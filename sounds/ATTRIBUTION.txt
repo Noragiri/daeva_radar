@@ -1,0 +1,13 @@
+Cube voice: synthetic Kokoro am_fenrir male preset lowered four semitones with generated breath effects, made locally from the Apache-2.0 Kokoro-82M model. No actor/character recordings used. Model and runtime not distributed.
+Other cube voices (cube-<name>.wav, listed in voices.py: Kokoro English voices saying "Cube!" and Japanese voices jf_alpha/jf_nezumi/jf_tebukuro saying キューブ phrases): made locally with the same Apache-2.0 model by make_voices.py, which also made every clip louder (clean compression, no clipping) (the original deep voice included). Japanese reading by misaki/pyopenjtalk on the owner's PC only.
+https://huggingface.co/hexgrad/Kokoro-82M
+https://github.com/thewh1teagle/kokoro-onnx
+
+Japanese cube callouts: synthetic Kokoro jm_kumo (male) and jf_alpha (female),
+saying キューブ! (kyūbu). Generated locally with Misaki Japanese pronunciation.
+Kokoro-82M is Apache-2.0; no actor/character recordings, models or speech runtimes distributed.
+https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md
+
+New voice cube callouts (cube-calm.wav, cube-urgent.wav, "Cube!"): synthetic, Qwen3-TTS 1.7B VoiceDesign (Apache-2.0),
+the voice built from a written description; made locally by ../make_voice_qwen.py. No actor recordings; model not distributed.
+https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
