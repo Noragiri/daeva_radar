@@ -43,7 +43,7 @@ def scaled(path, volume):
         frames = bytes(out)
     else:
         return path
-    folder = Path(tempfile.gettempdir()) / "CubeFinder"
+    folder = Path(tempfile.gettempdir()) / "DaevaRadar"
     folder.mkdir(exist_ok=True)
     target = str(folder / ("%d-%s" % (volume, Path(path).name)))
     with wave.open(target, "wb") as w:
@@ -56,12 +56,12 @@ def mci(command):
     return ctypes.windll.winmm.mciSendStringW(command, buf, 256, None), buf.value
 def play_mci(path, volume):
     """MP3 and other non-WAV audio through Windows MCI; its volume tops out at 100 %."""
-    mci("close cubefinder")
-    err, _ = mci('open "%s" type mpegvideo alias cubefinder' % path)
+    mci("close daevaradar")
+    err, _ = mci('open "%s" type mpegvideo alias daevaradar' % path)
     if err:
         return False
-    mci("setaudio cubefinder volume to %d" % min(1000, volume * 10))
-    return mci("play cubefinder")[0] == 0
+    mci("setaudio daevaradar volume to %d" % min(1000, volume * 10))
+    return mci("play daevaradar")[0] == 0
 def play_linux(path, volume):
     """First installed player: WAV (volume already applied) via PipeWire/PulseAudio/ALSA; others via
     mpv (to 200 %), ffplay or mpg123 (to 100 %)."""

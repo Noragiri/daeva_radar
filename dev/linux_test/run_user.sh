@@ -6,5 +6,5 @@ useradd -m player && echo 'player ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/play
 cp "$(readlink -f "$(which python3)")" /tmp/aion2.exe && chmod 755 /tmp/aion2.exe
 su player -c 'python3 /t/fake_server.py' & sleep 0.3
 su player -c '/tmp/aion2.exe /t/fake_game.py' &
-su player -c 'timeout 14 python3 -u /app/cube_finder.py --console --no-sound' || true
+su player -c 'timeout 14 python3 -u /app/daeva_radar.py --console --no-sound' || true
 sleep 3; echo "helper processes left: $(grep -l -a "capture-helpe[r]" /proc/[0-9]*/cmdline 2>/dev/null | grep -v self | wc -l)"

@@ -25,7 +25,7 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "maps"
 
 def fetch(key):
     url = "https://shugo.gg/maps/%s/markers.json" % key
-    req = urllib.request.Request(url, headers={"User-Agent": "CubeFinder/1.0 (personal map cache; credit Shugo.GG)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "DaevaRadar/1.0 (personal map cache; credit Shugo.GG)"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 

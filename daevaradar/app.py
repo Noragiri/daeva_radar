@@ -25,7 +25,7 @@ class App:
         self.view = ViewCone()
         self.fusion = PositionFusion()
         self.root = root = tk.Tk()
-        root.title("Cube Finder")
+        root.title("Daeva Radar")
         self.icon = set_icon(root)
         root.configure(bg=BG)
         settings = load_settings()

@@ -1,9 +1,9 @@
-"""Offline decoder/tracker tests: python dev/test_cube_finder.py (no game, capture or admin)."""
+"""Offline decoder/tracker tests: python dev/test_daeva_radar.py (no game, capture or admin)."""
 import sys, struct, random
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from types import SimpleNamespace
-from cubefinder import protocol, game, ui
+from daevaradar import protocol, game, ui
 cf = SimpleNamespace(**{k: v for m in (protocol, game) for k, v in vars(m).items() if not k.startswith("__")},
                      relative=ui.relative)  # the names these tests use
 

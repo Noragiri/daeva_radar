@@ -106,7 +106,7 @@ def show_error(text):
         root = tk.Tk()
         root.withdraw()
         set_icon(root)
-        messagebox.showerror("Cube Finder", str(text), parent=root)
+        messagebox.showerror("Daeva Radar", str(text), parent=root)
         root.destroy()
     except Exception:
         pass

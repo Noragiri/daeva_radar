@@ -131,7 +131,7 @@ def find_windivert(explicit):
     for d in candidates:
         if (d / "WinDivert.dll").exists() and (d / "WinDivert64.sys").exists():
             return d
-    raise OSError("WinDivert.dll + WinDivert64.sys not found. Put them beside cube_finder.py "
+    raise OSError("WinDivert.dll + WinDivert64.sys not found. Put them beside daeva_radar.py "
                   "(from the official WinDivert 2.2.2 x64 release) or pass --windivert DIR.")
 def usable(q):
     """IPv4 TCP packet, not a fragment, long enough for the headers."""

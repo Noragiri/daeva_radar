@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Offline decoder / tracker tests
-        run: python dev/test_cube_finder.py
+        run: python dev/test_daeva_radar.py
 
   release:
     needs: test
@@ -41,8 +41,8 @@ jobs:
       - name: Package
         run: |
           # git archive honours export-ignore in .gitattributes (dev/, .github/, the machine-specific .lnk)
-          git archive --format=zip --prefix=CubeFinder/ -o "CubeFinder-${{ steps.version.outputs.version }}.zip" HEAD
-          unzip -l "CubeFinder-${{ steps.version.outputs.version }}.zip" | tail -n 1
+          git archive --format=zip --prefix=DaevaRadar/ -o "DaevaRadar-${{ steps.version.outputs.version }}.zip" HEAD
+          unzip -l "DaevaRadar-${{ steps.version.outputs.version }}.zip" | tail -n 1
 
       - name: Release notes
         run: |
@@ -50,7 +50,7 @@ jobs:
           {
             echo "Build of \`${GITHUB_SHA::7}\` on \`${GITHUB_REF_NAME}\`."
             echo
-            echo "Unzip, then start \`Cube Finder.bat\` (Windows, run \`python cube_finder.py --shortcut\` once for a shortcut) or \`cube_finder.sh\` (Linux). See README.md."
+            echo "Unzip, then start \`Daeva Radar.bat\` (Windows, run \`python daeva_radar.py --shortcut\` once for a shortcut) or \`daeva_radar.sh\` (Linux). See README.md."
             echo
             if [ -n "$previous" ]; then
               echo "### Changes since $previous"
@@ -67,7 +67,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
-            "CubeFinder-${{ steps.version.outputs.version }}.zip" \
+            "DaevaRadar-${{ steps.version.outputs.version }}.zip" \
             --target "$GITHUB_SHA" \
-            --title "Cube Finder ${{ steps.version.outputs.version }}" \
+            --title "Daeva Radar ${{ steps.version.outputs.version }}" \
             --notes-file notes.md

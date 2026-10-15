@@ -7,7 +7,7 @@ Copied unchanged on 2026-10-14 from the bundle of Grip Strength Companion (versi
 notes do not say where these tables come from. Names are AION 2 game content © NCSOFT. Treat the tables as
 reference data for this personal tool and don't redistribute them as a dataset of your own.
 
-Type ids are the numbers the game sends in its `41 36` "monster in range" message (see cube_finder.py).
+Type ids are the numbers the game sends in its `41 36` "monster in range" message (see daeva_radar.py).
 Tables may be out of date after a game patch.
 
 ## Map data (`maps/*.json`)

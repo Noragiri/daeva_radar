@@ -20,18 +20,18 @@ from .app import Radar
 
 
 def make_shortcut():
-    """Windows: 'Cube Finder.lnk' beside the script and on the Desktop: pythonw (no console) + icon."""
+    """Windows: 'Daeva Radar.lnk' beside the script and on the Desktop: pythonw (no console) + icon."""
     pythonw = Path(sys.executable).with_name("pythonw.exe")
     target = pythonw if pythonw.exists() else Path(sys.executable)
     script = (
         "$s = New-Object -ComObject WScript.Shell; "
         "foreach ($dir in @('{here}', [Environment]::GetFolderPath('Desktop'))) {{ "
-        "$l = $s.CreateShortcut((Join-Path $dir 'Cube Finder.lnk')); "
+        "$l = $s.CreateShortcut((Join-Path $dir 'Daeva Radar.lnk')); "
         "$l.TargetPath = '{target}'; $l.Arguments = '\"{main}\"'; $l.WorkingDirectory = '{here}'; "
-        "$l.IconLocation = '{icon},0'; $l.Description = 'Cube Finder: AION2 cube radar'; $l.Save() }}"
-    ).format(here=HERE, target=target, main=HERE / "cube_finder.py", icon=ASSETS / "icon.ico")
+        "$l.IconLocation = '{icon},0'; $l.Description = 'Daeva Radar: AION2 radar'; $l.Save() }}"
+    ).format(here=HERE, target=target, main=HERE / "daeva_radar.py", icon=ASSETS / "icon.ico")
     subprocess.run(["powershell", "-NoProfile", "-Command", script], check=True, creationflags=NO_WINDOW)
-    print("Created 'Cube Finder.lnk' in %s and on your Desktop." % HERE)
+    print("Created 'Daeva Radar.lnk' in %s and on your Desktop." % HERE)
 def is_admin():
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
@@ -58,7 +58,7 @@ def main():
     parser.add_argument("--template", type=int, action="append", default=[],
                         help="extra cube type id to track (repeatable)")
     parser.add_argument("--shortcut", action="store_true",
-                        help="Windows: create a 'Cube Finder' shortcut (icon, no console) here and on the Desktop")
+                        help="Windows: create a 'Daeva Radar' shortcut (icon, no console) here and on the Desktop")
     parser.add_argument("--position", choices=("any", "old"), default="any",
                         help="how your position is read: any = every movement message about you (default); "
                              "old = only the old version's exact layouts")
@@ -95,7 +95,7 @@ def main():
         except (OSError, AttributeError):
             ctypes.windll.user32.SetProcessDPIAware()
     if WINDOWS:  # our own taskbar entry and icon, not Python's
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("CubeFinder.Radar")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DaevaRadar.Radar")
     if WINDOWS and not is_admin() and not args.demo:  # WinDivert needs elevation: relaunch through UAC (it starts in System32)
         argv = [str(ENTRY)]
         for prev, a in zip([None] + sys.argv[1:], sys.argv[1:]):

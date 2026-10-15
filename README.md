@@ -1,15 +1,15 @@
-# Cube Finder
+# Daeva Radar
 
-A standalone radar for AION2 Hidden Cubes (Verteron, Altgard; more by type id). It is the cube feature of Grip Strength Companion on its own: no damage meter and no uploads, plus a radar window and a minimap overlay.
+A standalone radar for AION2: Hidden Cubes (Verteron, Altgard; more by type id), monsters with a watch list, gathering nodes, alerts, your camera cone, and minimap overlays for each. It started as the cube feature of Grip Strength Companion on its own (formerly **Cube Finder**): no damage meter and no uploads.
 
 ## Folder layout
 
 ```
-Cube Finder.lnk      start it: icon, no console (recreate with: python cube_finder.py --shortcut)
-Cube Finder.bat      same, without the icon
-cube_finder.sh       Linux launcher
-cube_finder.py       launcher (starts cubefinder/; the command-line options are unchanged)
-cubefinder/          the program
+Daeva Radar.lnk      start it: icon, no console (create with: python daeva_radar.py --shortcut)
+Daeva Radar.bat      same, without the icon
+daeva_radar.sh       Linux launcher
+daeva_radar.py       launcher (starts daevaradar/)
+daevaradar/          the program
   common.py            platform flags, folders, settings file
   protocol.py          TCP stream reassembly, frames, LZ4
   game.py              game messages -> you, cubes, monsters, gathering nodes; local map data
@@ -29,7 +29,7 @@ sounds/custom/       your own WAV/MP3 alerts
 windivert/           WinDivert.dll + WinDivert64.sys + LICENSE (LGPLv3 / GPLv2)
 data/                monster/skill name tables and map data (see data/SOURCE.md)
 dev/                 tests and tools, not needed to run:
-  test_cube_finder.py   offline decoder/tracker tests
+  test_daeva_radar.py   offline decoder/tracker tests
   make_icon.py          regenerates assets/ (needs Pillow)
   fetch_map_data.py     refreshes data/maps/ from Shugo.GG's public marker files (one-time, after patches)
   linux_test/           Docker end-to-end test with a fake game and server
@@ -65,7 +65,7 @@ You only see cubes the server sends to your client, which means nearby objects. 
 
 1. Install Python 3.10+ for Windows x64 (tkinter included).
 2. The WinDivert 2.2 files `WinDivert.dll` and `WinDivert64.sys` go in `windivert/` (already there). If they are missing, the copy that Grip Strength Companion leaves in `%APPDATA%\GripStrengthMeter\windivert` is used instead.
-3. Double-click the **Cube Finder** shortcut (or `Cube Finder.bat`) and accept the administrator prompt. It runs without a console window, and errors appear in a message box. If you move the folder, run `python cube_finder.py --shortcut` once to recreate the shortcut, both here and on the Desktop. For console output, run `python cube_finder.py --console`.
+3. Double-click the **Daeva Radar** shortcut (or `Daeva Radar.bat`) and accept the administrator prompt. It runs without a console window, and errors appear in a message box. If you move the folder, run `python daeva_radar.py --shortcut` once to recreate the shortcut, both here and on the Desktop. For console output, run `python daeva_radar.py --console`.
 4. Start the radar, then teleport (or change zone / relog) so it learns your character and position. Summon your
    pet or keep an aura active, so your position follows you while you walk.
    Without either, it only updates when you dash or teleport.
@@ -73,13 +73,13 @@ You only see cubes the server sends to your client, which means nearby objects. 
 ## Run on Linux (AION2 under Wine / Proton)
 
 1. Install Python 3.10+ with tkinter (`python3-tk` on Debian/Ubuntu, `tk` on Arch/Fedora).
-2. Run `sh cube_finder.sh` (or `python3 cube_finder.py`) as your normal user.
-3. A small capture helper (`cube_finder.py --capture-helper`) then asks for your password through `pkexec` (or `sudo` in a terminal), because a raw socket needs root. Only the helper runs as root. The window, settings and sound stay with your user, and the helper exits when the window closes. Running the whole program with `sudo` also works, but then sound may not reach your desktop.
+2. Run `sh daeva_radar.sh` (or `python3 daeva_radar.py`) as your normal user.
+3. A small capture helper (`daeva_radar.py --capture-helper`) then asks for your password through `pkexec` (or `sudo` in a terminal), because a raw socket needs root. Only the helper runs as root. The window, settings and sound stay with your user, and the helper exits when the window closes. Running the whole program with `sudo` also works, but then sound may not reach your desktop.
 4. Sound uses the first player found:
    - WAV: `paplay`, `pw-play` or `aplay`
    - MP3: `mpv` (up to 200 %), `ffplay` or `mpg123` (up to 100 %)
 
-   Settings are kept in `~/.config/CubeFinder/settings.json`.
+   Settings are kept in `~/.config/DaevaRadar/settings.json` (`%APPDATA%\DaevaRadar` on Windows; settings from Cube Finder are picked up automatically).
 
 Options:
 

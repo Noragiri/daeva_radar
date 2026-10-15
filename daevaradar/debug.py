@@ -16,7 +16,7 @@ class PositionWindow:
         tk = app.tk
         self.app = app
         self.win = win = tk.Toplevel(app.root)
-        win.title("Cube Finder · Position debug")
+        win.title("Daeva Radar · Position debug")
         win.configure(bg=BG)
         win.attributes("-topmost", True)
         win.resizable(False, False)

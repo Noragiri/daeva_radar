@@ -1,4 +1,4 @@
-"""Draw the Cube Finder icon (needs Pillow): python dev/make_icon.py
+"""Draw the Daeva Radar icon (needs Pillow): python dev/make_icon.py
 -> assets/icon.png, icon-16.png, icon-32.png, icon.ico and dev/icon_preview.png"""
 import math
 import sys
