@@ -50,9 +50,10 @@ dev/                 tests and tools, not needed to run:
     movement skill (`*8`), and about once a second while an **aura** is active (`+8`, 46 bytes, one per aura effect;
     checked live 2026-10-15). With no aura on, your position only changes on dashes and teleports, so between
     packets it's followed with your pet (see [Following your position](#following-your-position)).
-  - Your summoned pet (checked live 2026-10-15): it spawns with an `41 36` on top of you right after your summon
-    skill (`02 38`), moves with `28 37` / `29 37` (position + velocity, 33 bytes) and `1a 37` (stopped), and
-    `42 36` removes it. Its type is remembered, so it's recognised again when it comes back with you.
+  - Your summoned pet (checked live 2026-10-15 with 4 different pets): it spawns with an `41 36` marked as a pet
+    (`1f 10` right after the id; monsters differ) 0-2.5 m beside you right after your summon skill (`02 38`),
+    moves with `28 37` / `29 37` (position + velocity, 33 bytes) and `1a 37` (stopped), and `42 36` removes it.
+    Its type is remembered, so it's recognised again when it comes back with you.
   - `#6`: teleport or zone-in (clears pins)
   - `46` with a cube type id: a cube appears, with xyz. Known ids: 1200039 (Verteron, confirmed), 1301199 / 1301200 (Altgard), 1301242-1301245 (Morheim, unconfirmed)
   - `56` `04 03 00`: the cube was opened

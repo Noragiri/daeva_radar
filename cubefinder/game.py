@@ -223,7 +223,16 @@ def pet_move(data):
     if not all(math.isfinite(v) and abs(v) < 1e5 for v in velocity):
         return None
     return entity, point, velocity
-PET_SPAWN_CM = 150  # your pet appears on you: within this of your position, right after one of your skills
+PET_SPAWN_CM = 500  # your pet appears beside you (0-2.5 m seen): within this, right after one of your skills
+PET_MARK = b"\x1f\x10"  # an 'A6' spawn of a summoned pet (anyone's) starts with this after the id; monsters don't
+def is_pet_intro(data):
+    """Is this 'A6' spawn a summoned pet's? (5 of 5 pets, 4 kinds, live 2026-10-15: '1f 10 00' after the id;
+    monsters had '04 20 00', '0c 20 00', '0c 2c 00', '0d 20 00'.)"""
+    try:
+        entity, p = varint(data, 2)
+    except ValueError:
+        return False
+    return data[p:p + 2] == PET_MARK
 NODE_RANGE_M = 200  # objects further than this are dropped (they leave range silently too)
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
@@ -308,11 +317,11 @@ class Tracker:
             self.log("object event: id %d template %d at %.1f m, message %s %s" % (
                 entity, obj[0], dist, data[:2].hex(), bytes(data[p:]).hex()))
 
-    def is_pet_spawn(self, spawn, when):
-        """Is this 'A6' spawn your pet? On top of you right after a skill of yours (the summon), or a type
-        already known as your pet appearing next to you (it comes along through teleports)."""
+    def is_pet_spawn(self, data, spawn, when):
+        """Is this 'A6' spawn your pet? A pet's spawn beside you right after a skill of yours (the summon), or
+        a type already known as your pet appearing near you (it comes along through teleports)."""
         entity, type_id, point = spawn
-        if when - self.position_time > 3:
+        if when - self.position_time > 3 or not is_pet_intro(data):
             return False
         dist = math.dist(point[:2], self.position[:2])
         if type_id in self.pet_types:
@@ -378,7 +387,7 @@ class Tracker:
                     pass
             if kind == b"A6" and self.position:
                 spawn = monster_intro(data)
-                if spawn and self.is_pet_spawn(spawn, when):
+                if spawn and self.is_pet_spawn(data, spawn, when):
                     entity, type_id, point = spawn
                     self.pet_types.add(type_id)
                     self.pet = dict(id=entity, type=type_id, xyz=point, velocity=(0.0, 0.0, 0.0), time=when)
