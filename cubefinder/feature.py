@@ -93,7 +93,7 @@ class Feature:
         self.tab_buttons[name].config(fg=ACCENT, bg=BUTTON)
         settings = load_settings()
         save_settings(dict(settings, tabs=dict(settings.get("tabs", {}), **{self.title: name})))
-        self.update(self.app.tracker.snapshot(), name)
+        self.update(self.app.snapshot(), name)
 
     # ---- overlay (shared by every feature that has one)
     def build_overlay_tab(self, f):

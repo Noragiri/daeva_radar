@@ -46,6 +46,9 @@ def cube_intro(data):
     if intro is None or intro[1] not in TEMPLATES:
         return None
     return intro[0], intro[2]
+POSITION_MODE = "any"  # "old": only the old version's exact layouts (--position old, to compare in game)
+
+
 def own_position(data, own):
     if own is None or data[:2] not in (b"*8", b"+8"):
         return None
@@ -53,10 +56,14 @@ def own_position(data, own):
         entity, p = varint(data, 2)
     except ValueError:
         return None
-    # Your position is the last 12 bytes of every '*8' / '+8' about you. Their length varies (40, 41, 43, 44, 45
-    # bytes after the id seen live on 2026-10-14; all agreed to the metre whenever they arrived together), so
-    # don't fix the length: accepting only 40 / 43 froze your position while walking.
-    if entity != own or len(data) - p < 36:
+    if entity != own:
+        return None
+    if POSITION_MODE == "old":  # the old version's exact layouts only ('*8' 40 bytes, '+8' 43 bytes after the id)
+        offset = p + (28 if data[:2] == b"*8" else 31)
+        return xyz(data, offset) if len(data) == offset + 12 else None
+    # default: the last 12 bytes of every '*8' / '+8' about you, whatever its length (39-45 bytes seen; where both
+    # kinds arrived together they agreed within ~1.5 m). Later sessions sent no 40/43-byte messages at all.
+    if len(data) - p < 36:
         return None
     return xyz(data, len(data) - 12)
 class Recorder:
@@ -68,12 +75,13 @@ class Recorder:
         self.file = open(path, "a", encoding="utf-8")
         self.count = 0
 
-    def write(self, batch, when):
+    def write(self, batch, when, direction="s"):
+        """direction: "s" = from the server, "c" = from your client."""
         if self.count >= self.LIMIT:
             return
         import json
         for data in batch:
-            self.file.write(json.dumps({"t": round(when, 3), "hex": bytes(data).hex()}) + "\n")
+            self.file.write(json.dumps({"t": round(when, 3), "d": direction, "hex": bytes(data).hex()}) + "\n")
         self.count += len(batch)
         self.file.flush()
 class MapData:
@@ -194,6 +202,28 @@ def entity_move(data):
         return None
     point = xyz(data, len(data) - 12)
     return (entity, point) if point else None
+def pet_move(data):
+    """Your summoned pet's movement (live 2026-10-15): '28 37' starts / '29 37' moves: id (LEB128) | 1 byte |
+    x, y, z | velocity x, y, z (units/s) | ...; '1a 37' stops: id | 2 bytes | x, y, z.
+    -> (entity, point, velocity) or None."""
+    kind = data[:2]
+    if kind not in (b"(7", b")7", b"\x1a7"):
+        return None
+    try:
+        entity, p = varint(data, 2)
+    except ValueError:
+        return None
+    if kind == b"\x1a7":
+        point = xyz(data, p + 2)
+        return (entity, point, (0.0, 0.0, 0.0)) if point else None
+    point = xyz(data, p + 1)
+    if point is None or len(data) < p + 25:
+        return None
+    velocity = struct.unpack_from("<fff", data, p + 13)
+    if not all(math.isfinite(v) and abs(v) < 1e5 for v in velocity):
+        return None
+    return entity, point, velocity
+PET_SPAWN_CM = 150  # your pet appears on you: within this of your position, right after one of your skills
 NODE_RANGE_M = 200  # objects further than this are dropped (they leave range silently too)
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
@@ -210,17 +240,25 @@ class Tracker:
         self.own = None
         self.position = None
         self.position_time = 0
+        self.position_source = None  # the message that last set your position (for the debug window)
+        self.position_updates = 0
+        self.estimate = None  # your position followed between packets (the app's, via your pet), for range checks
         self.cubes = {}
         self.monsters = {}  # entity -> dict(type, xyz, seen)
         self.track_cubes = self.track_monsters = True  # a feature switched off: its messages aren't parsed
         self.nodes = {}  # entity -> dict(type, xyz, seen): '46' objects that aren't cubes (gathering nodes...)
         self.track_nodes = True
-        # Who you are. Learned from: the login message ('33 36'), the 'own state' message ('4a 36', frequent on
-        # some characters, rare on others), the first mover landing on a teleport spot, or a remembered id.
-        self.characters = {}  # id -> name, your characters seen logging in (saved by the app)
-        self.on_character = None  # callback(id, name) when a new character of yours is seen
-        self.own_name = None
-        self.teleport = None  # (point, when) of the last teleport, until you're identified by it
+        # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
+        # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
+        # players land on the same teleport spots, and ids may be reused between sessions.)
+        self.own_name = None  # display only, from the login message
+        self.client_messages = 0  # messages from your client to the server
+        # Your summoned pet: the server sends its movement while yours goes unsent, and it follows you (about
+        # 1-1.5 s behind). Recognised as the 'A6' spawn on top of you right after one of your skills ('02 38');
+        # its type is then remembered, so it's also recognised when it reappears with you (teleport, relog).
+        self.pet = None  # dict(id, type, xyz, velocity, time) while it's out
+        self.pet_types = set()
+        self.last_cast = 0.0  # when you last used a skill
         self.kills = 0
         self.messages = 0
         self.detections = 0
@@ -236,11 +274,15 @@ class Tracker:
         self.nodes.clear()
         self.position = None
         self.position_time = 0
+        self.estimate = None
+        self.pet = None
 
-    def set_position(self, point, when):
+    def set_position(self, point, when, source=None):
         if when < self.position_time:
             return
         self.position, self.position_time = list(point), when
+        self.position_source = source
+        self.position_updates += 1
 
     def diagnose(self, data):
         """Log '56' events of objects within 10 m of you, once per (object, event)."""
@@ -266,6 +308,23 @@ class Tracker:
             self.log("object event: id %d template %d at %.1f m, message %s %s" % (
                 entity, obj[0], dist, data[:2].hex(), bytes(data[p:]).hex()))
 
+    def is_pet_spawn(self, spawn, when):
+        """Is this 'A6' spawn your pet? On top of you right after a skill of yours (the summon), or a type
+        already known as your pet appearing next to you (it comes along through teleports)."""
+        entity, type_id, point = spawn
+        if when - self.position_time > 3:
+            return False
+        dist = math.dist(point[:2], self.position[:2])
+        if type_id in self.pet_types:
+            return dist < 1000
+        return dist < PET_SPAWN_CM and 0 <= when - self.last_cast <= 2
+
+    def feed_client(self, batch, when):
+        """Messages your own client sends to the server (recorded for now; your movement is in here)."""
+        self.client_messages += len(batch)
+        if self.recorder:
+            self.recorder.write(batch, when, "c")
+
     def feed(self, batch, when):
         if self.recorder:
             self.recorder.write(batch, when)
@@ -278,72 +337,64 @@ class Tracker:
             return
         if self.own is not None:
             self.clear()
+            self.own_name = None
         self.own = own
-        if own not in self.characters:  # remember it, so next time you're recognised on your first move
-            self.characters[own] = None  # name unknown until a login message is seen
-            if self.on_character:
-                self.on_character(own, None)
-        self.own_name = self.characters.get(own)
-
-    def identify(self, data, when):
-        """Learn who you are from movement: the first mover landing on the spot you just teleported to (live:
-        6 of 6 teleports, 0 cm away, within 0.06 s), or, while unknown, a character of yours seen before
-        (ids stay the same across logins)."""
-        try:
-            entity, p = varint(data, 2)
-        except ValueError:
-            return
-        if entity == self.own or len(data) - p < 36:
-            return
-        if self.teleport and when - self.teleport[1] <= 10:
-            point = xyz(data, len(data) - 12)
-            if point and math.dist(point[:2], self.teleport[0][:2]) < 300 and entity not in self.monsters:
-                self.teleport = None
-                self.set_own(entity)
-                return
-        if self.own is None and entity in self.characters:
-            self.set_own(entity)
 
     def _feed(self, batch, when):
         self.messages += len(batch)
         for data in batch:  # who am I?
             kind = data[:2]
-            if kind == b"36":  # login: you; also remember this character (with its name) for next time
+            if kind == b"36":  # login: you (and your character's name, for display)
                 try:
                     self.set_own(varint(data, 2)[0])
                 except ValueError:
                     continue
                 login = login_name(data)
                 if login:
-                    entity, name = login
-                    if self.characters.get(entity) != name:
-                        self.characters[entity] = name
-                        if self.on_character:
-                            self.on_character(entity, name)
-                    self.own_name = name
+                    self.own_name = login[1]
             elif kind == b"J6":
                 try:
                     self.set_own(varint(data, 2)[0])
                 except ValueError:
                     pass
-            elif kind == b"#6" and len(data) == 26 and data[2:8] == bytes(6):
-                point = xyz(data, 8)
-                if point:
-                    self.teleport = (point, when)
-            elif kind in (b"*8", b"+8"):
-                self.identify(data, when)
+
         for data in batch:
             kind = data[:2]
             if kind == b"#6" and len(data) == 26 and data[2:8] == bytes(6):  # teleport / zone-in
                 point = xyz(data, 8)
                 if point is not None:
                     self.clear()
-                    self.set_position(point, when)
+                    self.set_position(point, when, "#6 teleport")
             point = own_position(data, self.own)
             if point is not None:
-                self.set_position(point, when)
+                self.set_position(point, when, "%s move, %d bytes" % (kind.decode("latin-1"), len(data)))
             if self.log:
                 self.diagnose(data)
+            if kind == b"\x028" and self.own is not None:  # a skill used
+                try:
+                    if varint(data, 2)[0] == self.own:
+                        self.last_cast = when
+                except ValueError:
+                    pass
+            if kind == b"A6" and self.position:
+                spawn = monster_intro(data)
+                if spawn and self.is_pet_spawn(spawn, when):
+                    entity, type_id, point = spawn
+                    self.pet_types.add(type_id)
+                    self.pet = dict(id=entity, type=type_id, xyz=point, velocity=(0.0, 0.0, 0.0), time=when)
+                    self.monsters.pop(entity, None)
+                    continue
+            if self.pet:
+                move = pet_move(data)
+                if move and move[0] == self.pet["id"]:
+                    self.pet.update(xyz=move[1], velocity=move[2], time=when)
+                    continue
+                if kind in (b"B6", b"\x04\x8d"):  # dismissed / gone
+                    try:
+                        if varint(data, 2)[0] == self.pet["id"]:
+                            self.pet = None
+                    except ValueError:
+                        pass
             if kind in (b"A6", b"*8", b"+8", b"\x04\x8d") and not self.track_monsters:
                 continue
             if kind == b"A6":
@@ -421,25 +472,29 @@ class Tracker:
                     continue
                 status = "last seen" if item["status"] == "nearby" and age > 60 else item["status"]
                 cubes.append(dict(id=item["id"], xyz=list(item["xyz"]), status=status, age=round(age)))
+            here = self.estimate or self.position
             monsters = []
-            if self.position:
+            if here:
                 for entity in list(self.monsters):
                     item = self.monsters[entity]
-                    if math.dist(item["xyz"][:2], self.position[:2]) > MONSTER_RANGE_M * 100:
+                    if math.dist(item["xyz"][:2], here[:2]) > MONSTER_RANGE_M * 100:
                         del self.monsters[entity]  # out of range: the server stops telling us about it
                         continue
                     monsters.append(dict(id=entity, type=item["type"], xyz=list(item["xyz"]),
                                          age=round(max(0, now - item["seen"]))))
             nodes = []
-            if self.position:
+            if here:
                 for entity in list(self.nodes):
                     item = self.nodes[entity]
-                    if math.dist(item["xyz"][:2], self.position[:2]) > NODE_RANGE_M * 100:
+                    if math.dist(item["xyz"][:2], here[:2]) > NODE_RANGE_M * 100:
                         del self.nodes[entity]
                         continue
                     nodes.append(dict(id=entity, type=item["type"], xyz=list(item["xyz"])))
             return dict(own=self.own, own_name=self.own_name, position=list(self.position) if self.position else None,
                         nodes=nodes,
                         position_age=max(0, now - self.position_time) if self.position else None,
+                        position_source=self.position_source, position_updates=self.position_updates,
+                        position_time=self.position_time if self.position else None,
+                        pet=dict(self.pet, xyz=list(self.pet["xyz"])) if self.pet else None,
                         cubes=cubes, monsters=monsters, kills=self.kills, messages=self.messages,
                         detections=self.detections, last_detection=self.last_detection)

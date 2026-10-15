@@ -150,7 +150,9 @@ class Capture:
         self.dll.WinDivertShutdown.argtypes = [ctypes.c_void_p, ctypes.c_int]
         self.dll.WinDivertClose.argtypes = [ctypes.c_void_p]
         self.ports = set(ports)
-        expression = " or ".join("tcp.SrcPort == %d" % p for p in sorted(self.ports))
+        # both directions: from the server (what the game tells your client) and to it (what your client sends,
+        # e.g. your own movement, which some characters barely get echoed back)
+        expression = " or ".join("tcp.SrcPort == %d or tcp.DstPort == %d" % (p, p) for p in sorted(self.ports))
         self.handle = self.dll.WinDivertOpen(("ip and tcp and (%s or loopback)" % expression).encode(),
                                              0, -30000, SNIFF | RECV_ONLY)
         if self.handle is None or self.handle == ctypes.c_void_p(-1).value:
@@ -276,6 +278,7 @@ class Engine:
         self.log = log
         self.routes = set()
         self.readers = {}
+        self.client_readers = {}  # your client -> server streams
         self.capture = None
         self.refresh = threading.Event()
         self.status = "Starting"
@@ -336,8 +339,9 @@ class Engine:
                     if q is None:
                         continue
                     route = packet_route(q)
+                    back = (route[2], route[3], route[0], route[1])  # the same connection, the other way
                     routes = self.routes
-                    if routes and route not in routes:
+                    if routes and route not in routes and back not in routes:
                         now = time.monotonic()
                         if now >= next_discovery:  # a brand-new socket (map change, reconnect)
                             next_discovery = now + 0.5
@@ -345,13 +349,26 @@ class Engine:
                                 pending = discover_routes()
                             except (OSError, subprocess.TimeoutExpired):
                                 pending = set()
-                        if route not in pending:
+                        if route not in pending and back not in pending:
                             continue
-                    if not routes and route[1] not in self.ports:
+                        outgoing = back in pending
+                    elif routes:
+                        outgoing = route not in routes
+                    elif route[1] in self.ports:
+                        outgoing = False
+                    elif route[3] in self.ports:
+                        outgoing = True
+                    else:
                         continue
-                    reader = self.readers.get(route)
-                    if reader is None:
-                        reader = self.readers[route] = StreamReader(self.tracker.feed, self.on_gap, self.say)
+                    if outgoing:  # your client -> the server: its own reader, never touching the server stream
+                        reader = self.client_readers.get(route)
+                        if reader is None:
+                            reader = self.client_readers[route] = StreamReader(
+                                self.tracker.feed_client, lambda reason: None, lambda text: None)
+                    else:
+                        reader = self.readers.get(route)
+                        if reader is None:
+                            reader = self.readers[route] = StreamReader(self.tracker.feed, self.on_gap, self.say)
                     self.packets += 1
                     self.status = "Reading the game"
                     reader.packet(q, time.time())

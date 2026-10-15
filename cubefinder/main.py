@@ -11,6 +11,7 @@ import threading
 import time
 
 from .common import ASSETS, ENTRY, HERE, LINUX, NO_WINDOW, WINDOWS, load_settings
+from . import game
 from .game import Recorder, TEMPLATES, Tracker
 from .capture import Engine, capture_helper, find_windivert
 from .sound import play, voices
@@ -58,10 +59,16 @@ def main():
                         help="extra cube type id to track (repeatable)")
     parser.add_argument("--shortcut", action="store_true",
                         help="Windows: create a 'Cube Finder' shortcut (icon, no console) here and on the Desktop")
+    parser.add_argument("--position", choices=("any", "old"), default="any",
+                        help="how your position is read: any = every movement message about you (default); "
+                             "old = only the old version's exact layouts")
+    parser.add_argument("--debug", action="store_true",
+                        help="open the position debug window (also from the sidebar)")
     parser.add_argument("--demo", action="store_true",
                         help="no capture or admin rights: simulated player and cubes, to try the window")
     args = parser.parse_args()
     TEMPLATES.update(args.template)
+    game.POSITION_MODE = args.position
     settings = load_settings()
     if args.no_sound:
         args.voice = "off"

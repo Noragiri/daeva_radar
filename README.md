@@ -16,6 +16,8 @@ cubefinder/          the program
   capture.py           WinDivert / Linux capture, finding the game's connections, the engine
   sound.py             alert sounds
   vision.py            reading the vision cone from the minimap
+  follow.py            following your position between packets with your summoned pet
+  debug.py             the Position debug window
   ui.py                shared drawing, overlay window, widgets, popups
   feature.py           the Feature base (tabs, On/Off switch, overlay controls)
   app.py               the main window
@@ -44,7 +46,13 @@ dev/                 tests and tools, not needed to run:
 - **Decoding:** each TCP stream is reassembled into frames (varint length + body). Bodies starting with `ff ff` are LZ4 blocks of more frames. After packet loss, decoding resyncs on a fully validated compressed frame.
 - **Messages used:**
   - `36` / `J6`: your entity id
-  - `*8` / `+8`: your position
+  - `*8` / `+8`: your position. The server doesn't send it for plain walking. It arrives when you dash or use a similar
+    movement skill (`*8`), and about once a second while an **aura** is active (`+8`, 46 bytes, one per aura effect;
+    checked live 2026-10-15). With no aura on, your position only changes on dashes and teleports, so between
+    packets it's followed with your pet (see [Following your position](#following-your-position)).
+  - Your summoned pet (checked live 2026-10-15): it spawns with an `41 36` on top of you right after your summon
+    skill (`02 38`), moves with `28 37` / `29 37` (position + velocity, 33 bytes) and `1a 37` (stopped), and
+    `42 36` removes it. Its type is remembered, so it's recognised again when it comes back with you.
   - `#6`: teleport or zone-in (clears pins)
   - `46` with a cube type id: a cube appears, with xyz. Known ids: 1200039 (Verteron, confirmed), 1301199 / 1301200 (Altgard), 1301242-1301245 (Morheim, unconfirmed)
   - `56` `04 03 00`: the cube was opened
@@ -57,7 +65,9 @@ You only see cubes the server sends to your client, which means nearby objects. 
 1. Install Python 3.10+ for Windows x64 (tkinter included).
 2. The WinDivert 2.2 files `WinDivert.dll` and `WinDivert64.sys` go in `windivert/` (already there). If they are missing, the copy that Grip Strength Companion leaves in `%APPDATA%\GripStrengthMeter\windivert` is used instead.
 3. Double-click the **Cube Finder** shortcut (or `Cube Finder.bat`) and accept the administrator prompt. It runs without a console window, and errors appear in a message box. If you move the folder, run `python cube_finder.py --shortcut` once to recreate the shortcut, both here and on the Desktop. For console output, run `python cube_finder.py --console`.
-4. Start the radar, then teleport (or change zone / relog) so it learns your character and position.
+4. Start the radar, then teleport (or change zone / relog) so it learns your character and position. Summon your
+   pet or keep an aura active, so your position follows you while you walk.
+   Without either, it only updates when you dash or teleport.
 
 ## Run on Linux (AION2 under Wine / Proton)
 
@@ -140,6 +150,21 @@ It only reads the screen while something shows the cone: the View cone page, a R
 - No "left range" message is sent for monsters, so ones more than 150 m from you are dropped.
 
 Checked live on 2026-10-14: Drana and Krall monsters at 11-29 m with the right names, and kills removed.
+
+## Following your position
+
+The server sends your position only when it moves you or something on you: teleports, dashes and similar skills,
+and aura ticks (about once a second). Plain walking is reported by your client (encrypted) and never sent back, so
+without one of those your position only changes on dashes and teleports. Your summoned pet fills the gap:
+
+- **Your pet:** the server sends where your pet is while it follows you (about 1–1.5 s behind), so its position
+  projected about 1.25 s ahead along its velocity is where you are. In a live session (2026-10-15) it was
+  1.6–11 m off when the last packet was 13–54 m off. Summon it and it works; no setup. It's left off the
+  Monsters radar.
+- **Packets win:** your own position packets are exact. The pet's estimate is only used once it's newer than
+  the last packet and says you've moved more than 4 m from it.
+- **Check it:** the **⌖ Position debug** window (sidebar, or `--debug`) shows where your position comes from
+  (packets or pet), your pet, and how far off the pet estimate was when the next packet arrived.
 
 ## Radar
 

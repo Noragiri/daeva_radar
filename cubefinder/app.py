@@ -3,6 +3,8 @@ import threading
 
 from .common import ASSETS, WINDOWS, load_settings, save_settings
 from .vision import ViewCone
+from .debug import PositionWindow
+from .follow import PositionFusion
 from .ui import ACCENT, BG, BUTTON, FONT, MUTED, OVERLAY_CONE, SIDEBAR, TEXT, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.monsters import MonstersFeature
@@ -20,11 +22,8 @@ class App:
         import tkinter as tk
         self.tk = tk
         self.tracker, self.engine, self.args = tracker, engine, args
-        # your characters, remembered across sessions so you're recognised without a login or teleport
-        tracker.characters.update({int(k): v for k, v in load_settings().get("characters", {}).items()})
-        tracker.on_character = lambda entity, name: save_settings(dict(
-            load_settings(), characters={str(k): v for k, v in tracker.characters.items()}))
         self.view = ViewCone()
+        self.fusion = PositionFusion()
         self.root = root = tk.Tk()
         root.title("Cube Finder")
         self.icon = set_icon(root)
@@ -51,6 +50,11 @@ class App:
         tk.Checkbutton(side, text="Keep on top", variable=self.topmost, command=self.set_topmost, bg=SIDEBAR,
                        fg=MUTED, selectcolor=BUTTON, activebackground=SIDEBAR, activeforeground=TEXT,
                        font=(FONT, 9), anchor="w", padx=10).pack(side="bottom", fill="x", pady=(0, 10))
+        self.debug = None
+        self.debug_link = tk.Label(side, text="⌖ Position debug", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w",
+                                   padx=14, cursor="hand2")
+        self.debug_link.pack(side="bottom", fill="x", pady=(0, 4))
+        self.debug_link.bind("<Button-1>", lambda e: self.toggle_debug())
         self.badges = tk.Label(side, text="", bg=SIDEBAR, fg=ACCENT, font=(FONT, 9), anchor="w", padx=14,
                                justify="left")
         self.badges.pack(side="bottom", fill="x", pady=(0, 6))
@@ -84,6 +88,8 @@ class App:
         self.show(saved if saved in self.features else self.FEATURES[0].title)
         root.protocol("WM_DELETE_WINDOW", self.close)
         self.cone_serial = -1
+        if args.debug or settings.get("debug_shown"):
+            self.toggle_debug()
         self.tick()
         self.cone_tick()
 
@@ -98,7 +104,13 @@ class App:
         for f in self.features.values():
             self.feature_state_changed(f)
         save_settings(dict(load_settings(), page=title))
-        feature.update(self.tracker.snapshot(), feature.tab)
+        feature.update(self.snapshot(), feature.tab)
+
+    def snapshot(self):
+        """The tracker's snapshot with your position followed between packets (by your pet)."""
+        snap = self.fusion.apply(self.tracker.snapshot())
+        self.tracker.estimate = snap["position"]
+        return snap
 
     def feature_state_changed(self, feature):
         """Sidebar entry: '(off)' and dimmed when the feature is switched off."""
@@ -115,6 +127,17 @@ class App:
             self.badge_text.pop(feature.title, None)
         if hasattr(self, "badges"):
             self.badges.config(text="\n".join(self.badge_text.values()))
+
+    def toggle_debug(self):
+        """Show or hide the position debug window (remembered for the next start)."""
+        if self.debug:
+            self.debug.close()
+            self.debug = None
+        else:
+            self.debug = PositionWindow(self)
+            self.debug.update(self.snapshot())
+        self.debug_link.config(fg=ACCENT if self.debug else MUTED)
+        save_settings(dict(load_settings(), debug_shown=bool(self.debug)))
 
     def set_topmost(self):
         self.root.attributes("-topmost", self.topmost.get())
@@ -165,7 +188,7 @@ class App:
             f.overlay.set_locked(lock)
 
     def tick(self):
-        snap = self.tracker.snapshot()
+        snap = self.snapshot()
         self.view.update(self.cone_needed())
         snap["cone"] = self.view.cone if self.view.ready() else None
         if self.hotkey.is_set():
@@ -176,10 +199,12 @@ class App:
                 feature.background(snap)
         current = self.features[self.current]
         current.update(snap, current.tab)
+        if self.debug:
+            self.debug.update(snap)
         if snap["own_name"]:
             who = "playing as %s" % snap["own_name"]
         else:
-            who = ("character #%d" % snap["own"]) if snap["own"] else "character not identified yet: teleport once"
+            who = ("character #%d" % snap["own"]) if snap["own"] else "character not identified yet: relog or change zone"
         parts = [self.engine.status, who] + [s for s in (f.status(snap) for f in self.features.values() if f.enabled) if s]
         self.status.config(text=" · ".join(parts + ["%d msgs" % snap["messages"], "%d pkts" % self.engine.packets]))
         self.root.after(250, self.tick)
@@ -188,6 +213,8 @@ class App:
         self.view.running = False
         for feature in self.features.values():
             feature.close()
+        if self.debug:
+            self.debug.close()
         self.engine.stop = True
         if self.engine.capture:
             self.engine.capture.shutdown()
