@@ -4,7 +4,7 @@
 
 Source: the public marker files of Shugo.GG (https://shugo.gg/maps/<map>/markers.json), which its guide for
 AI agents (https://shugo.gg/llms.txt) points to. Only those 9 public files are read: never the site's API.
-The app itself never goes online; it only reads the local copies this script writes. Re-run after a game
+The app only reads the local copies this script writes (its only online request is the update check). Re-run after a game
 patch if the site is still there; if it isn't, the existing copies keep working.
 
 Coordinates in the files are map pixels on a 4096 px map: pixel = game units / 200 + 2048 (checked live:

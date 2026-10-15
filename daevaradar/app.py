@@ -2,12 +2,13 @@
 import threading
 import time
 
+from . import update
 from .common import ASSETS, WINDOWS, load_settings, save_settings
 from .vision import ViewCone
 from .debug import PositionWindow
 from .follow import PositionFusion
 from .game import MapData, map_name
-from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, draw_cone, hotkey_thread, set_icon
+from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, Toast, button, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
@@ -59,6 +60,16 @@ class App:
                                    padx=14, cursor="hand2")
         self.debug_link.pack(side="bottom", fill="x", pady=(0, 4))
         self.debug_link.bind("<Button-1>", lambda e: self.toggle_debug())
+        self.check_button = button(tk, side, "Check for updates", self.check_updates)
+        self.check_button.config(font=(FONT, 9), pady=2, fg=MUTED)
+        self.check_button.pack(side="bottom", fill="x", padx=14, pady=(0, 8))
+        self.update_link = tk.Label(side, text="", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w", justify="left",
+                                    padx=14, cursor="hand2", wraplength=136)
+        self.update_link.pack(side="bottom", fill="x", pady=(0, 4))
+        self.update_link.bind("<Button-1>", lambda e: self.on_update_click())
+        self.version = update.current_version()
+        self.release, self.update_state, self.update_shown, self.toasted = None, "idle", None, set()
+        self.checked_at = None  # "HH:MM" of the last finished check
         self.badges = tk.Label(side, text="", bg=SIDEBAR, fg=ACCENT, font=(FONT, 9), anchor="w", padx=14,
                                justify="left")
         self.badges.pack(side="bottom", fill="x", pady=(0, 6))
@@ -97,6 +108,11 @@ class App:
             self.toggle_debug()
         self.tick()
         self.cone_tick()
+        self.show_update()
+        if settings.get("check_updates", True) and not getattr(args, "no_update_check", False):
+            threading.Thread(target=update.cleanup, daemon=True).start()
+            self.check_updates()
+            self.schedule_update_check()
 
     # ---- map: picked by hand in the sidebar, else detected from live gathering nodes or cubes
     def build_map_picker(self, side, settings):
@@ -145,6 +161,92 @@ class App:
         text = ("detected: %s" % map_name(self.detected)) if self.detected else "not detected yet"
         differs = self.picked() and self.detected and self.detected != self.picked()
         self.map_label.config(text=text + (" (differs!)" if differs else ""), fg="#ffb347" if differs else MUTED)
+
+    # ---- updates: checked at launch and every full hour; installed on a click
+    def schedule_update_check(self):
+        """Next check at the next x:00 (plus a few seconds), then every hour."""
+        wait = 3600 - time.time() % 3600 + 5
+        self.root.after(int(wait * 1000), lambda: (self.check_updates(), self.schedule_update_check()))
+
+    def check_updates(self):
+        if self.update_state in ("checking", "installing"):
+            return
+        self.update_state = "checking"
+
+        def work():
+            try:
+                self.release = update.latest()
+                self.update_state = "available" if update.is_newer(self.release, self.version) else "current"
+            except Exception as e:
+                self.engine.say("Update check failed: %s" % e)
+                self.update_state = "failed"
+            self.checked_at = time.strftime("%H:%M")
+        threading.Thread(target=work, daemon=True).start()
+
+    def show_update(self):
+        """Sidebar link for the update state (the worker threads only set update_state; this runs on Tk)."""
+        state = self.update_state
+        if state == self.update_shown:
+            return
+        self.update_shown = state
+        mine = "v" + self.version if self.version else ("git copy" if update.is_git() else "version unknown")
+        new = self.release["version"] if self.release else ""
+        text, color = {
+            "idle": (mine, MUTED),
+            "checking": ("Checking for updates…", MUTED),
+            "current": ("✓ Up to date (%s)\n%s" % (self.checked_at, mine), MUTED),
+            "failed": ("⚠ Update check failed (click to retry)", MUTED),
+            "available": (("↑ %s is out (git pull)" if update.is_git() else "↑ Update to %s") % new, "#7cf08a"),
+            "installing": ("Updating to %s…" % new, ACCENT),
+            "install_failed": ("⚠ Update failed (click to retry)", "#ffb347"),
+            "installed": ("✓ Updated, restarting…", "#7cf08a"),
+        }[state]
+        self.update_link.config(text=text, fg=color, font=(FONT, 9, "bold" if state == "available" else "normal"))
+        busy = state in ("checking", "installing", "installed")
+        self.check_button.config(state="disabled" if busy else "normal", text="Checking…" if state == "checking"
+                                 else "Check for updates")
+        if state == "available" and new not in self.toasted:
+            self.toasted.add(new)
+            Toast(self.root, "Daeva Radar %s is out.\nClick ↑ Update in the sidebar." % new, color="#7cf08a")
+        if state == "install_failed":
+            from tkinter import messagebox
+            messagebox.showerror("Daeva Radar", "Update failed: %s" % self.update_error, parent=self.root)
+        if state == "installed":
+            self.root.after(800, self.restart)
+
+    def on_update_click(self):
+        from tkinter import messagebox
+        if self.update_state in ("checking", "installing", "installed"):
+            return
+        if self.update_state not in ("available", "install_failed"):
+            return self.check_updates()
+        if update.is_git():
+            messagebox.showinfo("Daeva Radar", "This copy is a git checkout. Update it with git pull.", parent=self.root)
+            return
+        if not messagebox.askyesno("Daeva Radar", "Update to %s now?\n\nThe app restarts when it's done. Your settings "
+                                   "are kept." % self.release["version"], parent=self.root):
+            return
+        self.update_state = "installing"
+
+        def work():
+            try:
+                n = update.install(self.release)
+                self.engine.say("Updated to %s (%d files)" % (self.release["version"], n))
+                self.update_state = "installed"
+            except Exception as e:
+                self.engine.say("Update failed: %s" % e)
+                self.update_error = str(e)
+                self.update_state = "install_failed"
+        threading.Thread(target=work, daemon=True).start()
+
+    def restart(self):
+        try:
+            update.restart()
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Daeva Radar", "Updated, but couldn't restart (%s). Start it again by hand." % e,
+                                 parent=self.root)
+        self.close()
 
     def show(self, title):
         if self.current:
@@ -245,6 +347,7 @@ class App:
         self.view.update(self.cone_needed())
         snap["cone"] = self.view.cone if self.view.ready() else None
         self.detect_map(snap)
+        self.show_update()
         if self.hotkey.is_set():
             self.hotkey.clear()
             self.on_hotkey()

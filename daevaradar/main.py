@@ -64,6 +64,8 @@ def main():
                              "old = only the old version's exact layouts")
     parser.add_argument("--debug", action="store_true",
                         help="open the position debug window (also from the sidebar)")
+    parser.add_argument("--no-update-check", action="store_true",
+                        help="don't check GitHub for a new version (at launch and every full hour)")
     parser.add_argument("--demo", action="store_true",
                         help="no capture or admin rights: simulated player and cubes, to try the window")
     args = parser.parse_args()

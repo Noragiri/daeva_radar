@@ -40,8 +40,10 @@ jobs:
 
       - name: Package
         run: |
-          # git archive honours export-ignore in .gitattributes (dev/, .github/, the machine-specific .lnk)
-          git archive --format=zip --prefix=DaevaRadar/ -o "DaevaRadar-${{ steps.version.outputs.version }}.zip" HEAD
+          # git archive honours export-ignore in .gitattributes (dev/, .github/, the machine-specific .lnk).
+          # VERSION tells the installed copy which release it is (the in-app updater compares it).
+          echo "${{ steps.version.outputs.version }}" > VERSION
+          git archive --format=zip --prefix=DaevaRadar/ --add-file=VERSION -o "DaevaRadar-${{ steps.version.outputs.version }}.zip" HEAD
           unzip -l "DaevaRadar-${{ steps.version.outputs.version }}.zip" | tail -n 1
 
       - name: Release notes

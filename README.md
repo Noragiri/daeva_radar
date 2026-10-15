@@ -21,6 +21,7 @@ daevaradar/          the program
   ui.py                shared drawing, overlay window, widgets, popups
   feature.py           the Feature base (tabs, On/Off switch, overlay controls)
   app.py               the main window
+  update.py            update check and in-place install from GitHub releases
   main.py              startup, demo, console mode, shortcut
   features/            cubes.py, monsters.py, gathering.py, alerts.py, viewcone.py
 assets/              icons
@@ -28,6 +29,7 @@ sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
 windivert/           WinDivert.dll + WinDivert64.sys + LICENSE (LGPLv3 / GPLv2)
 data/                monster/skill name tables and map data (see data/SOURCE.md)
+VERSION              the release this copy is (release zips only)
 dev/                 tests and tools, not needed to run:
   test_daeva_radar.py   offline decoder/tracker tests
   make_icon.py          regenerates assets/ (needs Pillow)
@@ -96,12 +98,22 @@ Options:
 --port N           capture an extra server port
 --windivert DIR    Windows: folder containing the WinDivert files
 --template ID      also track this cube type id (repeatable)
+--no-update-check  don't check GitHub for a new version
 --demo             no game, capture or admin rights: simulated player and cubes, to try the window
 --log FILE         write a log; it includes the type id of anything you open within 10 m
 --record FILE      save every decoded game message (JSON lines) to work out new message layouts
 ```
 
 To find a cube id for a new zone, run with `--log`, open a cube, and look for `object event: ... message 3536 040300` in the log.
+
+## Updates
+
+At launch and then every full hour (x:00), the app asks GitHub which release of [Noragiri/daeva_radar](https://github.com/Noragiri/daeva_radar/releases) is the latest. That request is the app's only one to the internet; it sends nothing about you or the game. The sidebar shows the result above **Position debug**:
+
+- **✓ Up to date (HH:MM)** with this copy's version, and the time of the last check. The **Check for updates** button under it checks right away (also with the automatic check turned off).
+- **↑ Update to …** in green, with a short popup the first time a version is seen. Click it, confirm, and the app downloads the release zip, checks its SHA-256, writes the changed files over this folder and restarts itself (already elevated, so no new prompt). Settings live in your profile and are kept; your own files such as `sounds/custom/` are left alone. A `WinDivert.dll` that is in use is renamed to `.old` and removed on a later start.
+
+A git checkout (no `VERSION` file) is only told when the release's commit isn't in your branch; update it with `git pull`. Zips from before the updater have no `VERSION` and get the update offered. Turn the check off with `--no-update-check`, or `"check_updates": false` in the settings file.
 
 ## Window
 
