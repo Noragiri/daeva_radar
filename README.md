@@ -8,7 +8,19 @@ A standalone radar for AION2 Hidden Cubes (Verteron, Altgard; more by type id). 
 Cube Finder.lnk      start it: icon, no console (recreate with: python cube_finder.py --shortcut)
 Cube Finder.bat      same, without the icon
 cube_finder.sh       Linux launcher
-cube_finder.py       the whole program
+cube_finder.py       launcher (starts cubefinder/; the command-line options are unchanged)
+cubefinder/          the program
+  common.py            platform flags, folders, settings file
+  protocol.py          TCP stream reassembly, frames, LZ4
+  game.py              game messages -> you, cubes, monsters, gathering nodes; local map data
+  capture.py           WinDivert / Linux capture, finding the game's connections, the engine
+  sound.py             alert sounds
+  vision.py            reading the vision cone from the minimap
+  ui.py                shared drawing, overlay window, widgets, popups
+  feature.py           the Feature base (tabs, On/Off switch, overlay controls)
+  app.py               the main window
+  main.py              startup, demo, console mode, shortcut
+  features/            cubes.py, monsters.py, gathering.py, alerts.py, viewcone.py
 assets/              icons
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts

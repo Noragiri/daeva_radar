@@ -2,7 +2,10 @@
 import sys, struct, random
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import cube_finder as cf
+from types import SimpleNamespace
+from cubefinder import protocol, game, ui
+cf = SimpleNamespace(**{k: v for m in (protocol, game) for k, v in vars(m).items() if not k.startswith("__")},
+                     relative=ui.relative)  # the names these tests use
 
 def venc(n):
     out = bytearray()
