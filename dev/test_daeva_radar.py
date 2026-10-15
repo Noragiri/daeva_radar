@@ -118,4 +118,11 @@ t.feed([pet_move], 2.0)
 assert t.snapshot(now=2.0)['pet']['xyz'] == [1500.0, 2500.0, 300.0] and t.pet['velocity'][0] == 600.0
 t.feed([b'B6' + venc(PET) + b'\x00\x07'], 3.0); assert t.pet is None
 print('pet: recognised, moved, dismissed')
+
+# 8) gathering groups from the item ids in the map data
+md = cf.MapData()
+assert md.group_of('Orichalcum Ore') == 'Ore' and md.group_of('Odyle') == 'Odyle' and md.group_of('Ruby Gemstone') == 'Gem'
+assert md.group_of('Yggdrasil Log') == 'Log' and md.group_of('Aria') == 'Herb' and md.group_of('Coriolus') == 'Ingredient'
+assert all(md.group_of(n) for n in md.names()), [n for n in md.names() if not md.group_of(n)]
+print('groups:', {g: sum(1 for n in md.names() if md.group_of(n) == g) for g, _ in cf.GATHER_GROUPS})
 print('ALL OK')

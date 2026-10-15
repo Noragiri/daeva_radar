@@ -84,6 +84,10 @@ class Recorder:
             self.file.write(json.dumps({"t": round(when, 3), "d": direction, "hex": bytes(data).hex()}) + "\n")
         self.count += len(batch)
         self.file.flush()
+# Gathering groups by the first five digits of the item id (map data, 2026-10-15): 61061 Odyle, 61062 ores
+# (Orichalcum), 61065 logs, 61066 gemstones, 61067 herbs (Aria, Azpha...), 61068 cooking ingredients.
+GATHER_GROUPS = (("Ore", (61062,)), ("Odyle", (61061,)), ("Gem", (61066,)), ("Log", (61065,)), ("Herb", (61067,)),
+                 ("Ingredient", (61068,)))
 class MapData:
     """Local copy of map markers (data/maps/<map>.json, written once by dev/fetch_map_data.py; credit
     Shugo.GG). Names live nodes by position, works out which map you're on, and lists nodes the game hasn't
@@ -93,6 +97,7 @@ class MapData:
     def __init__(self, folder=None):
         import json
         self.maps = {}  # key -> {"grid": {(cx, cy): [(x, y, name, item)]}, "points": {name: [(x, y)]}}
+        self.items = {}  # resource name -> item id (its group is the id's first five digits, see GATHER_GROUPS)
         folder = folder or ROOT / "data" / "maps"
         for path in sorted(folder.glob("*.json")) if folder.exists() else []:
             try:
@@ -106,6 +111,7 @@ class MapData:
                 for x, y in cat["points"]:
                     grid.setdefault((x // self.CELL, y // self.CELL), []).append((x, y, cat["name"], cat["item"]))
                     points.setdefault(cat["name"], []).append((x, y))
+                self.items[cat["name"]] = cat["item"]
             if points:
                 self.maps[data.get("map", path.stem)] = {"grid": grid, "points": points}
 
@@ -116,6 +122,13 @@ class MapData:
     @staticmethod
     def to_world(px, py, z=0.0):
         return [(px - 2048) * 200, (py - 2048) * 200, z]
+
+    def group_of(self, name):
+        """The gathering group ('Ore', 'Gem', ...) of a resource, from its item id; None if unknown."""
+        item = self.items.get(name)
+        if item is None:
+            return None
+        return next((group for group, prefixes in GATHER_GROUPS if item // 10000 in prefixes), None)
 
     def names(self):
         return sorted({n for m in self.maps.values() for n in m["points"]})

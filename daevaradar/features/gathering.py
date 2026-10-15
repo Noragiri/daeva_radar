@@ -3,7 +3,7 @@ import math
 import time
 
 from ..common import load_settings, save_settings
-from ..game import MapData
+from ..game import GATHER_GROUPS, MapData
 from ..sound import play
 from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, WATCH_COLORS, button, checkbox, draw_cone, draw_me, draw_rings, draw_text, heading, radar_point, section
 from ..feature import Feature
@@ -264,6 +264,14 @@ class GatherFeature(Feature):
         row.pack(fill="x", pady=(4, 0))
         button(tk, row, "★ Watch", self.add_selected).pack(side="left")
         tk.Label(row, text="or double-click a name", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
+        section(tk, f, "Groups — click to watch / unwatch all of a kind")
+        row = tk.Frame(f, bg=BG)
+        row.pack(fill="x")
+        self.group_buttons = {}
+        for group, _ in GATHER_GROUPS:
+            b = button(tk, row, group, lambda g=group: self.toggle_group(g))
+            b.pack(side="left", padx=(0, 4))
+            self.group_buttons[group] = b
         section(tk, f, "Watching")
         self.watch_list = tk.Listbox(f, height=4, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
                                      highlightthickness=0, font=(FONT, 9, "bold"), activestyle="none")
@@ -282,6 +290,28 @@ class GatherFeature(Feature):
             self.flags[key] = tk.BooleanVar(value=self.cfg[key])
             checkbox(tk, f, text, self.flags[key], self.set_flags).pack(fill="x")
         self.refresh_watch()
+
+    def group_names(self, group):
+        return [n for n in self.all_names() if self.mapdata.group_of(n) == group]
+
+    def toggle_group(self, group):
+        """Watch every resource of the group, or, when all of them already are, unwatch them all."""
+        names = self.group_names(group)
+        if names and all(self.watched(n) for n in names):
+            self.cfg["watch"] = [n for n in self.cfg["watch"] if n not in names]
+        else:
+            self.cfg["watch"] += [n for n in names if not self.watched(n)]
+        self.save()
+        self.refresh_watch()
+
+    def refresh_groups(self):
+        """Group buttons: ✓ all watched, ◐ some, nothing marked for none."""
+        for group, b in getattr(self, "group_buttons", {}).items():
+            names = self.group_names(group)
+            n = sum(1 for name in names if self.watched(name))
+            mark = "✓ " if names and n == len(names) else "◐ " if n else ""
+            b.config(text="%s%s (%d)" % (mark, group, len(names)), fg=TEXT if n else MUTED,
+                     state="normal" if names else "disabled")
 
     def refresh_search(self):
         if not hasattr(self, "results"):
@@ -302,6 +332,7 @@ class GatherFeature(Feature):
             self.watch_list.insert("end", "Nothing yet. Pick from the list above, or click a name on the Radar tab.")
             self.watch_list.itemconfig(0, fg=MUTED)
         self.refresh_search()
+        self.refresh_groups()
 
     def add_selected(self):
         sel = self.results.curselection()
