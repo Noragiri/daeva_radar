@@ -1,0 +1,5086 @@
+{
+ "_source": "Pets: gegebase.com / wikily.gg (Global client). Soul drops: metabot.gg item pages. Monster type ids: Shugo.GG map markers. Fetched 2026-10-15 by dev/fetch_pet_data.py.",
+ "pets": {
+  "1001": {
+   "name": "Black Dragon",
+   "genus": "Special",
+   "souls": []
+  },
+  "1002": {
+   "name": "Krall Laborer",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Krall Armed Soldier",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100075
+     ]
+    },
+    {
+     "monster": "Krall Sentinel",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100480
+     ]
+    },
+    {
+     "monster": "Mutated Krall Laborer",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100914
+     ]
+    }
+   ]
+  },
+  "1003": {
+   "name": "Forest Specter",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Canyon Vine Spirit",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100601
+     ]
+    },
+    {
+     "monster": "Tainted Vine Specter",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100662
+     ]
+    }
+   ]
+  },
+  "1004": {
+   "name": "Fossa",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Patrolling Fossa",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100163
+     ]
+    },
+    {
+     "monster": "Daeva Renegade Fossa",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2400254
+     ]
+    },
+    {
+     "monster": "Tamed Beast",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2400414,
+      2590136
+     ]
+    }
+   ]
+  },
+  "1005": {
+   "name": "Klaw",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Wandering Klaw",
+     "level": 19,
+     "chance": 100.0,
+     "types": [
+      2100078
+     ]
+    },
+    {
+     "monster": "Abyss Klaw Mutant",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600029
+     ]
+    },
+    {
+     "monster": "Abyss Mutated Klaw",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600429,
+      2600688
+     ]
+    }
+   ]
+  },
+  "1006": {
+   "name": "Sparkie",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Wild Sparkie",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100273
+     ]
+    },
+    {
+     "monster": "Meadow Sparkie",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100305
+     ]
+    },
+    {
+     "monster": "Highland Odyle Sparkie",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100753
+     ]
+    },
+    {
+     "monster": "Highland Odyle Sparkie",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100795
+     ]
+    },
+    {
+     "monster": "Aullaeu Forest Sparkie",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100986
+     ]
+    },
+    {
+     "monster": "Highland Sparkie",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2100992
+     ]
+    }
+   ]
+  },
+  "1007": {
+   "name": "Potcrab",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Marsh Moss Potcrab",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100032
+     ]
+    },
+    {
+     "monster": "Flat Potcrab",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100610
+     ]
+    },
+    {
+     "monster": "Eternal Moss Crab",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101098
+     ]
+    },
+    {
+     "monster": "Moss Crab",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400363
+     ]
+    },
+    {
+     "monster": "Coastal Moss Crab",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400755
+     ]
+    },
+    {
+     "monster": "Coastal Moss Crab",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400812
+     ]
+    }
+   ]
+  },
+  "1008": {
+   "name": "Baby Odyle Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Coastal Odyle Spider",
+     "level": 16,
+     "chance": 100.0,
+     "types": [
+      2100034
+     ]
+    }
+   ]
+  },
+  "1009": {
+   "name": "Kernon",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1010": {
+   "name": "Manduri Fighter",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Crimson Manduri Fighter",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2110506
+     ]
+    },
+    {
+     "monster": "Black Claw Manduri Combatant",
+     "level": 42,
+     "chance": 100.0,
+     "types": [
+      2400617,
+      2500132
+     ]
+    }
+   ]
+  },
+  "1011": {
+   "name": "Skyray",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Small Forest Skyray",
+     "level": 16,
+     "chance": 100.0,
+     "types": [
+      2100047
+     ]
+    },
+    {
+     "monster": "Ellun River Falls Skyray",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100048
+     ]
+    },
+    {
+     "monster": "Tolbas Forest Lake Skyray",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100182
+     ]
+    },
+    {
+     "monster": "Ridge Skyray",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100556
+     ]
+    },
+    {
+     "monster": "Canyon Skyray",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100607
+     ]
+    },
+    {
+     "monster": "Canyon Lake Skyray",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100613
+     ]
+    },
+    {
+     "monster": "Pond Skyray",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100832
+     ]
+    },
+    {
+     "monster": "Ellun River Lake Skyray",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2101123
+     ]
+    },
+    {
+     "monster": "Cantas Valley Skyray",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2101124
+     ]
+    },
+    {
+     "monster": "Lake Skyray",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2101132
+     ]
+    },
+    {
+     "monster": "Tranein Skyray",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400163
+     ]
+    },
+    {
+     "monster": "Lake Skyray",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400945
+     ]
+    }
+   ]
+  },
+  "1012": {
+   "name": "Fungie",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Red Cap Fungie",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2100041
+     ]
+    }
+   ]
+  },
+  "1013": {
+   "name": "Swarm",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Contaminated Swarm",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2400080
+     ]
+    },
+    {
+     "monster": "Giant Ore Insectoid",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400456
+     ]
+    },
+    {
+     "monster": "Abyss Swarm",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2600001,
+      2600681
+     ]
+    },
+    {
+     "monster": "Abyss Aberrant Swarn",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2600011
+     ]
+    },
+    {
+     "monster": "Abyss Swarm Mutant",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600021
+     ]
+    },
+    {
+     "monster": "Abyss Swarm",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600401,
+      2600681
+     ]
+    },
+    {
+     "monster": "Abyss Swarm",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2600421,
+      2600681
+     ]
+    }
+   ]
+  },
+  "1014": {
+   "name": "Drakan Guard Dog",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Drakan Guard Dog",
+     "level": 43,
+     "chance": 100.0,
+     "types": [
+      2101002
+     ]
+    },
+    {
+     "monster": "Nahid Drakan Guard Dog",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2101009
+     ]
+    },
+    {
+     "monster": "Drakan Guard Dog",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400359
+     ]
+    },
+    {
+     "monster": "Drakan Patrol Armed Beast",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400587
+     ]
+    },
+    {
+     "monster": "Lagta Brigade Guard Dog",
+     "level": 43,
+     "chance": 100.0,
+     "types": [
+      2500122,
+      2400655
+     ]
+    },
+    {
+     "monster": "Abyss Drakan Scout Beast",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2600052
+     ]
+    }
+   ]
+  },
+  "1015": {
+   "name": "Kailin",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ellun River Kailin",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2101021
+     ]
+    },
+    {
+     "monster": "Unstable Kailin",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400736
+     ]
+    },
+    {
+     "monster": "Kailin",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400905
+     ]
+    },
+    {
+     "monster": "Kailin",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400934
+     ]
+    }
+   ]
+  },
+  "1016": {
+   "name": "Slink",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Tolbas Slink",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100165
+     ]
+    },
+    {
+     "monster": "Wetland Slink",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100188
+     ]
+    },
+    {
+     "monster": "Eternal Slink",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101097
+     ]
+    },
+    {
+     "monster": "Coastal Slink",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2400520
+     ]
+    },
+    {
+     "monster": "Coastal Slink",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400819
+     ]
+    },
+    {
+     "monster": "Slink",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400909
+     ]
+    },
+    {
+     "monster": "Slink",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400943
+     ]
+    },
+    {
+     "monster": "Abyss Slink",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2600048
+     ]
+    },
+    {
+     "monster": "Abyss Slink",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2600448
+     ]
+    }
+   ]
+  },
+  "1017": {
+   "name": "Krall Warshaman",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Krall Warshaman",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100074,
+      2290085
+     ]
+    },
+    {
+     "monster": "Modified Krall Healer",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100855
+     ]
+    }
+   ]
+  },
+  "1018": {
+   "name": "Varg Berserker",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Varg Berserker",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400385
+     ]
+    },
+    {
+     "monster": "Chief's Bodyguard",
+     "level": 42,
+     "chance": 100.0,
+     "types": [
+      2400609
+     ]
+    },
+    {
+     "monster": "Varg Berserker",
+     "level": 51,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Varg Berserker",
+     "level": 54,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Varg Berserker",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600455
+     ]
+    }
+   ]
+  },
+  "1021": {
+   "name": "Aberrant Odyle Spider",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1022": {
+   "name": "Crasaur",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Aquascale Crasaur",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100215
+     ]
+    },
+    {
+     "monster": "Docile Crasaur",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100608
+     ]
+    },
+    {
+     "monster": "Eternal Crasaur",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101083
+     ]
+    },
+    {
+     "monster": "Sensitive Crasaur",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400327
+     ]
+    },
+    {
+     "monster": "Crasaur",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400809
+     ]
+    }
+   ]
+  },
+  "1025": {
+   "name": "Mutated Aberrant Odyle Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Marsh Odyle Spider",
+     "level": 15,
+     "chance": 100.0,
+     "types": [
+      2100030
+     ]
+    },
+    {
+     "monster": "Garden Spider",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100663
+     ]
+    },
+    {
+     "monster": "Highland Odyle Spider",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2100745
+     ]
+    },
+    {
+     "monster": "Unstable Ashen Spider",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2400744
+     ]
+    }
+   ]
+  },
+  "1026": {
+   "name": "Krall Warrior",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Krall Assault Trooper",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100073
+     ]
+    },
+    {
+     "monster": "Modified Krall Warrior",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100910
+     ]
+    },
+    {
+     "monster": "Krall Test Subject",
+     "level": 43,
+     "chance": 100.0,
+     "types": [
+      2101005
+     ]
+    }
+   ]
+  },
+  "1027": {
+   "name": "Withered Agrint",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Withered Canyon Agrint",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100612
+     ]
+    },
+    {
+     "monster": "Thin Agrint",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100652
+     ]
+    },
+    {
+     "monster": "Withered Sulfur Agrint",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600026
+     ]
+    }
+   ]
+  },
+  "1028": {
+   "name": "Krao Mutant",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1029": {
+   "name": "Klaw Scout",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Consumed Klaw",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2400313
+     ]
+    },
+    {
+     "monster": "Abyss Klaw",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2600002,
+      2600602
+     ]
+    },
+    {
+     "monster": "Abyss Aberrant Klaw",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2600012
+     ]
+    },
+    {
+     "monster": "Abyss Klaw",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600402,
+      2600602
+     ]
+    }
+   ]
+  },
+  "1030": {
+   "name": "Nagarant Guardian Warrior",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Abyss Nagarant Brawler",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600036
+     ]
+    },
+    {
+     "monster": "Abyss Nagarant Warrior",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600041
+     ]
+    },
+    {
+     "monster": "Abyss Nagarant Brawler",
+     "level": 54,
+     "chance": 100.0,
+     "types": [
+      2600436
+     ]
+    }
+   ]
+  },
+  "1031": {
+   "name": "Konutin Worker",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Tolbas Konutin Worker",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2100157
+     ]
+    }
+   ]
+  },
+  "1032": {
+   "name": "Elite Keneire",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1033": {
+   "name": "Elite Manduri Fighter",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Wandering Manduri Fighter",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100557,
+      2100569
+     ]
+    },
+    {
+     "monster": "Black Claw Manduri Fighter",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2400605
+     ]
+    }
+   ]
+  },
+  "1034": {
+   "name": "Giant Sparkie",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Splendent Hill Sparkie",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2100015
+     ]
+    },
+    {
+     "monster": "Highland Giant Odyle Sparkie",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100796
+     ]
+    },
+    {
+     "monster": "Aullaeu Forest Giant Sparkie",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100987
+     ]
+    },
+    {
+     "monster": "Highland Giant Sparkie",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2100993
+     ]
+    },
+    {
+     "monster": "Withered Branch Odyle Sparkie",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2400341
+     ]
+    },
+    {
+     "monster": "Fafnite Luminous Sparkie",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400466
+     ]
+    }
+   ]
+  },
+  "1035": {
+   "name": "Skama",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Foul Skama",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100031
+     ]
+    },
+    {
+     "monster": "Lake Skama",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100376
+     ]
+    },
+    {
+     "monster": "Drana Mutated Skama",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100907
+     ]
+    }
+   ]
+  },
+  "1036": {
+   "name": "Lupyllini",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Tail Feather Lupyllini",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2100746
+     ]
+    }
+   ]
+  },
+  "1037": {
+   "name": "Male Crestlich",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ellun River Crestlich Male",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100151
+     ]
+    },
+    {
+     "monster": "Highland Crestlich Male",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100750
+     ]
+    }
+   ]
+  },
+  "1038": {
+   "name": "Airon",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Smallbeak Airon",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100144
+     ]
+    },
+    {
+     "monster": "Pointbeak Airon",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100216
+     ]
+    },
+    {
+     "monster": "Hardbeak Airon",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100609
+     ]
+    },
+    {
+     "monster": "Longbeak Highland Airon",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2100741
+     ]
+    },
+    {
+     "monster": "Canyon Airon",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400567
+     ]
+    },
+    {
+     "monster": "Baby Canyon Airon",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400568
+     ]
+    }
+   ]
+  },
+  "1039": {
+   "name": "Crestlich",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Stonebeak Crestlich",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2100037
+     ]
+    },
+    {
+     "monster": "Ellun River Crestlich Female",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100150
+     ]
+    },
+    {
+     "monster": "Highland Crestlich Female",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100799
+     ]
+    }
+   ]
+  },
+  "1040": {
+   "name": "Aullaeu Shaman",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Aullaeu Apprentice Shaman",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100950,
+      2290106
+     ]
+    }
+   ]
+  },
+  "1041": {
+   "name": "Cave Bat",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Drana Mutated Bat",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100911
+     ]
+    }
+   ]
+  },
+  "1042": {
+   "name": "Ursus",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Hardhorn Ursus",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100172
+     ]
+    },
+    {
+     "monster": "Ridge Ursus",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100552
+     ]
+    },
+    {
+     "monster": "Ridge Violent Ursus",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100560
+     ]
+    },
+    {
+     "monster": "Confused Ursus",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100655
+     ]
+    },
+    {
+     "monster": "Hill Ursus",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100817
+     ]
+    },
+    {
+     "monster": "Ursus",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400376
+     ]
+    },
+    {
+     "monster": "Ursus",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2400916
+     ]
+    }
+   ]
+  },
+  "1043": {
+   "name": "Elite Ursus",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1044": {
+   "name": "Aultross's Doppelganger",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1045": {
+   "name": "Sylphen",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Highland Sylphen",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2100004
+     ]
+    },
+    {
+     "monster": "Ellun River Sylphen",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100023
+     ]
+    },
+    {
+     "monster": "Ellun River Sylphen",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100219
+     ]
+    },
+    {
+     "monster": "Aberrant Sylphen",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2100472
+     ]
+    },
+    {
+     "monster": "Ridge Sylphen",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100565
+     ]
+    },
+    {
+     "monster": "Highland Sylphen",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100743
+     ]
+    },
+    {
+     "monster": "Sylphen",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400362
+     ]
+    }
+   ]
+  },
+  "1046": {
+   "name": "Armadon",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Red Shell Mole",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2400002
+     ]
+    },
+    {
+     "monster": "Withered Armadon",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400249
+     ]
+    }
+   ]
+  },
+  "1047": {
+   "name": "Aberrant Armadon",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Splendent Armadon",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2100453
+     ]
+    },
+    {
+     "monster": "Highland Wild Armadon",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100751
+     ]
+    }
+   ]
+  },
+  "1048": {
+   "name": "Forest Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Marsh Vine Spirit",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2100022
+     ]
+    },
+    {
+     "monster": "Contaminated Vine Spirit",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100142,
+      2290073
+     ]
+    },
+    {
+     "monster": "Ridge Forest Spirit",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100555
+     ]
+    },
+    {
+     "monster": "Deep Canyon Forest Spirit",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100611
+     ]
+    },
+    {
+     "monster": "Forest Spirit",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2400337
+     ]
+    }
+   ]
+  },
+  "1049": {
+   "name": "Mutated Forest Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Mutated Vine Bundle",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2100711
+     ]
+    },
+    {
+     "monster": "Contaminated Vine Bundle",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2100715
+     ]
+    },
+    {
+     "monster": "Condensed Specter",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2400061
+     ]
+    }
+   ]
+  },
+  "1050": {
+   "name": "Gravi",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Red Stalk Gravi",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100650
+     ]
+    },
+    {
+     "monster": "Tolbas Gravi",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2101125
+     ]
+    },
+    {
+     "monster": "Pink Gravi",
+     "level": 28,
+     "chance": 100.0,
+     "types": [
+      2400307
+     ]
+    }
+   ]
+  },
+  "1051": {
+   "name": "Magic Gravi",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Illusion Magic Gravi",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100659
+     ]
+    },
+    {
+     "monster": "Tolbas Magic Gravi",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2101126
+     ]
+    },
+    {
+     "monster": "Purifying Forest Magic Gravi",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400329
+     ]
+    },
+    {
+     "monster": "Unstable Gravi",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400731
+     ]
+    }
+   ]
+  },
+  "1052": {
+   "name": "Large Leaf Gravi",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Ellun River Hill Gravi",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100285
+     ]
+    },
+    {
+     "monster": "Large Leaf Gravi",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100651
+     ]
+    },
+    {
+     "monster": "Large Leaf Gravi",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2400342
+     ]
+    }
+   ]
+  },
+  "1053": {
+   "name": "Aberrant Potcrab",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Drana Mutated Potcrab",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100908
+     ]
+    },
+    {
+     "monster": "Eternal Moss Crab",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2110512
+     ]
+    }
+   ]
+  },
+  "1054": {
+   "name": "Mumu Warrior",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Mumu Watcher",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400350
+     ]
+    },
+    {
+     "monster": "Gribade Mumu Warrior",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400570
+     ]
+    },
+    {
+     "monster": "Mumu Watcher",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2400606
+     ]
+    }
+   ]
+  },
+  "1055": {
+   "name": "Grave Rat",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1056": {
+   "name": "Drakan Probe",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Drana Processing Maintenance Machine",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100866
+     ]
+    },
+    {
+     "monster": "Intruder Seeker",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2101014
+     ]
+    },
+    {
+     "monster": "Outpost Probe",
+     "level": 19,
+     "chance": 100.0,
+     "types": [
+      2400143
+     ]
+    },
+    {
+     "monster": "Drakan Probe",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2110428,
+      2400162
+     ]
+    },
+    {
+     "monster": "Drana Processing Maintenance Machine",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400382
+     ]
+    },
+    {
+     "monster": "Lagta Brigade Seeker",
+     "level": 43,
+     "chance": 100.0,
+     "types": [
+      2400658
+     ]
+    }
+   ]
+  },
+  "1057": {
+   "name": "Coradon",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1058": {
+   "name": "Black Smoke Murute",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1059": {
+   "name": "Giant Bee",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Giant Stripe Bee",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100551
+     ]
+    }
+   ]
+  },
+  "1060": {
+   "name": "Starturtle",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Coastal Starturtle",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100033
+     ]
+    },
+    {
+     "monster": "Pond Starturtle",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100808
+     ]
+    },
+    {
+     "monster": "Eternal Starturtle",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101082
+     ]
+    },
+    {
+     "monster": "Beach Starturtle",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400374
+     ]
+    },
+    {
+     "monster": "Starturtle",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2400519
+     ]
+    },
+    {
+     "monster": "Starturtle",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400808
+     ]
+    }
+   ]
+  },
+  "1061": {
+   "name": "Slime",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Unruly Slime",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400320
+     ]
+    }
+   ]
+  },
+  "1062": {
+   "name": "Contaminated Slime",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Marsh Slime",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2100025
+     ]
+    },
+    {
+     "monster": "Contaminated Poison Slime",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2100717
+     ]
+    },
+    {
+     "monster": "Abyss Sulfur Slime",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600023
+     ]
+    },
+    {
+     "monster": "Abyss Sulfur Slime",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2600423
+     ]
+    }
+   ]
+  },
+  "1063": {
+   "name": "Vigilant Oculazen",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Vigilant Oculazen",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400364,
+      2405252,
+      2405232
+     ]
+    }
+   ]
+  },
+  "1064": {
+   "name": "Oculazen",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Labor Manager Oculazen",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2100854
+     ]
+    },
+    {
+     "monster": "Oculazen",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2400711
+     ]
+    }
+   ]
+  },
+  "1065": {
+   "name": "Biruta",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Biruta Wanderer",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2100183
+     ]
+    },
+    {
+     "monster": "Biruta Wanderer",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2400920
+     ]
+    }
+   ]
+  },
+  "1066": {
+   "name": "Papis",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Faded Papis",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2000926
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2000927
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2000928
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 19,
+     "chance": 100.0,
+     "types": [
+      2000929
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2000951
+     ]
+    },
+    {
+     "monster": "Gentle Papis",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2100009
+     ]
+    },
+    {
+     "monster": "Ellun River Papis",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100220
+     ]
+    },
+    {
+     "monster": "Garden Papis",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100654
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400594,
+      2400940
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2400903
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2400938
+     ]
+    },
+    {
+     "monster": "Faded Papis",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2400947
+     ]
+    }
+   ]
+  },
+  "1067": {
+   "name": "Scorpion",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Contaminated Scorpion",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2100709
+     ]
+    },
+    {
+     "monster": "Ore Scorpion",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400470
+     ]
+    }
+   ]
+  },
+  "1068": {
+   "name": "Krao Test Subject",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1069": {
+   "name": "Stone Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Hill Stone Spirit",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2100812
+     ]
+    },
+    {
+     "monster": "Faded Stone Spirit",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2400301
+     ]
+    },
+    {
+     "monster": "Abyss Rock Spirit",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600056
+     ]
+    },
+    {
+     "monster": "Twilight Odyle Stone Spirit",
+     "level": 52,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Twilight Odyle Stone Spirit",
+     "level": 55,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1071": {
+   "name": "Cadaver Insectoid",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Drana Cadaver Insectoid",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2400018
+     ]
+    }
+   ]
+  },
+  "1072": {
+   "name": "Tog",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Tog",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2400912
+     ]
+    }
+   ]
+  },
+  "1073": {
+   "name": "Nepenthes",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Tolbas Nepenthes",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2100160
+     ]
+    },
+    {
+     "monster": "Scarlet Highland Nepenthes",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2100744
+     ]
+    },
+    {
+     "monster": "Abyss Nasty Nepenthes",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600049
+     ]
+    },
+    {
+     "monster": "Abyss Nasty Nepenthes",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2600449
+     ]
+    }
+   ]
+  },
+  "1074": {
+   "name": "Kuru Worker",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Tolbas Kuru Worker",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2100180
+     ]
+    },
+    {
+     "monster": "Harsh Kuru Tinkerer",
+     "level": 28,
+     "chance": 100.0,
+     "types": [
+      2100964
+     ]
+    },
+    {
+     "monster": "Eternal Kuru Worker",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2101136,
+      2101133
+     ]
+    },
+    {
+     "monster": "Kuru Worker",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2400831
+     ]
+    }
+   ]
+  },
+  "1075": {
+   "name": "Kuru Tinkerer",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Tolbas Kuru Tinkerer",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2100181
+     ]
+    },
+    {
+     "monster": "Eternal Kuru Tinkerer",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2101137,
+      2101134
+     ]
+    },
+    {
+     "monster": "Kuru Tinkerer",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2400832
+     ]
+    }
+   ]
+  },
+  "1077": {
+   "name": "Harcon",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Enhanced Harcon",
+     "level": 45,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Enhanced Harcon",
+     "level": 22,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Enhanced Harcon",
+     "level": 70,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1078": {
+   "name": "Urugugu Brawler",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1079": {
+   "name": "Ultimate Wind Spirit",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1080": {
+   "name": "Sentinel K'nash",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1081": {
+   "name": "Dionae",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1082": {
+   "name": "Ultimate Fire Spirit",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1083": {
+   "name": "Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Abyss Odyle Mutated Insectoid",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600046
+     ]
+    },
+    {
+     "monster": "Abyss Odyle Mutated Insectoid",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2600446
+     ]
+    }
+   ]
+  },
+  "1084": {
+   "name": "Kalgolem",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Hard Kalgolem",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2100002
+     ]
+    },
+    {
+     "monster": "Ashen Kalgolem",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2100700
+     ]
+    },
+    {
+     "monster": "Angry Kalgolem",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400328
+     ]
+    },
+    {
+     "monster": "Root Kalgolem",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600070
+     ]
+    },
+    {
+     "monster": "Abyss Kalgolem",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600470
+     ]
+    }
+   ]
+  },
+  "1086": {
+   "name": "Fungen",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Red Cap Fungen",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2100456
+     ]
+    }
+   ]
+  },
+  "1087": {
+   "name": "Pino",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Pino Worker",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100953
+     ]
+    },
+    {
+     "monster": "Pino Laborer",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100954
+     ]
+    }
+   ]
+  },
+  "1088": {
+   "name": "Pino Worker",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Harsh Pino Worker",
+     "level": 28,
+     "chance": 100.0,
+     "types": [
+      2100955
+     ]
+    }
+   ]
+  },
+  "1089": {
+   "name": "Aberrant Skama",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Yellow-Tailed Skama",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2100710
+     ]
+    },
+    {
+     "monster": "Abyss Sulfur Skama",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600024
+     ]
+    },
+    {
+     "monster": "Abyss Sulfur Skama",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2600424
+     ]
+    }
+   ]
+  },
+  "1090": {
+   "name": "Ultimate Water Spirit",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1091": {
+   "name": "Red Spark Ignus",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1092": {
+   "name": "Lesser Wind Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Air Spirit",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100605
+     ]
+    },
+    {
+     "monster": "Eternal Wind Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101096
+     ]
+    },
+    {
+     "monster": "Soft Breeze Spirit",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2400324
+     ]
+    }
+   ]
+  },
+  "1093": {
+   "name": "Phantasmal Lakshmi",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Phantasmal Lakshmi",
+     "level": 45,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Phantasmal Lakshmi",
+     "level": 70,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1094": {
+   "name": "Intermediate Wind Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Wandering Wind Spirit",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100658
+     ]
+    },
+    {
+     "monster": "Violent Wind Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101103
+     ]
+    },
+    {
+     "monster": "Immortal Wind Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400824
+     ]
+    }
+   ]
+  },
+  "1095": {
+   "name": "Superior Wind Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Brisk Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100666
+     ]
+    },
+    {
+     "monster": "Whirlwind Spirit",
+     "level": 26,
+     "chance": 100.0,
+     "types": [
+      2400302
+     ]
+    },
+    {
+     "monster": "Immortal Wind Spirit Guardian",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400818
+     ]
+    }
+   ]
+  },
+  "1096": {
+   "name": "Superior Fire Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Hellfire Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100664
+     ]
+    },
+    {
+     "monster": "Flame Spirit",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2400303
+     ]
+    },
+    {
+     "monster": "Unstable Superior Fire Spirit",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2400749
+     ]
+    },
+    {
+     "monster": "Immortal Fire Spirit Guardian",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400815
+     ]
+    }
+   ]
+  },
+  "1097": {
+   "name": "Karnif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ferocious Karnif",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100174
+     ]
+    },
+    {
+     "monster": "Tolbas Karnif",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2100348
+     ]
+    },
+    {
+     "monster": "Ferocious Tolbas Karnif",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2100349
+     ]
+    },
+    {
+     "monster": "Toughmane Highland Karnif",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100742
+     ]
+    },
+    {
+     "monster": "Highland Karnif",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2100752
+     ]
+    },
+    {
+     "monster": "Tamed Karnif",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2100802,
+      2100805,
+      2405156,
+      2405022,
+      2360156
+     ]
+    }
+   ]
+  },
+  "1098": {
+   "name": "Modified Karnif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Scouting Karnif",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100070
+     ]
+    },
+    {
+     "monster": "Unruly Karnif",
+     "level": 19,
+     "chance": 100.0,
+     "types": [
+      2100096
+     ]
+    },
+    {
+     "monster": "Trained Karnif",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2100130
+     ]
+    },
+    {
+     "monster": "Sensitive Karnif",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2100481
+     ]
+    },
+    {
+     "monster": "Abyss Karnif",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600004
+     ]
+    },
+    {
+     "monster": "Abyss Search Party Karnif",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600014
+     ]
+    },
+    {
+     "monster": "Abyss Search Party Karnif",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600404
+     ]
+    }
+   ]
+  },
+  "1099": {
+   "name": "Elite Karnif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Crimson Blizzard Renulf",
+     "level": 80,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1100": {
+   "name": "Ultimate Earth Spirit",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1101": {
+   "name": "Forest Guardian",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Garden Guardian",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100660
+     ]
+    },
+    {
+     "monster": "Enraged Forest Guardian",
+     "level": 50,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Enraged Forest Guardian",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600133
+     ]
+    }
+   ]
+  },
+  "1102": {
+   "name": "Dried Up Forest Guardian",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1103": {
+   "name": "Pretor Veil Administrator",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Gluttonous Egetis",
+     "level": 80,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1104": {
+   "name": "Manduri Trebuchet Worker",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Hill Manduri",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100816
+     ]
+    },
+    {
+     "monster": "Crimson Manduri Slinger",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2110507
+     ]
+    },
+    {
+     "monster": "Black Claw Manduri Scout",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2400615
+     ]
+    }
+   ]
+  },
+  "1105": {
+   "name": "Biruta Herbalist",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Biruta Herbalist",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2400919
+     ]
+    }
+   ]
+  },
+  "1106": {
+   "name": "Tayga",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Search Party Tayga",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400564
+     ]
+    },
+    {
+     "monster": "Guard Troopers Tayga",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400583
+     ]
+    },
+    {
+     "monster": "Tamed Tayga",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2400611
+     ]
+    }
+   ]
+  },
+  "1107": {
+   "name": "Krao Seal Guardian",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1108": {
+   "name": "Enhanced Krall Combatant",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Enhanced Krall Combatant",
+     "level": 22,
+     "chance": 100.0,
+     "types": [
+      2100097,
+      2200119
+     ]
+    }
+   ]
+  },
+  "1109": {
+   "name": "Enhanced Krall Sentry",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Enhanced Krall Sentry",
+     "level": 22,
+     "chance": 100.0,
+     "types": [
+      2100072
+     ]
+    }
+   ]
+  },
+  "1110": {
+   "name": "Blue Kalgolem",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Splendent Kalgolem",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2100454
+     ]
+    },
+    {
+     "monster": "Blue Kalgolem",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2400471
+     ]
+    },
+    {
+     "monster": "Abyssal Kalgolem",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2600051
+     ]
+    },
+    {
+     "monster": "Abyss Blue Kalgolem",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600451
+     ]
+    }
+   ]
+  },
+  "1111": {
+   "name": "Swift Lugi",
+   "genus": "Special",
+   "souls": []
+  },
+  "1112": {
+   "name": "Wandering Merchant Lugi",
+   "genus": "Special",
+   "souls": []
+  },
+  "1114": {
+   "name": "Ashen Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "White Shell Octaside",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100283
+     ]
+    },
+    {
+     "monster": "Ashen Spider",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400230
+     ]
+    }
+   ]
+  },
+  "1115": {
+   "name": "Kuru Overseer",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Eternal Kuru Overseer",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2101139
+     ]
+    },
+    {
+     "monster": "Kuru Overseer",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2400833
+     ]
+    }
+   ]
+  },
+  "1116": {
+   "name": "Withered Branch Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Withered Branch Spider",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2000956,
+      2400902,
+      2400932,
+      2500003
+     ]
+    },
+    {
+     "monster": "Withered Branch Spider",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2000957,
+      2400932,
+      2500003
+     ]
+    },
+    {
+     "monster": "Withered Branch Spider",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2400933,
+      2400932,
+      2500003
+     ]
+    },
+    {
+     "monster": "Withered Branch Spider",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2400939,
+      2400932,
+      2500003
+     ]
+    },
+    {
+     "monster": "Withered Branch Spider",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2400932,
+      2400946,
+      2500003
+     ]
+    },
+    {
+     "monster": "Withered Branch Spider",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400932,
+      2400948,
+      2500003
+     ]
+    }
+   ]
+  },
+  "1117": {
+   "name": "Unstable Spider",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Aullaeu Forest Odyle Spider",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2101023
+     ]
+    },
+    {
+     "monster": "Crimson Spider",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2110509
+     ]
+    },
+    {
+     "monster": "Flame Rock Spider",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2400319
+     ]
+    },
+    {
+     "monster": "Unstable Poison Blood Spider",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2400745
+     ]
+    },
+    {
+     "monster": "Abyss Red Mutated Insectoid",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600045
+     ]
+    }
+   ]
+  },
+  "1118": {
+   "name": "Aberrant Bee",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Black Armor Bee",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2000955
+     ]
+    },
+    {
+     "monster": "Black Pattern Bee",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100286
+     ]
+    },
+    {
+     "monster": "Stripe Bee",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100550
+     ]
+    },
+    {
+     "monster": "Black Armor Bee",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2400900
+     ]
+    },
+    {
+     "monster": "Black Armor Bee",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2400930
+     ]
+    }
+   ]
+  },
+  "1119": {
+   "name": "Aberrant Coradon",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Aberrant Coradon",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2000952
+     ]
+    },
+    {
+     "monster": "Garden Coradon",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100699
+     ]
+    },
+    {
+     "monster": "Hill Coradon",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100828,
+      2100821
+     ]
+    },
+    {
+     "monster": "Aberrant Coradon",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400907
+     ]
+    }
+   ]
+  },
+  "1120": {
+   "name": "Young Kailin",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ellun River Young Kailin",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2101022
+     ]
+    },
+    {
+     "monster": "Unstable Young Kailin",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400737
+     ]
+    },
+    {
+     "monster": "Young Kailin",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400906
+     ]
+    },
+    {
+     "monster": "Young Kailin",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400935
+     ]
+    }
+   ]
+  },
+  "1121": {
+   "name": "Young Slink",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Young Wetland Slink",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100189
+     ]
+    },
+    {
+     "monster": "Tolbas Young Slink",
+     "level": 23,
+     "chance": 100.0,
+     "types": [
+      2100473
+     ]
+    },
+    {
+     "monster": "Young Slink",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400910
+     ]
+    },
+    {
+     "monster": "Young Slink",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400950
+     ]
+    },
+    {
+     "monster": "Abyss Young Slink",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600047
+     ]
+    },
+    {
+     "monster": "Abyss Young Slink",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2600447
+     ]
+    }
+   ]
+  },
+  "1122": {
+   "name": "Young Tog",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1123": {
+   "name": "Young Ursus",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Baby Horn Ursus",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100173
+     ]
+    },
+    {
+     "monster": "Hill Young Ursus",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100818
+     ]
+    },
+    {
+     "monster": "Young Ursus",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400377
+     ]
+    },
+    {
+     "monster": "Young Ursus",
+     "level": 17,
+     "chance": 100.0,
+     "types": [
+      2400917
+     ]
+    }
+   ]
+  },
+  "1124": {
+   "name": "Zaif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Rock Hill Zaif",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100573
+     ]
+    },
+    {
+     "monster": "Highland Forest Zaif",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2100748
+     ]
+    },
+    {
+     "monster": "Highland Zaif",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100797
+     ]
+    },
+    {
+     "monster": "Hill Zaif",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2100813
+     ]
+    }
+   ]
+  },
+  "1125": {
+   "name": "Aberrant Zaif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Yellow-Maned Zaif",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100558
+     ]
+    },
+    {
+     "monster": "Golden Zaif",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400578
+     ]
+    }
+   ]
+  },
+  "1126": {
+   "name": "Aberrant Tog",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Cairn Tog",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2100006
+     ]
+    },
+    {
+     "monster": "Hungry Tog",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100145
+     ]
+    },
+    {
+     "monster": "Field Tog",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100288
+     ]
+    },
+    {
+     "monster": "Wild Stripe Tog",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100793
+     ]
+    },
+    {
+     "monster": "Hill Tog",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100819
+     ]
+    },
+    {
+     "monster": "Aberrant Tog",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400936
+     ]
+    }
+   ]
+  },
+  "1127": {
+   "name": "Odyle Stone Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Faded Odyle Spirit",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400734
+     ]
+    }
+   ]
+  },
+  "1128": {
+   "name": "Drana Slime",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Drana Slime",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2400015
+     ]
+    }
+   ]
+  },
+  "1129": {
+   "name": "Drana Swarm",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Crimson Drana Swarm",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2110501
+     ]
+    }
+   ]
+  },
+  "1130": {
+   "name": "Mutated Cadaver Insectoid",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ridge Spider",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100554
+     ]
+    }
+   ]
+  },
+  "1131": {
+   "name": "Drana Spore",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Crimson Mutated Spore",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2110502
+     ]
+    }
+   ]
+  },
+  "1132": {
+   "name": "Ashen Lupyllini",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1133": {
+   "name": "Forest Dionae",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1134": {
+   "name": "Eternal Coradon",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Eternal Coradon",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400941
+     ]
+    },
+    {
+     "monster": "Abyss Coradon",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600061
+     ]
+    },
+    {
+     "monster": "Abyss Eternal Coradon",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600461
+     ]
+    }
+   ]
+  },
+  "1135": {
+   "name": "Ashen Dionae",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Ashen Dionae",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400248
+     ]
+    }
+   ]
+  },
+  "1136": {
+   "name": "Rafflesia",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Rafflesia",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2000925
+     ]
+    },
+    {
+     "monster": "Crimson Rafflesia",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2110513
+     ]
+    },
+    {
+     "monster": "Rafflesia",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2400056
+     ]
+    },
+    {
+     "monster": "Unstable Rafflesia",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400735
+     ]
+    },
+    {
+     "monster": "Rafflesia",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400813
+     ]
+    },
+    {
+     "monster": "Rafflesia",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400949
+     ]
+    }
+   ]
+  },
+  "1137": {
+   "name": "Mumu Worker",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Mumu Worker",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400351
+     ]
+    },
+    {
+     "monster": "Escaped Mumu Worker",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2400390
+     ]
+    }
+   ]
+  },
+  "1138": {
+   "name": "Mumu Overseer",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1139": {
+   "name": "Swamp Monster",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1140": {
+   "name": "Forest Monster",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Tolbas Forest Targon",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2100350
+     ]
+    },
+    {
+     "monster": "Burned Forester",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400225
+     ]
+    }
+   ]
+  },
+  "1141": {
+   "name": "Marsh Targon",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Marsh Targon",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100021
+     ]
+    },
+    {
+     "monster": "Abyss Marsh Targon",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600426
+     ]
+    }
+   ]
+  },
+  "1142": {
+   "name": "Distorted Mutant",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Consumed Spirit Guardian",
+     "level": 30,
+     "chance": 100.0,
+     "types": [
+      2400312
+     ]
+    }
+   ]
+  },
+  "1143": {
+   "name": "Mutated Ursus",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Ashen Ursus",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400217
+     ]
+    }
+   ]
+  },
+  "1144": {
+   "name": "Mutated Forest Guardian",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Mutated Forest Guardian",
+     "level": 22,
+     "chance": 100.0,
+     "types": [
+      2400214
+     ]
+    },
+    {
+     "monster": "Unstable Forest Guardian",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2400751
+     ]
+    }
+   ]
+  },
+  "1145": {
+   "name": "Mutated Insectoid Valka",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1146": {
+   "name": "Gatekeeper Pinopi",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1147": {
+   "name": "Dratona",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Scarlet Forest Dratona",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100901
+     ]
+    },
+    {
+     "monster": "Dratona Tinkerer",
+     "level": 19,
+     "chance": 100.0,
+     "types": [
+      2400116
+     ]
+    },
+    {
+     "monster": "Dratona Supporter",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400161
+     ]
+    },
+    {
+     "monster": "Dratona",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2290061,
+      2400380
+     ]
+    }
+   ]
+  },
+  "1148": {
+   "name": "Drakana Kalgolem",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Crash Site Kalgolem",
+     "level": 11,
+     "chance": 100.0,
+     "types": [
+      2400014
+     ]
+    }
+   ]
+  },
+  "1153": {
+   "name": "Drana Mutant Brute",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Eternal Drana Mutant",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2101135
+     ]
+    },
+    {
+     "monster": "Crimson Drana Mutant",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2110503
+     ]
+    },
+    {
+     "monster": "Drana Mutant",
+     "level": 50,
+     "chance": 100.0,
+     "types": [
+      2400834
+     ]
+    }
+   ]
+  },
+  "1154": {
+   "name": "Faded Mutant Brute",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Faded Mutant Brute",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400476
+     ]
+    },
+    {
+     "monster": "Abyss Giant Mutant",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600432
+     ]
+    }
+   ]
+  },
+  "1155": {
+   "name": "Superior Water Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Torrent Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100665
+     ]
+    },
+    {
+     "monster": "Water Mist Spirit",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400306
+     ]
+    },
+    {
+     "monster": "Unstable Superior Water Spirit",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400739
+     ]
+    },
+    {
+     "monster": "Immortal Water Spirit Guardian",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400816
+     ]
+    }
+   ]
+  },
+  "1156": {
+   "name": "Elite Klaw",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Bodyguard Teegant",
+     "level": 45,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1157": {
+   "name": "Cadaver Cleaner",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Ruins Corpse Cleaner",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2400275
+     ]
+    },
+    {
+     "monster": "Ferocious Cadaver Cleaner",
+     "level": 34,
+     "chance": 100.0,
+     "types": [
+      2400418,
+      2400412
+     ]
+    }
+   ]
+  },
+  "1158": {
+   "name": "Venomous Insect Sram",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1159": {
+   "name": "Parasite Swarm",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Giant Ore Insectoid Adult",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2400473
+     ]
+    }
+   ]
+  },
+  "1160": {
+   "name": "Drana Contaminant",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1161": {
+   "name": "Faded Floater",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Faded Floater",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400479
+     ]
+    }
+   ]
+  },
+  "1162": {
+   "name": "Kerubar",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Eternal Kerubar",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101079,
+      2101075
+     ]
+    },
+    {
+     "monster": "Kerubar",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400801
+     ]
+    }
+   ]
+  },
+  "1163": {
+   "name": "Basilisk",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Black Ash Basilisk",
+     "level": 21,
+     "chance": 100.0,
+     "types": [
+      2400240
+     ]
+    }
+   ]
+  },
+  "1164": {
+   "name": "Lesser Earth Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Eternal Earth Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101089
+     ]
+    }
+   ]
+  },
+  "1165": {
+   "name": "Intermediate Earth Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Wandering Earth Spirit",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100653
+     ]
+    },
+    {
+     "monster": "Violent Earth Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101102
+     ]
+    },
+    {
+     "monster": "Immortal Earth Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400823
+     ]
+    }
+   ]
+  },
+  "1166": {
+   "name": "Superior Earth Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Peculiar Rock Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100667
+     ]
+    },
+    {
+     "monster": "Corroded Soil Spirit",
+     "level": 28,
+     "chance": 100.0,
+     "types": [
+      2400310
+     ]
+    },
+    {
+     "monster": "Immortal Earth Spirit Guardian",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400817
+     ]
+    }
+   ]
+  },
+  "1167": {
+   "name": "Flame Stone Guardian Statue",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1168": {
+   "name": "Lesser Water Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Water Spirit",
+     "level": 16,
+     "chance": 100.0,
+     "types": [
+      2100231,
+      2290070
+     ]
+    },
+    {
+     "monster": "Eternal Water Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101088
+     ]
+    }
+   ]
+  },
+  "1169": {
+   "name": "Intermediate Water Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Wandering Water Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100657
+     ]
+    },
+    {
+     "monster": "Violent Water Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101101
+     ]
+    },
+    {
+     "monster": "Unstable Intermediate Water Spirit",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2400738
+     ]
+    },
+    {
+     "monster": "Immortal Water Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400822
+     ]
+    }
+   ]
+  },
+  "1170": {
+   "name": "Kerubian",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Eternal Kerubian",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101080,
+      2101076
+     ]
+    },
+    {
+     "monster": "Kerubian",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400802
+     ]
+    }
+   ]
+  },
+  "1171": {
+   "name": "Kerubiel",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Eternal Kerubiel",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101077
+     ]
+    },
+    {
+     "monster": "Kerubiel",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400803
+     ]
+    }
+   ]
+  },
+  "1172": {
+   "name": "Duduka Worker",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Duduka Worker",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2400612
+     ]
+    }
+   ]
+  },
+  "1173": {
+   "name": "Duduka Trebuchet Worker",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Duduka Slinger",
+     "level": 42,
+     "chance": 100.0,
+     "types": [
+      2400613
+     ]
+    }
+   ]
+  },
+  "1174": {
+   "name": "Drana Predator",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Crimson Drana Predator",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2110505
+     ]
+    },
+    {
+     "monster": "Drana Predator",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2400010
+     ]
+    }
+   ]
+  },
+  "1175": {
+   "name": "Faded Predator",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Faded Predator",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400480
+     ]
+    }
+   ]
+  },
+  "1176": {
+   "name": "Mudthorn",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Addicted Mudthorn",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2400481
+     ]
+    },
+    {
+     "monster": "Remnant of Subspace",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2400707
+     ]
+    }
+   ]
+  },
+  "1177": {
+   "name": "Ancient Spirit",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1178": {
+   "name": "Spirit King's Bodyguard Warrior",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Old Tree Spirit Warrior",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2600066
+     ]
+    },
+    {
+     "monster": "Spirit King's Bodyguard Warrior",
+     "level": 54,
+     "chance": 100.0,
+     "types": [
+      2600466
+     ]
+    }
+   ]
+  },
+  "1179": {
+   "name": "Drana Mutant",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Twisted Mutant",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2400001
+     ]
+    }
+   ]
+  },
+  "1180": {
+   "name": "Faded Mutant",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Faded Mutant",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400477
+     ]
+    },
+    {
+     "monster": "Abyss Drana Mutant",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600430,
+      2600689,
+      2600686
+     ]
+    }
+   ]
+  },
+  "1181": {
+   "name": "Brax",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Brax",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2000954
+     ]
+    },
+    {
+     "monster": "Field Brax",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100217
+     ]
+    },
+    {
+     "monster": "Hungry Brax",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100303
+     ]
+    },
+    {
+     "monster": "Docile Highland Brax",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100740
+     ]
+    },
+    {
+     "monster": "Brax",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400375
+     ]
+    },
+    {
+     "monster": "Brax",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400914
+     ]
+    }
+   ]
+  },
+  "1182": {
+   "name": "Elite Soulless Corpse Gnat",
+   "genus": "Varian",
+   "souls": []
+  },
+  "1183": {
+   "name": "Soulless Corpse Gnat",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Soulless Corpse Gnat",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2400413
+     ]
+    }
+   ]
+  },
+  "1184": {
+   "name": "Drakan Watcher",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Processing Facility Drakan Scout",
+     "level": 42,
+     "chance": 100.0,
+     "types": [
+      2100872
+     ]
+    },
+    {
+     "monster": "Drakan Manager",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400384
+     ]
+    },
+    {
+     "monster": "Drakan Patrol Watcher",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2400591
+     ]
+    }
+   ]
+  },
+  "1185": {
+   "name": "Dratona Tinkerer",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1186": {
+   "name": "Poison Blood",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Cursed Poison Blood",
+     "level": 29,
+     "chance": 100.0,
+     "types": [
+      2400311
+     ]
+    },
+    {
+     "monster": "Unstable Poison Blood",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2400743
+     ]
+    }
+   ]
+  },
+  "1187": {
+   "name": "Intermediate Fire Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Violent Fire Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101100
+     ]
+    },
+    {
+     "monster": "Unstable Intermediate Fire Spirit",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2400748
+     ]
+    },
+    {
+     "monster": "Immortal Fire Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2400821
+     ]
+    }
+   ]
+  },
+  "1188": {
+   "name": "Vivel",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Highland Vivel",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2100583
+     ]
+    },
+    {
+     "monster": "Vampire Vivel",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2400057
+     ]
+    }
+   ]
+  },
+  "1189": {
+   "name": "Tamed Zaif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Marauders Zaif",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2100566
+     ]
+    },
+    {
+     "monster": "Twilight Zaif",
+     "level": 50,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Twilight Zaif",
+     "level": 53,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Tamed Zaif",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2110315,
+      2600452
+     ]
+    }
+   ]
+  },
+  "1190": {
+   "name": "Elite Poisonous Spore Fungen",
+   "genus": "Natura",
+   "souls": []
+  },
+  "1191": {
+   "name": "Furious Feruk",
+   "genus": "Cogni",
+   "souls": []
+  },
+  "1192": {
+   "name": "Silver Blade Rotan",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Abyss Rusty Rotan",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600003
+     ]
+    },
+    {
+     "monster": "Abyss Old Blade Rotan",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600013
+     ]
+    },
+    {
+     "monster": "Abyss Silver Blade Rotan",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600403
+     ]
+    }
+   ]
+  },
+  "1193": {
+   "name": "Addicted Shulak Cart Worker",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Rampaging Shulak Cart Worker",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2400455
+     ]
+    }
+   ]
+  },
+  "1194": {
+   "name": "Guardite",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Uncontrollable Guardite",
+     "level": 36,
+     "chance": 100.0,
+     "types": [
+      2100712
+     ]
+    }
+   ]
+  },
+  "1195": {
+   "name": "Dracuni Herbalist",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Dracuni Processing Laborer",
+     "level": 41,
+     "chance": 100.0,
+     "types": [
+      2100867
+     ]
+    },
+    {
+     "monster": "Poison Blood Gatherer",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2400746
+     ]
+    }
+   ]
+  },
+  "1196": {
+   "name": "Elite Dratona",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Predator Colossus Balakh",
+     "level": 80,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1197": {
+   "name": "Watcher Guardite",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Contaminated Guardite",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2100716
+     ]
+    }
+   ]
+  },
+  "1198": {
+   "name": "Ashen Basilisk",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1199": {
+   "name": "Flame Barghest",
+   "genus": "Fera",
+   "souls": []
+  },
+  "1200": {
+   "name": "Naga Elite Priest",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Abyss Naga Dark Mage",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600042
+     ]
+    },
+    {
+     "monster": "Abyss Naga Dark Mage",
+     "level": 54,
+     "chance": 100.0,
+     "types": [
+      2600437
+     ]
+    }
+   ]
+  },
+  "1201": {
+   "name": "Modified Lupyllini",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Lupyllini Test Subject",
+     "level": 40,
+     "chance": 100.0,
+     "types": [
+      2100815
+     ]
+    },
+    {
+     "monster": "Eternal Lupyllini",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101086
+     ]
+    },
+    {
+     "monster": "Modified Lupyllini",
+     "level": 49,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1202": {
+   "name": "Decomposed Lupyllini",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Contaminated Highland Lupyllini",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2100747
+     ]
+    },
+    {
+     "monster": "Decomposed Lupyllini",
+     "level": 10,
+     "chance": 100.0,
+     "types": [
+      2400004
+     ]
+    },
+    {
+     "monster": "Decomposed Lupyllini",
+     "level": 32,
+     "chance": 100.0,
+     "types": [
+      2400378
+     ]
+    },
+    {
+     "monster": "Ferocious Lupyllini",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2400391
+     ]
+    },
+    {
+     "monster": "Decomposed Lupyllini",
+     "level": 20,
+     "chance": 100.0,
+     "types": [
+      2400911
+     ]
+    }
+   ]
+  },
+  "1203": {
+   "name": "Tamed Karnif",
+   "genus": "Fera",
+   "souls": [
+    {
+     "monster": "Blades Karnif",
+     "level": 24,
+     "chance": 100.0,
+     "types": [
+      2400257
+     ]
+    },
+    {
+     "monster": "Tamed Blades Beast",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2400503,
+      2405104
+     ]
+    }
+   ]
+  },
+  "1204": {
+   "name": "Pagati",
+   "genus": "Special",
+   "souls": []
+  },
+  "1206": {
+   "name": "Elite Guardite",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Divine Ansas",
+     "level": 45,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1207": {
+   "name": "Agrint",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Decaying Agrint",
+     "level": 18,
+     "chance": 100.0,
+     "types": [
+      2100143
+     ]
+    },
+    {
+     "monster": "Old Agrint",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2100698
+     ]
+    },
+    {
+     "monster": "Contaminated Agrint",
+     "level": 37,
+     "chance": 100.0,
+     "types": [
+      2100714
+     ]
+    },
+    {
+     "monster": "Eternal Agrint",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101099
+     ]
+    },
+    {
+     "monster": "Mutated Elim",
+     "level": 22,
+     "chance": 100.0,
+     "types": [
+      2400221
+     ]
+    },
+    {
+     "monster": "Ruin Agrint",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2400415
+     ]
+    },
+    {
+     "monster": "Island Agrint",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400825
+     ]
+    },
+    {
+     "monster": "Sulfur Agrint",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2600027
+     ]
+    },
+    {
+     "monster": "Root Agrint",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600071
+     ]
+    },
+    {
+     "monster": "Sulfur Agrint",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600427
+     ]
+    },
+    {
+     "monster": "Abyss Agrint",
+     "level": 53,
+     "chance": 100.0,
+     "types": [
+      2600471
+     ]
+    }
+   ]
+  },
+  "1208": {
+   "name": "Ashen Agrint",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Unstable Agrint",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2400750
+     ]
+    }
+   ]
+  },
+  "1209": {
+   "name": "Thin Agrint",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Crimson Agrint",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2110508
+     ]
+    },
+    {
+     "monster": "Red Eye Agrint",
+     "level": 13,
+     "chance": 100.0,
+     "types": [
+      2400054
+     ]
+    },
+    {
+     "monster": "Thin Sulfur Agrint",
+     "level": 47,
+     "chance": 100.0,
+     "types": [
+      2600028
+     ]
+    },
+    {
+     "monster": "Thin Sulfur Agrint",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600428
+     ]
+    }
+   ]
+  },
+  "1210": {
+   "name": "Dry Leaf Agrint",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Forest Agrint",
+     "level": 25,
+     "chance": 100.0,
+     "types": [
+      2100179
+     ]
+    },
+    {
+     "monster": "Twilight Dry Leaf Agrint",
+     "level": 50,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Twilight Dry Leaf Agrint",
+     "level": 53,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1213": {
+   "name": "Lesser Fire Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Eternal Fire Spirit",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2101087
+     ]
+    },
+    {
+     "monster": "Burning Ember Spirit",
+     "level": 27,
+     "chance": 100.0,
+     "types": [
+      2400325
+     ]
+    }
+   ]
+  },
+  "1214": {
+   "name": "Black Spirit",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Contaminated Spirit",
+     "level": 15,
+     "chance": 100.0,
+     "types": [
+      2100460
+     ]
+    },
+    {
+     "monster": "Distorted Spirit",
+     "level": 39,
+     "chance": 100.0,
+     "types": [
+      2100807
+     ]
+    },
+    {
+     "monster": "Black Spirit",
+     "level": 44,
+     "chance": 100.0,
+     "types": [
+      2400708
+     ]
+    },
+    {
+     "monster": "Abyss Corrupted Spirit",
+     "level": 48,
+     "chance": 100.0,
+     "types": [
+      2600069
+     ]
+    },
+    {
+     "monster": "Abyss Corrupted Spirit",
+     "level": 52,
+     "chance": 100.0,
+     "types": [
+      2600469
+     ]
+    }
+   ]
+  },
+  "1215": {
+   "name": "Predator Saraswati",
+   "genus": "Cogni",
+   "souls": [
+    {
+     "monster": "Predator Saraswati",
+     "level": 45,
+     "chance": 100.0,
+     "types": []
+    },
+    {
+     "monster": "Predator Saraswati",
+     "level": 70,
+     "chance": 100.0,
+     "types": []
+    }
+   ]
+  },
+  "1216": {
+   "name": "Dark Spirit",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Corrupted Spirit",
+     "level": 33,
+     "chance": 100.0,
+     "types": [
+      2100600
+     ]
+    },
+    {
+     "monster": "Wandering Dark Spirit",
+     "level": 45,
+     "chance": 100.0,
+     "types": [
+      2100656
+     ]
+    }
+   ]
+  },
+  "1217": {
+   "name": "Congealed Drana",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Congealed Drana",
+     "level": 12,
+     "chance": 100.0,
+     "types": [
+      2400009
+     ]
+    }
+   ]
+  },
+  "1218": {
+   "name": "Faded Drana",
+   "genus": "Varian",
+   "souls": [
+    {
+     "monster": "Faded Chunk",
+     "level": 35,
+     "chance": 100.0,
+     "types": [
+      2400478
+     ]
+    }
+   ]
+  },
+  "1219": {
+   "name": "Zelophi",
+   "genus": "Natura",
+   "souls": [
+    {
+     "monster": "Coastal Zelophi",
+     "level": 14,
+     "chance": 100.0,
+     "types": [
+      2100458
+     ]
+    },
+    {
+     "monster": "Eternal Zelophi",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2101085
+     ]
+    },
+    {
+     "monster": "Zelophi",
+     "level": 49,
+     "chance": 100.0,
+     "types": [
+      2400811
+     ]
+    },
+    {
+     "monster": "Abyss Zelophi",
+     "level": 46,
+     "chance": 100.0,
+     "types": [
+      2600050
+     ]
+    },
+    {
+     "monster": "Abyss Zelophi",
+     "level": 51,
+     "chance": 100.0,
+     "types": [
+      2600450
+     ]
+    }
+   ]
+  },
+  "1240": {
+   "name": "White Bunny",
+   "genus": "Special",
+   "souls": []
+  },
+  "1278": {
+   "name": "Chonky Hamster",
+   "genus": "Special",
+   "souls": []
+  },
+  "1299": {
+   "name": "Two",
+   "genus": "Special",
+   "souls": []
+  }
+ }
+}

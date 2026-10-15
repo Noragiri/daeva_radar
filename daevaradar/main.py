@@ -164,6 +164,12 @@ def demo(tracker, engine):
     engine.say("Demo mode: simulated player, cubes and monsters; nothing is captured.")
     teleport = b"#6" + bytes(6) + point(*centre) + bytes(6)
     tracker.feed([b"36" + varint_bytes(own) + bytes(5), teleport], time.time())
+    # your pet collection ('00 90'): a few pets at each level, then a soul drop now and then ('0d 90')
+    pets = {1002: (1, 12), 1004: (2, 30), 1015: (1, 22), 1130: (1, 21), 1033: (2, 0), 1005: (3, 0)}
+    tracker.feed([b"\x00\x90" + bytes(4) + varint_bytes(len(pets))
+                  + b"".join(struct.pack("<III", p, p, lv) for p, (lv, s) in pets.items())
+                  + varint_bytes(len(pets)) + b"".join(struct.pack("<II", p, s) for p, (lv, s) in pets.items())],
+                 time.time())
     while not engine.stop:
         step += 1
         angle = step * 0.01  # one lap of a 40 m circle every ~2.5 minutes
@@ -199,6 +205,8 @@ def demo(tracker, engine):
                 xyz[0] += random.uniform(-600, 600)
                 xyz[1] += random.uniform(-600, 600)
                 batch.append(b"*8" + varint_bytes(entity) + bytes(31) + point(*xyz))
+        if step % 80 == 40:  # a soul drop every ~20 s
+            batch.append(b"\r\x90" + varint_bytes(1) + struct.pack("<II", random.choice((1002, 1015, 1130)), random.randint(1, 2)))
         engine.packets += 1
         tracker.feed(batch, time.time())
         time.sleep(0.25)

@@ -14,13 +14,14 @@ from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
 from .features.alerts import AlertsFeature
+from .features.pets import PetsFeature
 from .features.viewcone import ViewFeature
 
 
 class App:
     """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
     whatever is shown; only the shown feature/tab is redrawn."""
-    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, PetsFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk

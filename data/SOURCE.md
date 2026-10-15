@@ -18,3 +18,16 @@ Gathering-node and hidden-cube positions per map (Verteron, Altgard, Lower Resha
 points to). Credit: Shugo.GG, https://shugo.gg. The app only reads these local copies and never goes online.
 Re-run the script after a game patch to refresh them; if the site is gone, the copies keep working.
 Positions are map pixels on a 4096 px map: pixel = game units / 200 + 2048.
+
+## Pets (`pets.json`, `pet_spawns/*.json`)
+
+Written once on 2026-10-15 by `dev/fetch_pet_data.py`; re-run it after a game patch.
+
+- The 207 pets of the Global client (200 collection pets + 7 Special), with names and genus: gegebase.com and
+  wikily.gg.
+- Which monsters drop each pet's soul, with level and drop chance: metabot.gg's public item pages
+  (`/en/aion-2/items/soul-<pet>-bound`, global client data). Credit: metabot.gg.
+- Where those monsters spawn (`pet_spawns/<map>.json`, map pixels like `maps/`) and named places for the Pets map:
+  the same public Shugo.GG marker files as above. Their monster templates carry the type id the game sends in
+  `41 36`; where a map's templates don't, the id comes from `monsters.json` by name and level. Shugo.GG had no
+  monster markers for Eltnen or Morheim yet, so pets that only drop there show no spawn points.

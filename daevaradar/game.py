@@ -89,7 +89,8 @@ class Recorder:
 # (Orichalcum), 61065 logs, 61066 gemstones, 61067 herbs (Aria, Azpha...), 61068 cooking ingredients.
 GATHER_GROUPS = (("Ore", (61062,)), ("Odyle", (61061,)), ("Gem", (61066,)), ("Log", (61065,)), ("Herb", (61067,)),
                  ("Ingredient", (61068,)))
-MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta", "reshanta-middle": "Middle Reshanta"}
+MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta", "reshanta-middle": "Middle Reshanta",
+             "reshanta-upper": "Upper Reshanta"}
 def map_name(key):
     return MAP_NAMES.get(key, key.replace("-", " ").title())
 class MapData:
@@ -294,6 +295,57 @@ def is_pet_intro(data):
     except ValueError:
         return False
     return data[p:p + 2] == PET_MARK
+SOUL_STAGES = (5, 25, 75)  # pet souls per stage: unlock (Lv1), Lv2, Lv3 (the counter restarts at each level)
+def pet_collection(data):
+    """'00 90' your pet collection (account-wide; sent when you enter the world, live 2026-10-15):
+    u32 | count (LEB128) | count x (pet u32, pet u32 again, level u32) | count (LEB128) | count x (pet u32,
+    souls in the current stage u32) | genus insight data. -> ({pet: level}, {pet: souls}) or None."""
+    if data[:2] != b"\x00\x90":
+        return None
+    try:
+        n, p = varint(data, 6)
+        if not 0 < n < 1000 or len(data) < p + 12 * n:
+            return None
+        levels = {}
+        for _ in range(n):
+            pet, again, level = struct.unpack_from("<III", data, p)
+            p += 12
+            if pet != again or not 1000 <= pet < 10000 or not 1 <= level <= 5:
+                return None
+            levels[pet] = level
+        m, p = varint(data, p)
+        if m > 1000 or len(data) < p + 8 * m:
+            return None
+        souls = {}
+        for _ in range(m):
+            pet, count = struct.unpack_from("<II", data, p)
+            p += 8
+            if not 1000 <= pet < 10000 or count > 1000:
+                return None
+            souls[pet] = count
+        return levels, souls
+    except (ValueError, IndexError, struct.error):
+        return None
+def pet_souls(data):
+    """Live pet soul updates (live 2026-10-15; a level up came as 0d 90, 14 90, 0e 90 in that order):
+      '0d 90' count (LEB128) | count x (pet u32, souls gained u32): a soul drop
+      '14 90' 2 bytes | pet u32 | new level u32 | genus insight data: a level up (or unlock)
+      '0e 90' count (LEB128) | count x (pet u32, souls spent u32): the souls the level up used
+    -> ("gain" | "level" | "spent", [(pet, value)]) or None."""
+    kind = {b"\r\x90": "gain", b"\x14\x90": "level", b"\x0e\x90": "spent"}.get(bytes(data[:2]))
+    try:
+        if kind == "level" and len(data) >= 12:
+            pet, level = struct.unpack_from("<II", data, 4)
+            return (kind, [(pet, level)]) if 1000 <= pet < 10000 and 1 <= level <= 5 else None
+        if kind in ("gain", "spent"):
+            n, p = varint(data, 2)
+            if not 0 < n < 50 or len(data) != p + 8 * n:
+                return None
+            pairs = [struct.unpack_from("<II", data, p + 8 * i) for i in range(n)]
+            return (kind, pairs) if all(1000 <= pet < 10000 and v <= 1000 for pet, v in pairs) else None
+    except (ValueError, IndexError, struct.error):
+        pass
+    return None
 NODE_RANGE_M = 200  # objects further than this are dropped (they leave range silently too)
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
@@ -323,6 +375,11 @@ class Tracker:
         self.used = []  # the last objects used up ('56' 04 03 00): dict(type, xyz, n), n counting up
         self.used_count = 0
         self.track_nodes = True
+        # Your pet collection (account-wide): the full list when you enter the world, then soul drops / level ups.
+        self.soul_sync = None  # dict(levels, souls, time) from the last '00 90'
+        self.soul_sync_count = 0
+        self.soul_events = []  # the last soul updates: dict(kind, pairs, time, n), n counting up
+        self.soul_count = 0
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
         # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
         # players land on the same teleport spots, and ids may be reused between sessions.)
@@ -436,6 +493,8 @@ class Tracker:
 
         for data in batch:
             kind = data[:2]
+            if kind[1:] == b"\x90" and self.note_souls(data, when):
+                continue
             if kind == b"#6" and len(data) == 26 and data[2:8] == bytes(6):  # teleport / zone-in
                 point = xyz(data, 8)
                 if point is not None:
@@ -542,6 +601,21 @@ class Tracker:
             elif item["status"] != "opened" and (kind == b"\x05\x8d" or data[p:] == b"\x01\x01\x00"):
                 item.update(status="last seen", seen=when)
 
+    def note_souls(self, data, when):
+        """Pet collection messages -> soul_sync / soul_events. True if the message was one."""
+        sync = pet_collection(data)
+        if sync:
+            self.soul_sync = dict(levels=sync[0], souls=sync[1], time=when)
+            self.soul_sync_count += 1
+            return True
+        update = pet_souls(data)
+        if update:
+            self.soul_count += 1
+            self.soul_events = self.soul_events[-99:] + [dict(kind=update[0], pairs=update[1], time=when,
+                                                               n=self.soul_count)]
+            return True
+        return False
+
     def add_used(self, type_id, point):
         self.used_count += 1
         self.used = self.used[-49:] + [dict(type=type_id, xyz=list(point), n=self.used_count)]
@@ -603,4 +677,6 @@ class Tracker:
                         pet=dict(self.pet, xyz=list(self.pet["xyz"])) if self.pet else None,
                         cubes=cubes, monsters=monsters, kills=self.kills, messages=self.messages,
                         detections=self.detections, last_detection=self.last_detection,
-                        used=list(self.used), used_count=self.used_count)
+                        used=list(self.used), used_count=self.used_count,
+                        soul_sync=self.soul_sync, soul_sync_count=self.soul_sync_count,
+                        soul_events=list(self.soul_events), soul_count=self.soul_count)

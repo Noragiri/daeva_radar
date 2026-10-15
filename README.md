@@ -1,6 +1,6 @@
 # Daeva Radar
 
-A standalone radar for AION2: Hidden Cubes (Verteron, Altgard; more by type id), Empyrean Traces (feathers) with what you've collected, monsters with a watch list, gathering nodes, alerts, your camera cone, and minimap overlays for each. It started as the cube feature of Grip Strength Companion on its own (formerly **Cube Finder**): no damage meter and no uploads.
+A standalone radar for AION2: Hidden Cubes (Verteron, Altgard; more by type id), Empyrean Traces (feathers) with what you've collected, monsters with a watch list, gathering nodes, your pet collection's progress to Lv3 with a pop-up per soul drop and where the soul monsters spawn, alerts, your camera cone, and minimap overlays for each. It started as the cube feature of Grip Strength Companion on its own (formerly **Cube Finder**): no damage meter and no uploads.
 
 ## Folder layout
 
@@ -23,17 +23,18 @@ daevaradar/          the program
   app.py               the main window
   update.py            update check and in-place install from GitHub releases
   main.py              startup, demo, console mode, shortcut
-  features/            cubes.py, feathers.py, monsters.py, gathering.py, alerts.py, viewcone.py
+  features/            cubes.py, feathers.py, monsters.py, gathering.py, pets.py, alerts.py, viewcone.py
 assets/              icons
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
 windivert/           WinDivert.dll + WinDivert64.sys + LICENSE (LGPLv3 / GPLv2)
-data/                monster/skill name tables and map data (see data/SOURCE.md)
+data/                monster/skill name tables, map data, pets and their soul monsters' spawns (see data/SOURCE.md)
 VERSION              the release this copy is (release zips only)
 dev/                 tests and tools, not needed to run:
   test_daeva_radar.py   offline decoder/tracker tests
   make_icon.py          regenerates assets/ (needs Pillow)
   fetch_map_data.py     refreshes data/maps/ from Shugo.GG's public marker files (one-time, after patches)
+  fetch_pet_data.py     refreshes data/pets.json and data/pet_spawns/ (soul drops: metabot.gg; spawns: Shugo.GG)
   linux_test/           Docker end-to-end test with a fake game and server
 ```
 
@@ -60,6 +61,10 @@ dev/                 tests and tools, not needed to run:
   - `46` with a cube type id: a cube appears, with xyz. Known ids: 1200039 (Verteron, confirmed), 1301199 / 1301200 (Altgard), 1301242-1301245 (Morheim, unconfirmed)
   - `56` `04 03 00`: the cube was opened
   - `05 8d` or `56` `01 01 00`: the cube left your range
+  - Pets (account-wide; checked live 2026-10-15 against the game's own login sync):
+    - `00 90`: your whole collection when you enter the world: each pet's level, then souls in its current stage
+    - `0d 90`: a soul drop (pet, souls gained); several pets can come in one message
+    - `14 90` then `0e 90`: a level up (pet, new level) and the souls it used (5 to unlock, 25 to Lv2, 75 to Lv3)
 
 You only see cubes the server sends to your client, which means nearby objects. This is not a whole-map scan. All data stays on this PC.
 

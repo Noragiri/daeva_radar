@@ -164,4 +164,31 @@ t.feed([real[1]], 3.0); t.feed([real[2]], 3.1); t.feed([real[3]], 5.0)
 s = t.snapshot(now=5.0); assert s['used_count'] == 2 and {e['type'] for e in s['used']} == {1200865}, s['used']
 print('real feather: 0c-flag spawn parsed, your pickup reported (twice), the other player\'s not')
 print('cube spawns:', {k: len(v) for k, v in md.cubes.items()})
+# 12) pet collection: the full list on entering the world ('00 90'), then live soul drops and a level up
+# (recorded 2026-10-15: Mutated Cadaver Insectoid 1130 went 21 -> 23 -> 25 = Lv2; one drop carried two pets)
+sync = (b'\x00\x90' + struct.pack('<I', 1005) + venc(2) + struct.pack('<III', 1130, 1130, 1) + struct.pack('<III', 1033, 1033, 2)
+        + venc(2) + struct.pack('<II', 1130, 21) + struct.pack('<II', 1033, 0) + b'\x06\x01')
+assert cf.pet_collection(sync) == ({1130: 1, 1033: 2}, {1130: 21, 1033: 0})
+assert cf.pet_collection(b'\x00\x90' + bytes(4) + venc(1) + struct.pack('<III', 1130, 1131, 1) + venc(0)) is None  # ids differ
+live = [bytes.fromhex(h) for h in (
+    '0d90016a04000002000000',                                          # +2 souls, pet 1130
+    '0d900209040000010000006a04000002000000',                          # two pets in one drop
+    '1490' + '0000' + '6a040000' + '02000000' + '0306000000362900000000000000',  # pet 1130 -> Lv2
+    '0e90016a04000019000000')]                                         # 25 souls spent
+assert cf.pet_souls(live[0]) == ('gain', [(1130, 2)])
+assert cf.pet_souls(live[1]) == ('gain', [(1033, 1), (1130, 2)])
+assert cf.pet_souls(live[2]) == ('level', [(1130, 2)])
+assert cf.pet_souls(live[3]) == ('spent', [(1130, 25)])
+assert cf.pet_souls(b'\r\x90\x01' + bytes(7)) is None  # pet id 0
+t = cf.Tracker(); t.feed([sync] + live, 1.0)
+s = t.snapshot(now=1.0)
+assert s['soul_sync']['levels'] == {1130: 1, 1033: 2} and s['soul_count'] == 4 and s['soul_events'][-1]['kind'] == 'spent'
+from daevaradar.features.pets import PetData, progress, SOUL_CAP
+pd = PetData()
+assert len(pd.collection) == 200 and pd.pets[1130]['name'] == 'Mutated Cadaver Insectoid', len(pd.collection)
+assert progress(2, 12) == 42 and progress(3, 0) == SOUL_CAP == 105
+fossa = pd.spawn_points('verteron', [1004])
+assert fossa and all(pid == 1004 for pid, *_ in fossa), len(fossa)
+assert pd.which_map({p[1] for p in fossa + pd.spawn_points('verteron', [1015])}) == 'verteron'
+print('pets: sync + live drops + level up parsed;', len(pd.collection), 'pets, spawn maps', pd.keys())
 print('ALL OK')
