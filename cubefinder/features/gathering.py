@@ -9,7 +9,10 @@ from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, WATCH
 from ..feature import Feature
 
 
-GATHER_DEFAULT = dict(watch=[], mode="watched", map_nodes=True, alert=True, me_on_top=True, unnamed=False)
+GATHER_DEFAULT = dict(watch=[], mode="watched", map_nodes=True, alert=True, me_on_top=True, unnamed=False, map="auto")
+MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta"}
+def map_name(key):
+    return MAP_NAMES.get(key, key.replace("-", " ").title())
 class GatherFeature(Feature):
     """Gathering nodes. Live nodes come from the game ('46' object messages); their names are learned once by
     matching their position to the local map data (data/maps, credit Shugo.GG) and then remembered by type,
@@ -23,7 +26,8 @@ class GatherFeature(Feature):
         self.cfg = dict(GATHER_DEFAULT, **load_settings().get("gathering", {}))
         self.learned = {int(k): v for k, v in load_settings().get("node_types", {}).items()}
         self.mapdata = MapData()
-        self.map_key = None
+        self.map_key = None  # the map in use: picked by hand, else detected
+        self.detected = None  # what the live nodes say, whatever is picked
         self.map_checked = 0
         self.range = 150
         self.alerted = set()
@@ -37,16 +41,22 @@ class GatherFeature(Feature):
     def name_of(self, node):
         return self.learned.get(node["type"])
 
+    def picked(self):
+        """The map picked by hand, or None for Auto (also when its data is gone)."""
+        return self.cfg["map"] if self.cfg["map"] in self.mapdata.maps else None
+
     def learn(self, snap):
         """Which map you're on, and names for node types seen for the first time (saved for good)."""
+        self.map_key = self.picked() or self.detected
         if not snap["position"] or time.time() - self.map_checked < 2:
             return
         self.map_checked = time.time()
         points = [n["xyz"] for n in snap["nodes"]]
         key = self.mapdata.which_map(points) if points else None
-        if key and key != self.map_key:
-            self.map_key = key
+        if key and key != self.detected:
+            self.detected = key
             self.app.engine.say("Gathering: map is %s" % key)
+        self.map_key = self.picked() or self.detected
         if not self.map_key:
             return
         changed = False
@@ -120,8 +130,19 @@ class GatherFeature(Feature):
                            selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 10),
                            indicatoron=False, padx=10, pady=3, relief="flat", bd=0, offrelief="flat",
                            cursor="hand2").pack(side="left", padx=(0, 4))
-        self.map_label = tk.Label(bar, text="", bg=BG, fg=MUTED, font=(FONT, 9))
-        self.map_label.pack(side="right")
+        row = tk.Frame(f, bg=BG)
+        row.pack(fill="x", pady=(6, 0))
+        tk.Label(row, text="Map", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=(0, 6))
+        self.map_choices = [("auto", "Auto")] + [(k, map_name(k)) for k in sorted(self.mapdata.maps, key=map_name)]
+        labels = dict(self.map_choices)
+        self.map_var = tk.StringVar(value=labels.get(self.cfg["map"], "Auto"))
+        menu = tk.OptionMenu(row, self.map_var, *[label for _, label in self.map_choices], command=self.set_map)
+        menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat", bd=0,
+                    highlightthickness=0, font=(FONT, 9), width=14, cursor="hand2")
+        menu["menu"].config(bg=PANEL, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, font=(FONT, 9))
+        menu.pack(side="left")
+        self.map_label = tk.Label(row, text="", bg=BG, fg=MUTED, font=(FONT, 9))
+        self.map_label.pack(side="left", padx=8)
         tk.Label(f, text="Nearby — click a name to watch / unwatch it  (● live  ○ on the map, not announced yet)",
                  bg=BG, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x", pady=(8, 2))
         listing = tk.Frame(f, bg=BG)
@@ -137,6 +158,19 @@ class GatherFeature(Feature):
     def zoom(self, factor):
         self.range = max(25, min(2000, self.range * factor))
 
+    def set_map(self, label):
+        self.cfg["map"] = next(key for key, text in self.map_choices if text == label)
+        self.save()
+        self.map_key = self.picked() or self.detected
+
+    def map_text(self):
+        detected = ("detected: %s" % map_name(self.detected)) if self.detected else "not detected yet"
+        if not self.picked():
+            return detected, MUTED
+        if self.detected and self.detected != self.picked():
+            return detected + " (differs!)", "#ffb347"
+        return detected, MUTED
+
     def set_mode(self):
         self.cfg["mode"] = self.mode_var.get()
         self.save()
@@ -148,7 +182,8 @@ class GatherFeature(Feature):
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")
         scale = draw_rings(c, size, self.range)
         position = snap["position"]
-        self.map_label.config(text=("map: %s" % self.map_key) if self.map_key else "map: not known yet")
+        text, color = self.map_text()
+        self.map_label.config(text=text, fg=color)
         if not position:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
             for row in self.rows:

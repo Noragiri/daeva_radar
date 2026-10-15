@@ -125,7 +125,7 @@ Every feature's background work keeps running whichever feature or tab is shown:
   - **Overlay:** its own minimap overlay (green frame).
   - **Settings:** search all resources (Diamond/Ruby/Sapphire Gemstone, Orichalcum Ore, Odyle, Aria, Yggdrasil Log...), watch several (each with its own colour), map-only nodes on/off, your position on top, a beep when a watched resource appears, and objects without a known name.
 
-  Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). That also tells which map you're on, and the name is then saved for that type for good. Map data exists for Verteron, Altgard and Lower Reshanta so far.
+  Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). That also tells which map you're on, and the name is then saved for that type for good. The **Map** dropdown on the Radar tab picks the map by hand instead of **Auto** (detection still runs, and the label beside it warns if it disagrees with your pick). Map data exists for Verteron, Altgard and Lower Reshanta so far.
 - **View cone** (Windows): mirrors the camera cone from the game's minimap onto the Cubes and Monsters radars (a soft wedge) and overlays (an outline, so the minimap stays visible).
 
 ### How the view cone is read
