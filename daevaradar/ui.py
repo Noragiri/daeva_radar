@@ -262,7 +262,8 @@ def radar_point(position, point, mid, scale, range_m):
     a = math.radians(bearing(position, point))
     shown = min(dist, range_m)
     return mid + math.sin(a) * shown * scale, mid - math.cos(a) * shown * scale, dist > range_m
-WATCH_COLORS = ("#ff5c5c", "#7cf08a", "#ffb347", "#c58cff", "#4fd8ff", "#ffd24a", "#ff6ad5", "#9fe3ff")
+CUBE_SPAWN = "#ff5c5c"  # hollow cube spawn points; no other dot uses red
+WATCH_COLORS = ("#7cf08a", "#ffb347", "#c58cff", "#4fd8ff", "#ffd24a", "#ff6ad5", "#9fe3ff")
 class Toast:
     """A small notification on top of everything (the game too) for a few seconds; click to dismiss.
     Doesn't take focus from the game."""

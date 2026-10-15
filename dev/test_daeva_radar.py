@@ -125,4 +125,9 @@ assert md.group_of('Orichalcum Ore') == 'Ore' and md.group_of('Odyle') == 'Odyle
 assert md.group_of('Yggdrasil Log') == 'Log' and md.group_of('Aria') == 'Herb' and md.group_of('Coriolus') == 'Ingredient'
 assert all(md.group_of(n) for n in md.names()), [n for n in md.names() if not md.group_of(n)]
 print('groups:', {g: sum(1 for n in md.names() if md.group_of(n) == g) for g, _ in cf.GATHER_GROUPS})
+# 9) hidden-cube spawn points from the map data
+for key, spawns in md.cubes.items():
+    at, at2 = md.to_world(*spawns[0], 500.0), md.to_world(*spawns[1], 500.0)
+    assert md.cube_map([at]) is None and md.cube_map([at, at2]) == key and at in md.cubes_nearby(key, at, 10), key
+print('cube spawns:', {k: len(v) for k, v in md.cubes.items()})
 print('ALL OK')

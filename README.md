@@ -110,9 +110,9 @@ The sidebar lists features. Each feature has its own tabs, overlay and settings.
 Each feature has an **On/Off switch** at the right of its tab bar. A feature that's off does nothing in the background: its game messages aren't parsed, there are no alerts, its overlay is hidden (it comes back when switched on), and View cone doesn't read the screen. The sidebar marks it "· off". Its settings can still be changed. For View cone, the switch replaces the old "Show the vision cone" checkbox.
 
 - **Cubes**
-  - **Radar:** radar and cube list.
+  - **Radar:** radar and cube list, plus hidden-cube spawn points from the map data as hollow circles.
   - **Overlay:** the cube minimap overlay.
-  - **Settings:** alert sound, volume, and the cube types being tracked.
+  - **Settings:** alert sound, volume, spawn points on/off, and the cube types being tracked.
 - **Monsters**
   - **Radar:** watched monsters as coloured dots, plus a "Nearby" list of every named monster in range (count, nearest distance, level). Click a name to watch or unwatch it. **Watched / All** switches between only watched monsters and every monster.
   - **Overlay:** its own minimap overlay (red frame), separate from the cube one, with its own position and scale.
@@ -125,7 +125,8 @@ Every feature's background work keeps running whichever feature or tab is shown:
   - **Overlay:** its own minimap overlay (green frame).
   - **Settings:** search all resources (Diamond/Ruby/Sapphire Gemstone, Orichalcum Ore, Odyle, Aria, Yggdrasil Log...), watch several (each with its own colour), or a whole group at once with the **Ore / Odyle / Gem / Log / Herb / Ingredient** buttons (by item id; click again to unwatch the group), map-only nodes on/off, your position on top, a beep when a watched resource appears, and objects without a known name.
 
-  Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). That also tells which map you're on, and the name is then saved for that type for good. The **Map** dropdown on the Radar tab picks the map by hand instead of **Auto** (detection still runs, and the label beside it warns if it disagrees with your pick). Map data exists for Verteron, Altgard and Lower Reshanta so far.
+  Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). The name is then saved for that type for good. Which map is used comes from the sidebar **Map** picker (see below). Map data exists for Verteron, Altgard and Lower Reshanta so far.
+- **Map** (sidebar, under the features): the map used for the map data, shared by Cubes (spawn points) and Gathering (names, map-only nodes). **Auto** uses the detected map: live gathering nodes decide when there are any, else live cubes (at least two must sit on spawn points). Pick a map by hand when detection is slow or wrong; detection still runs, and the label under the picker warns if it disagrees. A pick made in Gathering's old dropdown carries over.
 - **View cone** (Windows): mirrors the camera cone from the game's minimap onto the Cubes and Monsters radars (a soft wedge) and overlays (an outline, so the minimap stays visible).
 
 ### How the view cone is read
@@ -179,6 +180,7 @@ without one of those your position only changes on dashes and teleports. Your su
   Labels read like `50 m +12`, and the list rows use the same colours.
 - **Solid:** the cube is in range. **Dimmed outline:** last seen (it left your range, or no update for 60 s). Opened cubes are hidden on the radar and greyed in the list. Pins are dropped after 20 minutes.
 - An outline pin at the radar's edge is a cube beyond the radar range. You are the white dot.
+- **Hollow red circle:** a hidden-cube spawn point (red is kept for these; no other dot uses it) from the local map data (Verteron, Altgard; credit Shugo.GG), so you can fly around them before any cube shows up. Spawn points have no height, and one with a tracked cube on it is hidden. The map comes from the sidebar **Map** picker. The list's last row gives the count in range and the nearest one. Turn them off in Cubes → Settings.
 - Changing character, teleporting or losing the stream clears pins and position.
 
 ## Minimap overlay

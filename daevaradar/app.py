@@ -1,11 +1,13 @@
 """The main window: a sidebar of features, the status bar, and the loop that drives everything."""
 import threading
+import time
 
 from .common import ASSETS, WINDOWS, load_settings, save_settings
 from .vision import ViewCone
 from .debug import PositionWindow
 from .follow import PositionFusion
-from .ui import ACCENT, BG, BUTTON, FONT, MUTED, OVERLAY_CONE, SIDEBAR, TEXT, draw_cone, hotkey_thread, set_icon
+from .game import MapData, map_name
+from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
@@ -14,8 +16,8 @@ from .features.viewcone import ViewFeature
 
 
 class App:
-    """Main window: a sidebar of features. Every feature's background() runs each tick whatever is shown;
-    only the shown feature/tab is redrawn."""
+    """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
+    whatever is shown; only the shown feature/tab is redrawn."""
     FEATURES = (CubesFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
@@ -24,6 +26,8 @@ class App:
         self.tracker, self.engine, self.args = tracker, engine, args
         self.view = ViewCone()
         self.fusion = PositionFusion()
+        self.mapdata = MapData()  # shared by the features that use the map data
+        self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
         self.root = root = tk.Tk()
         root.title("Daeva Radar")
         self.icon = set_icon(root)
@@ -59,6 +63,7 @@ class App:
                                justify="left")
         self.badges.pack(side="bottom", fill="x", pady=(0, 6))
         self.badge_text = {}
+        self.build_map_picker(side, settings)
         main = tk.Frame(root, bg=BG)
         main.pack(side="left", fill="both", expand=True)
         content = tk.Frame(main, bg=BG)
@@ -92,6 +97,54 @@ class App:
             self.toggle_debug()
         self.tick()
         self.cone_tick()
+
+    # ---- map: picked by hand in the sidebar, else detected from live gathering nodes or cubes
+    def build_map_picker(self, side, settings):
+        tk = self.tk
+        box = tk.Frame(side, bg=SIDEBAR)
+        box.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
+        tk.Label(box, text="Map", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x")
+        self.map_choices = [("auto", "Auto")] + [(k, map_name(k)) for k in self.mapdata.keys()]
+        self.map_cfg = settings.get("map", settings.get("gathering", {}).get("map", "auto"))  # was Gathering's
+        self.map_var = tk.StringVar(value=dict(self.map_choices).get(self.map_cfg, "Auto"))
+        menu = tk.OptionMenu(box, self.map_var, *[label for _, label in self.map_choices], command=self.set_map)
+        menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat", bd=0,
+                    highlightthickness=0, font=(FONT, 9), anchor="w", cursor="hand2")
+        menu["menu"].config(bg=PANEL, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, font=(FONT, 9))
+        menu.pack(fill="x")
+        self.map_label = tk.Label(box, text="", bg=SIDEBAR, fg=MUTED, font=(FONT, 8), anchor="w", justify="left",
+                                  wraplength=130)
+        self.map_label.pack(fill="x")
+        self.show_map()
+
+    def picked(self):
+        """The map picked by hand, or None for Auto (also when its data is gone)."""
+        return self.map_cfg if self.map_cfg in self.mapdata.keys() else None
+
+    def map_key(self):
+        return self.picked() or self.detected
+
+    def set_map(self, label):
+        self.map_cfg = next(key for key, text in self.map_choices if text == label)
+        save_settings(dict(load_settings(), map=self.map_cfg))
+        self.show_map()
+
+    def detect_map(self, snap):
+        """Gathering nodes decide when there are any; cubes only when there aren't."""
+        if not snap["position"] or time.time() - self.map_checked < 2:
+            return
+        self.map_checked = time.time()
+        nodes, cubes = [n["xyz"] for n in snap["nodes"]], [c["xyz"] for c in snap["cubes"]]
+        key = (nodes and self.mapdata.which_map(nodes)) or (cubes and self.mapdata.cube_map(cubes)) or None
+        if key and key != self.detected:
+            self.detected = key
+            self.engine.say("Map is %s" % key)
+            self.show_map()
+
+    def show_map(self):
+        text = ("detected: %s" % map_name(self.detected)) if self.detected else "not detected yet"
+        differs = self.picked() and self.detected and self.detected != self.picked()
+        self.map_label.config(text=text + (" (differs!)" if differs else ""), fg="#ffb347" if differs else MUTED)
 
     def show(self, title):
         if self.current:
@@ -191,6 +244,7 @@ class App:
         snap = self.snapshot()
         self.view.update(self.cone_needed())
         snap["cone"] = self.view.cone if self.view.ready() else None
+        self.detect_map(snap)
         if self.hotkey.is_set():
             self.hotkey.clear()
             self.on_hotkey()

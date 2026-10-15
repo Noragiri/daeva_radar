@@ -88,16 +88,21 @@ class Recorder:
 # (Orichalcum), 61065 logs, 61066 gemstones, 61067 herbs (Aria, Azpha...), 61068 cooking ingredients.
 GATHER_GROUPS = (("Ore", (61062,)), ("Odyle", (61061,)), ("Gem", (61066,)), ("Log", (61065,)), ("Herb", (61067,)),
                  ("Ingredient", (61068,)))
+MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta"}
+def map_name(key):
+    return MAP_NAMES.get(key, key.replace("-", " ").title())
 class MapData:
     """Local copy of map markers (data/maps/<map>.json, written once by dev/fetch_map_data.py; credit
     Shugo.GG). Names live nodes by position, works out which map you're on, and lists nodes the game hasn't
-    announced yet. Map pixels on a 4096 px map: pixel = game units / 200 + 2048 (checked live)."""
+    announced yet, and hidden-cube spawn points. Map pixels on a 4096 px map: pixel = game units / 200 + 2048
+    (checked live)."""
     CELL = 16  # px grid for lookups
 
     def __init__(self, folder=None):
         import json
         self.maps = {}  # key -> {"grid": {(cx, cy): [(x, y, name, item)]}, "points": {name: [(x, y)]}}
         self.items = {}  # resource name -> item id (its group is the id's first five digits, see GATHER_GROUPS)
+        self.cubes = {}  # key -> [(x, y)] hidden-cube spawn points
         folder = folder or ROOT / "data" / "maps"
         for path in sorted(folder.glob("*.json")) if folder.exists() else []:
             try:
@@ -105,9 +110,11 @@ class MapData:
             except (OSError, ValueError):
                 continue
             grid, points = {}, {}
-            for cat in data.get("categories", {}).values():
+            for cat_id, cat in data.get("categories", {}).items():
+                if cat_id == "HiddenCube":
+                    self.cubes[data.get("map", path.stem)] = [tuple(p) for p in cat["points"]]
                 if not cat.get("item"):
-                    continue  # gathering resources only (hidden cubes are their own feature)
+                    continue  # gathering resources only
                 for x, y in cat["points"]:
                     grid.setdefault((x // self.CELL, y // self.CELL), []).append((x, y, cat["name"], cat["item"]))
                     points.setdefault(cat["name"], []).append((x, y))
@@ -148,6 +155,10 @@ class MapData:
                         best = (d, name, item)
         return best[1:] if best else None
 
+    def keys(self):
+        """Every map with data: gathering nodes or cube spawn points."""
+        return sorted(set(self.maps) | set(self.cubes), key=map_name)
+
     def which_map(self, points):
         """The map whose resource markers line up with these live node positions, or None if unclear."""
         votes = {key: sum(1 for p in points if self.match(key, p, 3)) for key in self.maps}
@@ -171,6 +182,26 @@ class MapData:
                 if abs(x - cx) <= r and abs(y - cy) <= r and math.hypot(x - cx, y - cy) <= r:
                     out.append((name, self.to_world(x, y, centre[2])))
         return out
+
+    def cube_map(self, points):
+        """The map whose cube spawn points line up with these live cube positions, or None if unclear."""
+        votes = {}
+        for key, spawns in self.cubes.items():
+            px = [self.to_px(p) for p in points]
+            votes[key] = sum(1 for x, y in px if any(math.hypot(x - sx, y - sy) <= 3 for sx, sy in spawns))
+        ranked = sorted(votes.items(), key=lambda kv: -kv[1])
+        if not ranked:
+            return None
+        best, hits = ranked[0]
+        runner = ranked[1][1] if len(ranked) > 1 else 0
+        return best if hits >= 2 and hits >= 2 * runner + 1 else None  # one cube near a spawn can be chance
+
+    def cubes_nearby(self, key, centre, radius_m):
+        """Hidden-cube spawn points (game units, at your height) within radius of centre on map key."""
+        cx, cy = self.to_px(centre)
+        r = radius_m / 2  # metres -> px
+        return [self.to_world(x, y, centre[2]) for x, y in self.cubes.get(key, ())
+                if abs(x - cx) <= r and abs(y - cy) <= r and math.hypot(x - cx, y - cy) <= r]
 _MONSTERS = None
 def monster_info(type_id):
     """Monster type id -> (name, level, rank) from data/monsters.json; unknown types get a placeholder."""

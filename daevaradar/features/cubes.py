@@ -4,14 +4,19 @@ import math
 import os
 
 from ..common import SOUNDS, load_settings, save_settings
-from ..game import TEMPLATES
+from ..game import TEMPLATES, MapData, map_name
 from ..sound import play, voices
-from ..ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, HEIGHT, MONO, MUTED, PANEL, TEXT, button, dim, draw_cone, draw_pin, draw_rings, draw_text, heading, height_class, label_side, radar_point, relative, section
+from ..ui import ACCENT, BG, BUTTON, BUTTON_HOVER, CUBE_SPAWN, FONT, HEIGHT, MONO, MUTED, PANEL, TEXT, button, checkbox, dim, draw_cone, draw_pin, draw_rings, draw_text, heading, height_class, label_side, radar_point, relative, section
 from ..feature import Feature
 
 
+CUBES_DEFAULT = dict(spawns=True)
+
+
 class CubesFeature(Feature):
-    """Hidden Cubes: radar + list, the minimap overlay, and the alert settings."""
+    """Hidden Cubes: radar + list, the minimap overlay, and the alert settings. Spawn points from the local
+    map data (data/maps, credit Shugo.GG) show as hollow circles, so you can fly around them, on the app's map
+    (sidebar picker, else detected)."""
     title, icon, TABS = "Cubes", "◈", ("Radar", "Overlay", "Settings")
     overlay_key, overlay_color = "overlay", "#4fd8ff"
     overlay_text = "A see-through layer with only the cube pins, to place over the game's minimap."
@@ -21,6 +26,8 @@ class CubesFeature(Feature):
         tk, args = app.tk, app.args
         self.range = args.range
         self.seen_detections = 0
+        self.cfg = dict(CUBES_DEFAULT, **load_settings().get("cubes", {}))
+        self.mapdata = app.mapdata
         self.voice = tk.StringVar(value=args.voice)
         self.volume = tk.IntVar(value=args.volume)
         super().__init__(app, parent)
@@ -45,6 +52,24 @@ class CubesFeature(Feature):
     def zoom(self, factor):
         self.range = max(25, min(2000, self.range * factor))
 
+    # ---- spawn points from the map data
+    def map_key(self):
+        key = self.app.map_key()
+        return key if key in self.mapdata.cubes else None
+
+    def spawns(self, snap, radius_m):
+        """Spawn points within radius_m that no tracked cube (opened ones too) is sitting on."""
+        key = self.map_key()
+        if not self.cfg["spawns"] or not key or not snap["position"]:
+            return []
+        taken = [MapData.to_px(c["xyz"]) for c in snap["cubes"]]
+        out = []
+        for xyz in self.mapdata.cubes_nearby(key, snap["position"], radius_m):
+            px, py = MapData.to_px(xyz)
+            if not any(math.hypot(px - x, py - y) <= 3 for x, y in taken):
+                out.append(xyz)
+        return out
+
     def clear_cubes(self):
         with self.app.tracker.lock:
             self.app.tracker.cubes.clear()
@@ -56,14 +81,19 @@ class CubesFeature(Feature):
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")  # under the rings and pins
         scale = draw_rings(c, size, self.range)
         x = 8  # legend
-        for kind in ("above", "level", "below"):
-            color, mark = HEIGHT[kind]
-            label = "%s %s" % (mark, kind)
+        legend = [("%s %s" % (HEIGHT[kind][1], kind), HEIGHT[kind][0]) for kind in ("above", "level", "below")]
+        if self.cfg["spawns"]:
+            legend.append(("○ spawn point", CUBE_SPAWN))
+        for label, color in legend:
             c.create_text(x, size - 9, text=label, fill=color, anchor="w", font=(FONT, 9, "bold"))
             x += 8 + 7 * len(label)
         position = snap["position"]
         rows = []
+        spawns = self.spawns(snap, self.range) if position else []
         if position:
+            for xyz in spawns:  # hollow, under the cube pins
+                x, y, _ = radar_point(position, xyz, mid, scale, self.range)
+                c.create_oval(x - 4, y - 4, x + 4, y + 4, outline=CUBE_SPAWN, width=2)
             for cube in snap["cubes"]:
                 dist, dz, direction = relative(position, cube["xyz"])
                 rows.append((dist, dz, direction, cube))
@@ -83,8 +113,11 @@ class CubesFeature(Feature):
                 draw_text(c, lx, y, label, color, anchor=anchor)
         else:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
+        spawn_row = (len(rows) or 1) if position else None  # under the cubes, or under "No cubes"
         for i, row in enumerate(self.rows):
-            if i < len(rows):
+            if i == spawn_row and self.cfg["spawns"]:
+                row.config(text=self.spawn_text(position, spawns), fg=CUBE_SPAWN)
+            elif i < len(rows):
                 dist, dz, direction, cube = rows[i]
                 kind = height_class(dz)
                 height = "%s %3d m" % (HEIGHT[kind][1], abs(dz)) if kind != "level" else "  level"
@@ -99,6 +132,17 @@ class CubesFeature(Feature):
             else:
                 row.config(text="")
 
+    def spawn_text(self, position, spawns):
+        if not self.app.map_key():
+            return "○ spawn points: map not known yet"
+        if not self.map_key():
+            return "○ no spawn point data for %s" % map_name(self.app.map_key())
+        if not spawns:
+            return "○ no spawn points within %d m" % self.range
+        dist, _, direction = min(relative(position, xyz) for xyz in spawns)
+        return "○ %d spawn point%s within %d m, nearest %d m %s" % (
+            len(spawns), "" if len(spawns) == 1 else "s", self.range, dist, direction)
+
     # ---- Overlay tab
     def build_overlay(self, f):
         self.build_overlay_tab(f)
@@ -106,6 +150,11 @@ class CubesFeature(Feature):
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         w = overlay.cfg["w"]
+        for xyz in self.spawns(snap, math.hypot(w, overlay.cfg["h"]) / 2 / overlay.cfg["ppm"]):
+            x, y, edge = overlay.to_screen(position, xyz)
+            if not edge:
+                c.create_oval(x - 6, y - 6, x + 6, y + 6, outline="#000000", width=4)
+                c.create_oval(x - 4, y - 4, x + 4, y + 4, outline=CUBE_SPAWN, width=2)
         cubes = sorted(snap["cubes"], key=lambda cube: -math.dist(cube["xyz"][:2], position[:2]))
         for cube in cubes:  # nearest drawn last, on top
             if cube["status"] == "opened":
@@ -147,6 +196,10 @@ class CubesFeature(Feature):
         scale.pack(side="left", padx=6)
         scale.bind("<ButtonRelease-1>", lambda e: self.set_volume())
         tk.Label(row, text="%", bg=BG, fg=MUTED, font=(FONT, 10)).pack(side="left")
+        section(tk, f, "Show")
+        self.spawns_var = tk.BooleanVar(value=self.cfg["spawns"])
+        checkbox(tk, f, "Spawn points from the map data (hollow; credit Shugo.GG)", self.spawns_var,
+                 self.set_spawns).pack(fill="x")
         section(tk, f, "Cube types tracked")
         tk.Label(f, bg=BG, fg=MUTED, font=(MONO, 9), anchor="w", justify="left", wraplength=380,
                  text="  ".join(str(t) for t in sorted(TEMPLATES)) +
@@ -181,6 +234,10 @@ class CubesFeature(Feature):
         save_settings(dict(load_settings(), voice="custom", custom=self.app.args.sound))
         self.show_file()
         self.test_sound()
+
+    def set_spawns(self):
+        self.cfg["spawns"] = self.spawns_var.get()
+        save_settings(dict(load_settings(), cubes=self.cfg))
 
     def set_volume(self):
         save_settings(dict(load_settings(), volume=self.volume.get()))
