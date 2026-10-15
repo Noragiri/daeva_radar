@@ -1,2 +1,9 @@
 *.sh text eol=lf
 
+
+# left out of release zips (git archive)
+dev/ export-ignore
+.github/ export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+*.lnk export-ignore
