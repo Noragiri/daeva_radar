@@ -31,3 +31,11 @@ Written once on 2026-10-15 by `dev/fetch_pet_data.py`; re-run it after a game pa
   the same public Shugo.GG marker files as above. Their monster templates carry the type id the game sends in
   `41 36`; where a map's templates don't, the id comes from `monsters.json` by name and level. Shugo.GG had no
   monster markers for Eltnen or Morheim yet, so pets that only drop there show no spawn points.
+
+## World map images (`map_tiles/<map>/<z>/<x>_<y>.webp`)
+
+Downloaded once on 2026-10-15 by `dev/fetch_map_tiles.py` from Shugo.GG's public map tiles (the images of its
+interactive map, https://shugo.gg/map/<map>). 256 px WebP tiles, zoom 0-4; zoom 4 is the same 4096 px map as the
+pixel coordinates above (Middle and Upper Reshanta fill its top-left 2048 px). Credit: Shugo.GG. The map art is
+AION 2 game content © NCSOFT; it's here for this personal tool's Map window, not to be redistributed on its own.
+The Map window shows them with Pillow (`pip install pillow`).

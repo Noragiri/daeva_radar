@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 
-from .common import ASSETS, ENTRY, HERE, LINUX, NO_WINDOW, WINDOWS, load_settings
+from .common import ASSETS, FROZEN, HERE, LINUX, NO_WINDOW, WINDOWS, launch_command, load_settings
 from . import game
 from .game import Recorder, TEMPLATES, Tracker
 from .capture import Engine, capture_helper, find_windivert
@@ -20,16 +20,17 @@ from .app import Radar
 
 
 def make_shortcut():
-    """Windows: 'Daeva Radar.lnk' beside the script and on the Desktop: pythonw (no console) + icon."""
+    """Windows: 'Daeva Radar.lnk' beside the script and on the Desktop: pythonw (no console) + icon
+    (the build: DaevaRadar.exe itself)."""
     pythonw = Path(sys.executable).with_name("pythonw.exe")
-    target = pythonw if pythonw.exists() else Path(sys.executable)
+    target = Path(sys.executable) if FROZEN or not pythonw.exists() else pythonw
     script = (
         "$s = New-Object -ComObject WScript.Shell; "
         "foreach ($dir in @('{here}', [Environment]::GetFolderPath('Desktop'))) {{ "
         "$l = $s.CreateShortcut((Join-Path $dir 'Daeva Radar.lnk')); "
         "$l.TargetPath = '{target}'; $l.Arguments = '\"{main}\"'; $l.WorkingDirectory = '{here}'; "
         "$l.IconLocation = '{icon},0'; $l.Description = 'Daeva Radar: AION2 radar'; $l.Save() }}"
-    ).format(here=HERE, target=target, main=HERE / "daeva_radar.py", icon=ASSETS / "icon.ico")
+    ).format(here=HERE, target=target, main="" if FROZEN else HERE / "daeva_radar.py", icon=ASSETS / "icon.ico")
     subprocess.run(["powershell", "-NoProfile", "-Command", script], check=True, creationflags=NO_WINDOW)
     print("Created 'Daeva Radar.lnk' in %s and on your Desktop." % HERE)
 def is_admin():
@@ -99,13 +100,14 @@ def main():
     if WINDOWS:  # our own taskbar entry and icon, not Python's
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DaevaRadar.Radar")
     if WINDOWS and not is_admin() and not args.demo:  # WinDivert needs elevation: relaunch through UAC (it starts in System32)
-        argv = [str(ENTRY)]
+        command = launch_command()
+        argv = command[1:]
         for prev, a in zip([None] + sys.argv[1:], sys.argv[1:]):
             argv.append(os.path.abspath(a) if os.path.exists(a) or prev in ("--log", "--record") else a)
         params = subprocess.list2cmdline(argv)
-        # The elevated copy runs without a console window unless one was asked for.
-        exe = Path(sys.executable)
-        if not args.console and exe.with_name("pythonw.exe").exists():
+        # The elevated copy runs without a console window unless one was asked for (the build never has one).
+        exe = Path(command[0])
+        if not FROZEN and not args.console and exe.with_name("pythonw.exe").exists():
             exe = exe.with_name("pythonw.exe")
         if ctypes.windll.shell32.ShellExecuteW(None, "runas", str(exe), params, None, 1) <= 32:
             show_error("Administrator rights are required (WinDivert needs them).")
@@ -158,8 +160,9 @@ def demo(tracker, engine):
 
     own, centre, step, next_id, live = 6190, (10000.0, 20000.0, 500.0), 0, 50000, {}
     mobs = {}
-    # Krall Soldier (two variants), Krall Healer, Krall Karnif, Drana Test Subject, Failed Drana Mutant
-    MOB_TYPES = (2700977, 2700972, 2700978, 2700980, 2110450, 2110451)
+    # Krall Soldier (two variants), Krall Healer, Krall Karnif, Drana Test Subject, Failed Drana Mutant, and
+    # Ridge Spider (drops Mutated Cadaver Insectoid souls: target that pet to see soul monsters)
+    MOB_TYPES = (2700977, 2700972, 2700978, 2700980, 2110450, 2110451, 2100554)
     engine.status = "Demo (simulated, no capture)"
     engine.say("Demo mode: simulated player, cubes and monsters; nothing is captured.")
     teleport = b"#6" + bytes(6) + point(*centre) + bytes(6)

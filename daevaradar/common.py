@@ -5,8 +5,15 @@ import subprocess
 import sys
 
 
-ROOT = Path(__file__).resolve().parent.parent  # the project folder (assets/, data/, sounds/, windivert/)
+FROZEN = getattr(sys, "frozen", False)  # the Windows build (DaevaRadar.exe, PyInstaller): no Python needed
+# the project folder (assets/, data/, sounds/, windivert/); in the build, the folder DaevaRadar.exe is in
+ROOT = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent.parent
 ENTRY = ROOT / "daeva_radar.py"  # the launcher: relaunched elevated / as the Linux capture helper
+
+
+def launch_command():
+    """How to start this program again: the exe, or Python with the launcher."""
+    return [sys.executable] if FROZEN else [sys.executable, str(ENTRY)]
 ASSETS = ROOT / "assets"
 SOUNDS = ROOT / "sounds"
 HERE = ROOT

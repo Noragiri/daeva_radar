@@ -18,23 +18,27 @@ daevaradar/          the program
   vision.py            reading the vision cone from the minimap
   follow.py            following your position between packets with your summoned pet
   debug.py             the Position debug window
+  worldmap.py          the Map window (world map images: pets' soul spawns, hidden cubes, gathering nodes)
   ui.py                shared drawing, overlay window, widgets, popups
   feature.py           the Feature base (tabs, On/Off switch, overlay controls)
   app.py               the main window
   update.py            update check and in-place install from GitHub releases
   main.py              startup, demo, console mode, shortcut
-  features/            cubes.py, feathers.py, monsters.py, gathering.py, pets.py, alerts.py, viewcone.py
+  features/            cubes.py, feathers.py, monsters.py (+ pets.py: its Pets tab), gathering.py, alerts.py, viewcone.py
 assets/              icons
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
 windivert/           WinDivert.dll + WinDivert64.sys + LICENSE (LGPLv3 / GPLv2)
-data/                monster/skill name tables, map data, pets and their soul monsters' spawns (see data/SOURCE.md)
+data/                monster/skill name tables, map data, pets and their soul monsters' spawns, world map images
+                     (data/map_tiles; see data/SOURCE.md)
 VERSION              the release this copy is (release zips only)
 dev/                 tests and tools, not needed to run:
   test_daeva_radar.py   offline decoder/tracker tests
   make_icon.py          regenerates assets/ (needs Pillow)
   fetch_map_data.py     refreshes data/maps/ from Shugo.GG's public marker files (one-time, after patches)
   fetch_pet_data.py     refreshes data/pets.json and data/pet_spawns/ (soul drops: metabot.gg; spawns: Shugo.GG)
+  fetch_map_tiles.py    refreshes data/map_tiles/ (Shugo.GG's map images; one-time, after patches that change maps)
+  daeva_radar.spec      PyInstaller recipe for the Windows build (DaevaRadar.exe; the release workflow runs it)
   linux_test/           Docker end-to-end test with a fake game and server
 ```
 
@@ -68,9 +72,20 @@ dev/                 tests and tools, not needed to run:
 
 You only see cubes the server sends to your client, which means nearby objects. This is not a whole-map scan. All data stays on this PC.
 
+## Run on Windows without Python (DaevaRadar.exe)
+
+1. From the [latest release](https://github.com/Noragiri/daeva_radar/releases/latest), download
+   `DaevaRadar-<version>-win64.zip` and unzip it anywhere (keep the folder together: the exe needs the files beside it).
+2. Start `DaevaRadar.exe` and accept the administrator prompt (WinDivert needs it). `DaevaRadar.exe --demo` tries the
+   window without capture or admin rights. `DaevaRadar.exe --shortcut` puts a shortcut on the Desktop.
+3. Windows SmartScreen may say "Windows protected your PC" because the exe isn't code-signed: click
+   *More info* → *Run anyway*. Some antivirus tools flag packet-capture tools; the build is made from this repo's source by
+   the release workflow.
+4. Updates install in place from the sidebar, like the Python version (the exe updates from the `-win64` zip).
+
 ## Run on Windows
 
-1. Install Python 3.10+ for Windows x64 (tkinter included).
+1. Install Python 3.10+ for Windows x64 (tkinter included), then Pillow for the Map's images: `python -m pip install pillow`.
 2. The WinDivert 2.2 files `WinDivert.dll` and `WinDivert64.sys` go in `windivert/` (already there). If they are missing, the copy that Grip Strength Companion leaves in `%APPDATA%\GripStrengthMeter\windivert` is used instead.
 3. Double-click the **Daeva Radar** shortcut (or `Daeva Radar.bat`) and accept the administrator prompt. It runs without a console window, and errors appear in a message box. If you move the folder, run `python daeva_radar.py --shortcut` once to recreate the shortcut, both here and on the Desktop. For console output, run `python daeva_radar.py --console`.
 4. Start the radar, then teleport (or change zone / relog) so it learns your character and position. Summon your
@@ -79,7 +94,8 @@ You only see cubes the server sends to your client, which means nearby objects. 
 
 ## Run on Linux (AION2 under Wine / Proton)
 
-1. Install Python 3.10+ with tkinter (`python3-tk` on Debian/Ubuntu, `tk` on Arch/Fedora).
+1. Install Python 3.10+ with tkinter (`python3-tk` on Debian/Ubuntu, `tk` on Arch/Fedora) and Pillow with Tk support
+   (`python3-pil.imagetk` on Debian/Ubuntu, or `python3 -m pip install pillow`).
 2. Run `sh daeva_radar.sh` (or `python3 daeva_radar.py`) as your normal user.
 3. A small capture helper (`daeva_radar.py --capture-helper`) then asks for your password through `pkexec` (or `sudo` in a terminal), because a raw socket needs root. Only the helper runs as root. The window, settings and sound stay with your user, and the helper exits when the window closes. Running the whole program with `sudo` also works, but then sound may not reach your desktop.
 4. Sound uses the first player found:
@@ -135,20 +151,25 @@ Each feature has an **On/Off switch** at the right of its tab bar. A feature tha
   - The game announces a feather with a type id but no name (Verteron's, 1200865, is built in). On other maps, the first object that shows up on a feather spot teaches its type, saved for good (Settings lists them, with **Forget learned ids**). Live feathers show solid and beep.
   - **Collected:** picking a feather up marks its spot collected (saved per map), and it disappears from the radar even though the game keeps showing it to other players. **✓ Mark nearest collected** / **Undo** on the Radar tab do it by hand for the nearest spot within 10 m, for feathers taken before this existed. **Collected spots too** in Settings shows them dimmed; **Reset collected on this map** starts over.
   - **Overlay:** its own minimap overlay (bronze frame).
-- **Monsters**
-  - **Radar:** watched monsters as coloured dots, plus a "Nearby" list of every named monster in range (count, nearest distance, level). Click a name to watch or unwatch it. **Watched / All** switches between only watched monsters and every monster.
-  - **Overlay:** its own minimap overlay (red frame), separate from the cube one, with its own position and scale.
-  - **Settings:** search all 7,545 monster names, build a watch list (several at once, each with its own colour), names on the overlay (off by default: clutter), include unnamed NPCs, beep when a watched monster appears, and **your position on top** (on by default: your white dot is drawn above every monster dot, on the radar and at the overlay's centre).
+- **Monsters** (and pets)
+  - **Radar:** watched monsters as coloured dots, plus a "Nearby" list of every named monster in range (count, nearest distance, level). Click a name to watch or unwatch it. **Watched / All** switches between only watched monsters and every monster. Target pets add the monsters that drop their souls, in the pet's colour: solid when in range (`❀ Ridge Spider x5 30 m → Mutated Cadaver Insectoid`), hollow where they spawn (map data), with the nearest spawn listed.
+  - **Pets:** your pet collection (account-wide), read from the game when you enter the world and updated live by every soul drop: collected, Lv3 and soul totals, a list with each pet's stages (5 / 25 / 75 souls) and souls to Lv3, filters, and which monsters drop the selected pet's souls, where and how often. Double-click a pet to make it a target. **Map ↗** opens the Map window on its Pets side (see below).
+  - **Overlay:** its own minimap overlay (red frame), separate from the cube one, with its own position and scale; target pets' soul monsters and their spawn points too.
+  - **Settings:** search all 7,545 monster names, build a watch list (several at once, each with its own colour), names on the overlay (off by default: clutter), include unnamed NPCs, beep when a watched monster (or a target pet's soul monster) appears, and **your position on top** (on by default: your white dot is drawn above every monster dot, on the radar and at the overlay's centre). Pets: a pop-up on each soul drop (every pet, target pets only, or off) with what's left to Lv3, a beep with it, and the soul monsters' spawn points / live dots on or off.
 
 Every feature's background work keeps running whichever feature or tab is shown: capture, alerts and its overlay. **Ctrl+Shift+O** locks every shown overlay, or unlocks them all if all are locked. The sidebar shows short states like "Monsters: overlay locked", and **Keep on top** at its bottom applies to the whole window. The last feature and tab you used are remembered.
 
 - **Gathering**
-  - **Radar:** live nodes as solid dots, and nodes from the map data that the game hasn't announced yet as hollow circles. A Nearby list shows "● live ○ on the map" counts and the nearest distance per resource. Click a name to watch it, and use **Watched / All** to switch.
+  - **Radar:** live nodes as solid dots, and nodes from the map data that the game hasn't announced yet as hollow circles. A Nearby list shows "● live ○ on the map" counts and the nearest distance per resource. Click a name to watch it, and use **Watched / All** to switch. **Map ↗** opens the Map window on its Resources side.
   - **Overlay:** its own minimap overlay (green frame).
   - **Settings:** search all resources (Diamond/Ruby/Sapphire Gemstone, Orichalcum Ore, Odyle, Aria, Yggdrasil Log...), watch several (each with its own colour), or a whole group at once with the **Ore / Odyle / Gem / Log / Herb / Ingredient** buttons (by item id; click again to unwatch the group), map-only nodes on/off, your position on top, a beep when a watched resource appears, and objects without a known name.
 
   Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). The name is then saved for that type for good. Which map is used comes from the sidebar **Map** picker (see below). Map data exists for Verteron, Altgard and Lower Reshanta so far.
 - **Map** (sidebar, under the features): the map used for the map data, shared by Cubes (spawn points) and Gathering (names, map-only nodes). **Auto** uses the detected map: live gathering nodes decide when there are any, else live cubes (at least two must sit on spawn points). Pick a map by hand when detection is slow or wrong; detection still runs, and the label under the picker warns if it disagrees. A pick made in Gathering's old dropdown carries over.
+- **Map window** (needs Pillow; from Monsters → Pets or Gathering → Radar, one window for both): the world map (Shugo.GG's images) with layers for pets' soul spawns (coloured by genus), hidden cubes and each gathering group (Ore, Gems, Odyle, Herbs, Wood, Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side panel has two sides:
+  - **Pets:** the pets with soul spawns on that map (type filter, "unfinished only", search by pet or monster), their level and souls; click one to see its spawns, double-click to target it. Totals: how many are Lv3 and the souls still to go.
+  - **Resources:** every resource on that map with its node count (Orichalcum Ore, Diamond Gemstone, Aria...); click one to see its nodes, double-click (or ★) to highlight it. Highlighted resources are the ones watched in Gathering, so the Gathering radar and overlay follow too; they're drawn bigger in their watch colour even with their layer off.
+  It reopens at start if it was open when the app closed, and follows **Keep on top**.
 - **View cone** (Windows): mirrors the camera cone from the game's minimap onto the Cubes and Monsters radars (a soft wedge) and overlays (an outline, so the minimap stays visible).
 
 ### How the view cone is read

@@ -116,6 +116,7 @@ class GatherFeature(Feature):
         bar.pack(fill="x", pady=(6, 0))
         button(tk, bar, "−", lambda: self.zoom(1.5), width=3).pack(side="left", padx=(0, 4))
         button(tk, bar, "+", lambda: self.zoom(1 / 1.5), width=3).pack(side="left", padx=(0, 8))
+        button(tk, bar, "Map ↗", lambda: self.app.open_map("Resources")).pack(side="right")
         self.mode_var = tk.StringVar(value=self.cfg["mode"])
         for value, text in (("watched", "Watched"), ("all", "All")):
             tk.Radiobutton(bar, text=text, value=value, variable=self.mode_var, command=self.set_mode, bg=BG, fg=TEXT,

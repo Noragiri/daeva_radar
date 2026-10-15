@@ -15,13 +15,14 @@ import urllib.request
 import zipfile
 from pathlib import PurePosixPath
 
-from .common import ENTRY, NO_WINDOW, ROOT
+from .common import FROZEN, NO_WINDOW, ROOT, launch_command
 
 REPO = "Noragiri/daeva_radar"
 API = "https://api.github.com/repos/%s/releases/latest" % REPO
 PAGE = "https://github.com/%s/releases/latest" % REPO
 VERSION_FILE = ROOT / "VERSION"
 PREFIX = "DaevaRadar"  # the top folder inside release zips
+BUILD_SUFFIX = "-win64.zip"  # the Windows build's zip (DaevaRadar.exe); the other zip is the Python source
 HEADERS = {"User-Agent": "DaevaRadar-updater", "Accept": "application/vnd.github+json"}
 
 
@@ -46,7 +47,8 @@ def latest():
     req = urllib.request.Request(API, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=15) as resp:
         data = json.loads(resp.read().decode("utf-8"))
-    asset = next(a for a in data["assets"] if a["name"].endswith(".zip"))
+    # the build updates from the build's zip, a Python copy from the source zip
+    asset = next(a for a in data["assets"] if a["name"].endswith(".zip") and a["name"].endswith(BUILD_SUFFIX) == FROZEN)
     return dict(version=data["tag_name"].lstrip("v"), url=asset["browser_download_url"], digest=asset.get("digest"),
                 commit=data.get("target_commitish"))
 
@@ -120,5 +122,5 @@ def cleanup():
 def restart():
     """Start a fresh copy with the same arguments (already elevated, so no new prompt); the caller closes."""
     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    subprocess.Popen([sys.executable, str(ENTRY)] + sys.argv[1:], cwd=str(ROOT), creationflags=flags,
+    subprocess.Popen(launch_command() + sys.argv[1:], cwd=str(ROOT), creationflags=flags,
                      close_fds=True)

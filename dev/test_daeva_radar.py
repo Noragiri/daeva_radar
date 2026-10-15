@@ -190,5 +190,8 @@ assert progress(2, 12) == 42 and progress(3, 0) == SOUL_CAP == 105
 fossa = pd.spawn_points('verteron', [1004])
 assert fossa and all(pid == 1004 for pid, *_ in fossa), len(fossa)
 assert pd.which_map({p[1] for p in fossa + pd.spawn_points('verteron', [1015])}) == 'verteron'
+tiles = Path(__file__).resolve().parent.parent / 'data' / 'map_tiles'
+for key in ('verteron', 'altgard', 'reshanta-lower'):  # zoom 4 = the 4096 px map: 16 x 16 tiles of 256 px
+    assert (tiles / key / '0' / '0_0.webp').exists() and len(list((tiles / key / '4').glob('*.webp'))) == 256, key
 print('pets: sync + live drops + level up parsed;', len(pd.collection), 'pets, spawn maps', pd.keys())
 print('ALL OK')

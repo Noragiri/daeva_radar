@@ -1,4 +1,5 @@
-"""Monsters near you, named from data/monsters.json, with a watch list."""
+"""Monsters near you, named from data/monsters.json, with a watch list; and your pets (features/pets.py): their
+progress to Lv3, soul-drop pop-ups, and the monsters that drop the souls of your target pets."""
 import math
 import time
 
@@ -7,16 +8,20 @@ from ..game import monster_info, monster_names
 from ..sound import play
 from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, WATCH_COLORS, button, checkbox, draw_cone, draw_me, draw_rings, draw_text, heading, label_side, radar_point, section
 from ..feature import Feature
+from .pets import Pets
 
 
 MONSTER_DEFAULT = dict(watch=[], mode="watched", names=False, unnamed=False, alert=True,  # names: clutter
                        me_on_top=True)
 class MonstersFeature(Feature):
     """Monsters near you (from the game's 'monster in range' messages), named from data/monsters.json.
-    A watch list picks the ones to show: on the radar, on this feature's own overlay, and with an alert."""
-    title, icon, TABS = "Monsters", "☠", ("Radar", "Overlay", "Settings")
+    A watch list picks the ones to show: on the radar, on this feature's own overlay, and with an alert.
+    Target pets (Pets tab) add the monsters that drop their souls: solid in range, hollow where they spawn."""
+    title, icon, TABS = "Monsters", "☠", ("Radar", "Pets", "Overlay", "Settings")
     overlay_key, overlay_color = "monster_overlay", "#ff5c5c"
-    overlay_text = "A see-through layer with the monsters you watch, to place over the game's minimap."
+    overlay_text = ("A see-through layer with the monsters you watch and your target pets' soul monsters, to place "
+                    "over the game's minimap.")
+    off_text = "Nothing is tracked, alerted or drawn while it's off, and pet souls aren't counted."
     tracks = "monsters"
 
     def __init__(self, app, parent):
@@ -24,6 +29,7 @@ class MonstersFeature(Feature):
         self.range = 150
         self.alerted = set()
         self.last_alert = 0
+        self.pets = Pets(app)
         super().__init__(app, parent)
 
     def save(self):
@@ -31,6 +37,12 @@ class MonstersFeature(Feature):
 
     def watched(self, name):
         return name in self.cfg["watch"]
+
+    def style(self, name, pet=None):
+        """-> (colour, dot radius): a target pet's soul monster in its pet's colour, watched ones bigger."""
+        if pet is not None:
+            return self.pets.target_color(pet), 6
+        return self.color(name), (6 if self.watched(name) else 4)
 
     def color(self, name):
         if name in self.cfg["watch"]:
@@ -101,10 +113,14 @@ class MonstersFeature(Feature):
         position = snap["position"]
         if not position:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
+        soul = {m["id"]: pid for pid, m in self.pets.live(snap)} if position else {}
+        spawn_rows = self.pets.draw_spots(c, snap, mid, scale, self.range) if position else []
         shown = self.visible(snap) if position else []
-        for name, level, rank, m in sorted(shown, key=lambda s: self.watched(s[0])):  # watched on top
+        ids = {m["id"] for *_, m in shown}
+        shown += [monster_info(m["type"]) + (m,) for m in snap["monsters"] if m["id"] in soul and m["id"] not in ids]
+        for name, level, rank, m in sorted(shown, key=lambda s: (s[3]["id"] in soul, self.watched(s[0]))):  # on top
             x, y, beyond = radar_point(position, m["xyz"], mid, scale, self.range)
-            color, r = self.color(name), (6 if self.watched(name) else 4)
+            color, r = self.style(name, soul.get(m["id"]))
             if beyond:
                 c.create_oval(x - r, y - r, x + r, y + r, outline=color, width=2)
             else:
@@ -112,7 +128,7 @@ class MonstersFeature(Feature):
                 c.create_oval(x - r, y - r, x + r, y + r, fill=color, outline="")
         if position and self.cfg["me_on_top"]:  # you, above every monster dot
             draw_me(c, mid, mid, 6)
-        if position and not shown:
+        if position and not shown and not spawn_rows:
             draw_text(c, mid, mid + 30, "no watched monsters nearby" if self.cfg["mode"] == "watched"
                       else "no monsters nearby", "#b8c0cc", size=10, bold=False)
         # nearby list: every named monster type in range, watched first, then nearest
@@ -122,16 +138,24 @@ class MonstersFeature(Feature):
             if rank == "?" and not self.cfg["unnamed"]:
                 continue
             d = math.dist(m["xyz"][:2], position[:2]) / 100
-            g = groups.setdefault(name, [0, d, level, rank])
+            g = groups.setdefault(name, [0, d, level, rank, soul.get(m["id"])])
             g[0] += 1
             g[1] = min(g[1], d)
-        order = sorted(groups.items(), key=lambda kv: (not self.watched(kv[0]), kv[1][1]))
+        order = sorted(groups.items(), key=lambda kv: (kv[1][4] is None, not self.watched(kv[0]), kv[1][1]))
+        lines = []
+        for name, (count, d, level, rank, pid) in order:
+            if pid is not None:  # drops a target pet's soul
+                lines.append(("❀ %-24.24s x%-2d %4d m  → %s" % (name, count, d, self.pets.name(pid)),
+                              self.pets.target_color(pid), name))
+            else:
+                lines.append(("%s %-24.24s x%-2d %4d m  L%-2s %s" % ("★" if self.watched(name) else "☆", name, count, d,
+                                                                     level or "?", rank[:1]),
+                              self.color(name) if self.watched(name) else MUTED, name))
+        lines += [(text, color, None) for text, color in spawn_rows]  # soul monsters' nearest spawn points
         for i, row in enumerate(self.rows):
-            if i < len(order):
-                name, (count, d, level, rank) = order[i]
-                mark = "★" if self.watched(name) else "☆"
-                row.config(text="%s %-24.24s x%-2d %4d m  L%-2s %s" % (mark, name, count, d, level or "?", rank[:1]),
-                           fg=self.color(name) if self.watched(name) else MUTED)
+            if i < len(lines):
+                text, color, name = lines[i]
+                row.config(text=text, fg=color)
                 self.row_names[i] = name
             else:
                 row.config(text="No monsters in range." if i == 0 and position else "", fg=MUTED)
@@ -144,7 +168,9 @@ class MonstersFeature(Feature):
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         w = overlay.cfg["w"]
-        shown = self.visible(snap)
+        self.pets.paint_spots(overlay, c, snap)
+        soul = {m["id"] for _, m in self.pets.live(snap)}
+        shown = [s for s in self.visible(snap) if s[3]["id"] not in soul]  # soul monsters: drawn by the pets below
         labels = self.cfg["names"] and len(shown) <= 12
         for name, level, rank, m in sorted(shown, key=lambda s: self.watched(s[0])):
             x, y, edge = overlay.to_screen(position, m["xyz"])
@@ -158,6 +184,7 @@ class MonstersFeature(Feature):
             if labels:
                 lx, anchor = label_side(x, w / 2, 6 * len(name), w, gap=9)
                 draw_text(c, lx, y, name, color, outline="#000000", anchor=anchor, size=8)
+        self.pets.paint_live(overlay, c, snap)
         if self.cfg["me_on_top"]:  # you, above every monster dot (the overlay's centre is your position)
             draw_me(c, w / 2, overlay.cfg["h"] / 2, 5)
 
@@ -200,6 +227,7 @@ class MonstersFeature(Feature):
         checkbox(tk, f, "Include NPCs without a known name", self.unnamed_var, self.set_flags).pack(fill="x")
         checkbox(tk, f, "Beep when a watched monster appears", self.alert_var, self.set_flags).pack(fill="x")
         checkbox(tk, f, "Your position on top (radar and overlay)", self.me_var, self.set_flags).pack(fill="x")
+        self.pets.build_settings(f)
         self.refresh_search()
         self.refresh_watch()
 
@@ -247,7 +275,16 @@ class MonstersFeature(Feature):
         self.save()
 
     # ---- loop hooks
+    def build_pets(self, f):
+        self.pets.build(f)
+
     def background(self, snap):
+        self.pets.background(snap)
+        souls = self.pets.new_live(snap)
+        if souls and self.cfg["alert"] and time.time() - self.last_alert > 3:
+            self.last_alert = time.time()
+            self.app.engine.say("Soul monster: " + ", ".join(souls))
+            play("system beep")
         if self.cfg["alert"] and self.cfg["watch"]:
             present = {m["id"] for m in snap["monsters"] if monster_info(m["type"])[0] in self.cfg["watch"]}
             new = present - self.alerted
@@ -265,7 +302,9 @@ class MonstersFeature(Feature):
         super().update(snap, tab)
 
     def status(self, snap):
+        souls = len(self.pets.live(snap))
         if not self.cfg["watch"]:
-            return "%d monsters" % len(snap["monsters"])
-        n = sum(1 for m in snap["monsters"] if monster_info(m["type"])[0] in self.cfg["watch"])
-        return "%d watched" % n
+            text = "%d monsters" % len(snap["monsters"])
+        else:
+            text = "%d watched" % sum(1 for m in snap["monsters"] if monster_info(m["type"])[0] in self.cfg["watch"])
+        return text + (" · %d soul monster%s" % (souls, "" if souls == 1 else "s") if souls else "") + " · " + self.pets.status()

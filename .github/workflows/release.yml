@@ -1,4 +1,5 @@
-# Every push to main: run the offline tests, then publish a release with the app as a zip.
+# Every push to main: run the offline tests, build the Windows exe, then publish a release with two zips:
+# the Python source (Windows + Linux) and DaevaRadar-<version>-win64.zip (DaevaRadar.exe, no Python needed).
 name: Release
 
 on:
@@ -21,8 +22,41 @@ jobs:
       - name: Offline decoder / tracker tests
         run: python dev/test_daeva_radar.py
 
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - id: v
+        run: |
+          version="$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: [test, version]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build DaevaRadar.exe
+        shell: bash
+        run: |
+          python -m pip install --quiet pyinstaller pillow
+          echo "${{ needs.version.outputs.version }}" > VERSION  # the exe's updater compares it
+          python -m PyInstaller dev/daeva_radar.spec --distpath build/dist --workpath build/work --noconfirm
+          # python's zip, so entries use '/' (the updater reads DaevaRadar/<path>)
+          python -c "import shutil; shutil.make_archive('DaevaRadar-${{ needs.version.outputs.version }}-win64', 'zip', 'build/dist', 'DaevaRadar')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win64
+          path: DaevaRadar-${{ needs.version.outputs.version }}-win64.zip
+
   release:
-    needs: test
+    needs: [test, version, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write  # create the tag and the release
@@ -31,20 +65,17 @@ jobs:
         with:
           fetch-depth: 0  # all tags and history, for the notes
 
-      - name: Version
-        id: version
-        run: |
-          version="$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          name: win64
 
       - name: Package
         run: |
           # git archive honours export-ignore in .gitattributes (dev/, .github/, the machine-specific .lnk).
           # VERSION tells the installed copy which release it is (the in-app updater compares it).
-          echo "${{ steps.version.outputs.version }}" > VERSION
-          git archive --format=zip --prefix=DaevaRadar/ --add-file=VERSION -o "DaevaRadar-${{ steps.version.outputs.version }}.zip" HEAD
-          unzip -l "DaevaRadar-${{ steps.version.outputs.version }}.zip" | tail -n 1
+          echo "${{ needs.version.outputs.version }}" > VERSION
+          git archive --format=zip --prefix=DaevaRadar/ --add-file=VERSION -o "DaevaRadar-${{ needs.version.outputs.version }}.zip" HEAD
+          unzip -l "DaevaRadar-${{ needs.version.outputs.version }}.zip" | tail -n 1
 
       - name: Release notes
         run: |
@@ -52,7 +83,9 @@ jobs:
           {
             echo "Build of \`${GITHUB_SHA::7}\` on \`${GITHUB_REF_NAME}\`."
             echo
-            echo "Unzip, then start \`Daeva Radar.bat\` (Windows, run \`python daeva_radar.py --shortcut\` once for a shortcut) or \`daeva_radar.sh\` (Linux). See README.md."
+            echo "**Windows, no Python needed:** download \`DaevaRadar-${{ needs.version.outputs.version }}-win64.zip\`, unzip, start \`DaevaRadar.exe\`."
+            echo
+            echo "**From source:** the other zip; start \`Daeva Radar.bat\` (Windows, run \`python daeva_radar.py --shortcut\` once for a shortcut) or \`daeva_radar.sh\` (Linux). See README.md."
             echo
             if [ -n "$previous" ]; then
               echo "### Changes since $previous"
@@ -68,8 +101,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" \
-            "DaevaRadar-${{ steps.version.outputs.version }}.zip" \
+          gh release create "${{ needs.version.outputs.tag }}" \
+            "DaevaRadar-${{ needs.version.outputs.version }}.zip" \
             --target "$GITHUB_SHA" \
-            --title "Daeva Radar ${{ steps.version.outputs.version }}" \
+            --title "Daeva Radar ${{ needs.version.outputs.version }}" \
             --notes-file notes.md
+          # uploaded after the source zip, so it's listed second: older updaters take the first .zip
+          gh release upload "${{ needs.version.outputs.tag }}" "DaevaRadar-${{ needs.version.outputs.version }}-win64.zip"

@@ -8,7 +8,7 @@ import sys
 import threading
 import time
 
-from .common import ENTRY, LINUX, NO_WINDOW, ROOT, WINDOWS
+from .common import LINUX, NO_WINDOW, ROOT, WINDOWS, launch_command
 from .protocol import StreamReader
 
 
@@ -223,7 +223,7 @@ class HelperCapture:
             launcher = ["sudo"]
         else:
             raise FatalCapture("Packet capture needs root: run with sudo, or install pkexec.")
-        self.proc = subprocess.Popen(launcher + [sys.executable, str(ENTRY), "--capture-helper"],
+        self.proc = subprocess.Popen(launcher + launch_command() + ["--capture-helper"],
                                      stdout=subprocess.PIPE, bufsize=0)
         self.out = self.proc.stdout
 

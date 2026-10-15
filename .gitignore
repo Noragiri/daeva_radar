@@ -6,3 +6,4 @@ VERSION
 *.new
 
 dev/.cache/
+build/

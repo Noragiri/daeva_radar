@@ -14,14 +14,13 @@ from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
 from .features.alerts import AlertsFeature
-from .features.pets import PetsFeature
 from .features.viewcone import ViewFeature
 
 
 class App:
     """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
     whatever is shown; only the shown feature/tab is redrawn."""
-    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, PetsFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk
@@ -31,6 +30,7 @@ class App:
         self.fusion = PositionFusion()
         self.mapdata = MapData()  # shared by the features that use the map data
         self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
+        self.world_map = None  # the Map window (worldmap.py), shared by Monsters (pets) and Gathering
         self.root = root = tk.Tk()
         root.title("Daeva Radar")
         self.icon = set_icon(root)
@@ -108,6 +108,8 @@ class App:
         self.cone_serial = -1
         if args.debug or settings.get("debug_shown"):
             self.toggle_debug()
+        if settings.get("world_map", settings.get("pet_map", {})).get("open"):  # it was open when the app closed
+            root.after(300, self.open_map)
         self.tick()
         self.cone_tick()
         self.show_update()
@@ -250,6 +252,29 @@ class App:
                                  parent=self.root)
         self.close()
 
+    def open_map(self, mode=None):
+        """The Map window (world map images; needs Pillow): mode "Pets" or "Resources" for its side panel."""
+        from tkinter import messagebox
+        if self.world_map:
+            if mode:
+                self.world_map.set_mode(mode)
+            self.world_map.win.deiconify()
+            self.world_map.win.lift()
+            return
+        try:
+            from .worldmap import WorldMap
+            self.world_map = WorldMap(self, mode)
+            self.engine.say("Map window opened")
+        except ImportError:
+            import traceback
+            self.engine.say("Map: Pillow missing: " + traceback.format_exc())
+            messagebox.showerror("Daeva Radar", "The Map needs Pillow for the map images.\n\n"
+                                 "Install it once with:  python -m pip install pillow", parent=self.root)
+        except Exception as e:  # never silently: the build has no console
+            import traceback
+            self.engine.say("Map failed: " + traceback.format_exc())
+            messagebox.showerror("Daeva Radar", "Couldn't open the Map: %s" % e, parent=self.root)
+
     def show(self, title):
         if self.current:
             self.features[self.current].frame.pack_forget()
@@ -358,6 +383,8 @@ class App:
                 feature.background(snap)
         current = self.features[self.current]
         current.update(snap, current.tab)
+        if self.world_map:
+            self.world_map.update()
         if self.debug:
             self.debug.update(snap)
         if snap["own_name"]:
@@ -372,6 +399,8 @@ class App:
         self.view.running = False
         for feature in self.features.values():
             feature.close()
+        if self.world_map:
+            self.world_map.close(quitting=True)
         if self.debug:
             self.debug.close()
         self.engine.stop = True
