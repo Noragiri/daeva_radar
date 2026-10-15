@@ -57,7 +57,7 @@ class PositionWindow:
         now = time.time()
         f = self.fields
         if snap["own_name"]:
-            f["who"].config(text="%s (#%s)" % (snap["own_name"], snap["own"]))
+            f["who"].config(text="%s (ID %s) · entity #%s" % (snap["own_name"], snap["own_char_no"], snap["own"]))
         else:
             f["who"].config(text=("#%d" % snap["own"]) if snap["own"] else "not identified yet")
         pos = self.position = snap["position"]

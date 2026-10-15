@@ -13,7 +13,7 @@ class Feature:
       update(snap, tab): every tick, only while this feature and that tab are shown"""
     title, icon, TABS = "", "", ()
     overlay_key, overlay_color, overlay_text = None, ACCENT, ""
-    tracks = None  # what the tracker parses for this feature ("cubes", "monsters"); skipped while off
+    tracks = None  # what the tracker parses for this feature ("cubes", "monsters"); skipped while every user is off
     off_text = "Nothing is tracked, alerted or drawn while it's off."
 
     def __init__(self, app, parent):
@@ -78,8 +78,10 @@ class Feature:
         else:
             self.banner.pack(fill="x", pady=(0, 8), before=self.body)
         if self.tracks:
-            setattr(self.app.tracker, "track_" + self.tracks, self.enabled)
-            if not self.enabled:
+            users = [f for f in getattr(self.app, "features", {}).values() if f.tracks == self.tracks and f is not self]
+            on = self.enabled or any(f.enabled for f in users)
+            setattr(self.app.tracker, "track_" + self.tracks, on)
+            if not on:
                 with self.app.tracker.lock:
                     getattr(self.app.tracker, self.tracks).clear()
         self.app.feature_state_changed(self)

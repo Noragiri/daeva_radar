@@ -76,7 +76,10 @@ class GatherFeature(Feature):
     def shown(self, snap):
         """-> live [(name, node)] and map-only [(name, xyz)] to draw, per the watch list and mode."""
         live = []
+        feathers = self.app.features.get("Feathers")
         for n in snap["nodes"]:
+            if feathers and n["type"] in feathers.types:
+                continue  # the Feathers page shows those
             name = self.name_of(n)
             if name is None:
                 if not self.cfg["unnamed"]:

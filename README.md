@@ -1,6 +1,6 @@
 # Daeva Radar
 
-A standalone radar for AION2: Hidden Cubes (Verteron, Altgard; more by type id), monsters with a watch list, gathering nodes, alerts, your camera cone, and minimap overlays for each. It started as the cube feature of Grip Strength Companion on its own (formerly **Cube Finder**): no damage meter and no uploads.
+A standalone radar for AION2: Hidden Cubes (Verteron, Altgard; more by type id), Empyrean Traces (feathers) with what you've collected, monsters with a watch list, gathering nodes, alerts, your camera cone, and minimap overlays for each. It started as the cube feature of Grip Strength Companion on its own (formerly **Cube Finder**): no damage meter and no uploads.
 
 ## Folder layout
 
@@ -23,7 +23,7 @@ daevaradar/          the program
   app.py               the main window
   update.py            update check and in-place install from GitHub releases
   main.py              startup, demo, console mode, shortcut
-  features/            cubes.py, monsters.py, gathering.py, alerts.py, viewcone.py
+  features/            cubes.py, feathers.py, monsters.py, gathering.py, alerts.py, viewcone.py
 assets/              icons
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
@@ -125,6 +125,11 @@ Each feature has an **On/Off switch** at the right of its tab bar. A feature tha
   - **Radar:** radar and cube list, plus hidden-cube spawn points from the map data as hollow circles.
   - **Overlay:** the cube minimap overlay.
   - **Settings:** alert sound, volume, spawn points on/off, and the cube types being tracked.
+- **Feathers** (Empyrean Traces)
+  - **Radar:** every feather spot from the map data (Verteron 559, Altgard 559, Lower Reshanta 200, Middle Reshanta 100; credit Shugo.GG) as bronze hollow circles, live feathers as solid bronze pins whose shape gives the height like the cube pins (▲ 3 m+ above, ■ level, ▼ 3 m+ below) with distance and height, and a list of the nearest ones. The last row counts what you've collected on this map.
+  - The game announces a feather with a type id but no name (Verteron's, 1200865, is built in). On other maps, the first object that shows up on a feather spot teaches its type, saved for good (Settings lists them, with **Forget learned ids**). Live feathers show solid and beep.
+  - **Collected:** picking a feather up marks its spot collected (saved per map), and it disappears from the radar even though the game keeps showing it to other players. **✓ Mark nearest collected** / **Undo** on the Radar tab do it by hand for the nearest spot within 10 m, for feathers taken before this existed. **Collected spots too** in Settings shows them dimmed; **Reset collected on this map** starts over.
+  - **Overlay:** its own minimap overlay (bronze frame).
 - **Monsters**
   - **Radar:** watched monsters as coloured dots, plus a "Nearby" list of every named monster in range (count, nearest distance, level). Click a name to watch or unwatch it. **Watched / All** switches between only watched monsters and every monster.
   - **Overlay:** its own minimap overlay (red frame), separate from the cube one, with its own position and scale.

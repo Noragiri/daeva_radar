@@ -28,14 +28,15 @@ def project(point):
     """World units (cm) -> Altgard map pixels (1 px = 1 m)."""
     return [point[0] / 100 + 4096, point[1] / 100 + 4096]
 def object_intro(data):
-    """'46' object spawn -> (entity, template, point), any template; None if not that layout."""
+    """'46' object spawn -> (entity, template, point), any template; None if not that layout.
+    entity (LEB128) | flags 04 00 (cubes, gathering nodes) or 0c 00 (feathers) | template u32 | xyz f32."""
     if data[:2] != b"46":
         return None
     try:
         entity, p = varint(data, 2)
     except ValueError:
         return None
-    if len(data) < p + 18 or data[p:p + 2] != b"\x04\x00":
+    if len(data) < p + 18 or data[p:p + 2] not in (b"\x04\x00", b"\x0c\x00"):  # 0c: Empyrean Traces (2026-10-15)
         return None
     point = xyz(data, p + 6)
     if point is None:
@@ -88,7 +89,7 @@ class Recorder:
 # (Orichalcum), 61065 logs, 61066 gemstones, 61067 herbs (Aria, Azpha...), 61068 cooking ingredients.
 GATHER_GROUPS = (("Ore", (61062,)), ("Odyle", (61061,)), ("Gem", (61066,)), ("Log", (61065,)), ("Herb", (61067,)),
                  ("Ingredient", (61068,)))
-MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta"}
+MAP_NAMES = {"verteron": "Verteron", "altgard": "Altgard", "reshanta-lower": "Lower Reshanta", "reshanta-middle": "Middle Reshanta"}
 def map_name(key):
     return MAP_NAMES.get(key, key.replace("-", " ").title())
 class MapData:
@@ -103,6 +104,7 @@ class MapData:
         self.maps = {}  # key -> {"grid": {(cx, cy): [(x, y, name, item)]}, "points": {name: [(x, y)]}}
         self.items = {}  # resource name -> item id (its group is the id's first five digits, see GATHER_GROUPS)
         self.cubes = {}  # key -> [(x, y)] hidden-cube spawn points
+        self.traces = {}  # key -> [(x, y)] Empyrean Trace (feather) spots
         folder = folder or ROOT / "data" / "maps"
         for path in sorted(folder.glob("*.json")) if folder.exists() else []:
             try:
@@ -113,6 +115,8 @@ class MapData:
             for cat_id, cat in data.get("categories", {}).items():
                 if cat_id == "HiddenCube":
                     self.cubes[data.get("map", path.stem)] = [tuple(p) for p in cat["points"]]
+                if cat_id == "EmpyreanTrace":
+                    self.traces[data.get("map", path.stem)] = [tuple(p) for p in cat["points"]]
                 if not cat.get("item"):
                     continue  # gathering resources only
                 for x, y in cat["points"]:
@@ -156,8 +160,8 @@ class MapData:
         return best[1:] if best else None
 
     def keys(self):
-        """Every map with data: gathering nodes or cube spawn points."""
-        return sorted(set(self.maps) | set(self.cubes), key=map_name)
+        """Every map with data: gathering nodes, cube spawn points or feather spots."""
+        return sorted(set(self.maps) | set(self.cubes) | set(self.traces), key=map_name)
 
     def which_map(self, points):
         """The map whose resource markers line up with these live node positions, or None if unclear."""
@@ -198,10 +202,23 @@ class MapData:
 
     def cubes_nearby(self, key, centre, radius_m):
         """Hidden-cube spawn points (game units, at your height) within radius of centre on map key."""
+        return [self.to_world(x, y, centre[2]) for x, y in self.spots_near(self.cubes.get(key, ()), centre, radius_m)]
+
+    def traces_nearby(self, key, centre, radius_m):
+        """Empyrean Trace spots within radius of centre on map key -> [((x, y) map px, world point)]."""
+        return [((x, y), self.to_world(x, y, centre[2]))
+                for x, y in self.spots_near(self.traces.get(key, ()), centre, radius_m)]
+
+    def trace_at(self, key, point, radius_px=3):
+        """The Empyrean Trace spot (map px) at a game position on map key, or None."""
+        px, py = self.to_px(point)
+        best = min(self.traces.get(key, ()), key=lambda s: math.hypot(s[0] - px, s[1] - py), default=None)
+        return best if best and math.hypot(best[0] - px, best[1] - py) <= radius_px else None
+
+    def spots_near(self, spots, centre, radius_m):
         cx, cy = self.to_px(centre)
         r = radius_m / 2  # metres -> px
-        return [self.to_world(x, y, centre[2]) for x, y in self.cubes.get(key, ())
-                if abs(x - cx) <= r and abs(y - cy) <= r and math.hypot(x - cx, y - cy) <= r]
+        return [(x, y) for x, y in spots if abs(x - cx) <= r and abs(y - cy) <= r and math.hypot(x - cx, y - cy) <= r]
 _MONSTERS = None
 def monster_info(type_id):
     """Monster type id -> (name, level, rank) from data/monsters.json; unknown types get a placeholder."""
@@ -280,11 +297,14 @@ def is_pet_intro(data):
 NODE_RANGE_M = 200  # objects further than this are dropped (they leave range silently too)
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
-    """'33 36' your character at login: id (LEB128) | 4 bytes | 1 byte | name (length byte + UTF-8)."""
+    """'33 36' your character at login: id (LEB128) | character number (u32) | 1 byte | name (length byte + UTF-8).
+    -> (entity id, name, character number). The entity id changes every login; the character number stays with
+    the character (it matched the charNo other tools keep for Noragiri and Nowagiwi, 2026-10-15). Bit 7 of its
+    first byte is a flag that differs between logins (de / 5e seen), not part of the number."""
     try:
         entity, p = varint(data, 2)
         n = data[p + 5]
-        return entity, bytes(data[p + 6:p + 6 + n]).decode("utf-8")
+        return entity, bytes(data[p + 6:p + 6 + n]).decode("utf-8"), int.from_bytes(data[p:p + 4], "little") & ~0x80
     except (ValueError, IndexError, UnicodeDecodeError):
         return None
 class Tracker:
@@ -300,11 +320,14 @@ class Tracker:
         self.monsters = {}  # entity -> dict(type, xyz, seen)
         self.track_cubes = self.track_monsters = True  # a feature switched off: its messages aren't parsed
         self.nodes = {}  # entity -> dict(type, xyz, seen): '46' objects that aren't cubes (gathering nodes...)
+        self.used = []  # the last objects used up ('56' 04 03 00): dict(type, xyz, n), n counting up
+        self.used_count = 0
         self.track_nodes = True
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
         # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
         # players land on the same teleport spots, and ids may be reused between sessions.)
         self.own_name = None  # display only, from the login message
+        self.own_char_no = None  # your character's permanent number, from the login message
         self.client_messages = 0  # messages from your client to the server
         # Your summoned pet: the server sends its movement while yours goes unsent, and it follows you (about
         # 1-1.5 s behind). Recognised as the 'A6' spawn on top of you right after one of your skills ('02 38');
@@ -390,7 +413,7 @@ class Tracker:
             return
         if self.own is not None:
             self.clear()
-            self.own_name = None
+            self.own_name = self.own_char_no = None
         self.own = own
 
     def _feed(self, batch, when):
@@ -404,7 +427,7 @@ class Tracker:
                     continue
                 login = login_name(data)
                 if login:
-                    self.own_name = login[1]
+                    self.own_name, self.own_char_no = login[1], login[2]
             elif kind == b"J6":
                 try:
                     self.set_own(varint(data, 2)[0])
@@ -472,6 +495,8 @@ class Tracker:
                 except ValueError:
                     pass
                 continue
+            if self.track_nodes and kind in (b":6", b":\xe3"):
+                self.note_pickup(data, kind, when)
             if self.track_nodes and kind in (b"46", b"56", b"\x05\x8d"):
                 if kind == b"46":
                     obj = object_intro(data)
@@ -485,7 +510,9 @@ class Tracker:
                     except ValueError:
                         entity = None
                     if entity in self.nodes and (kind == b"\x05\x8d" or bytes(data[p:]) in (b"\x01\x01\x00", b"\x04\x03\x00")):
-                        del self.nodes[entity]
+                        gone = self.nodes.pop(entity)
+                        if bytes(data[p:]) == b"\x04\x03\x00":
+                            self.add_used(gone["type"], gone["xyz"])
             if not self.track_cubes:
                 continue
             intro = cube_intro(data)
@@ -515,6 +542,31 @@ class Tracker:
             elif item["status"] != "opened" and (kind == b"\x05\x8d" or data[p:] == b"\x01\x01\x00"):
                 item.update(status="last seen", seen=when)
 
+    def add_used(self, type_id, point):
+        self.used_count += 1
+        self.used = self.used[-49:] + [dict(type=type_id, xyz=list(point), n=self.used_count)]
+
+    def note_pickup(self, data, kind, when):
+        """You picked an object up (an Empyrean Trace, recorded 2026-10-15): it stays there for other players,
+        so there's no '56' used-up. Two messages say so; either is enough:
+          ':6'   object (LEB128) | who (LEB128) | ...: who finished interacting with it (you: picked up)
+          ':\xe3' object (u32) | xyz f32: sent to you only, right after your pickup (no type: from the spawn)"""
+        if kind == b":6":
+            try:
+                entity, p = varint(data, 2)
+                who = varint(data, p)[0]
+            except ValueError:
+                return
+            node = self.nodes.get(entity)
+            if node and who == self.own:
+                self.add_used(node["type"], node["xyz"])
+        elif len(data) >= 18:
+            entity = int.from_bytes(data[2:6], "little")
+            point = xyz(data, 6)
+            node = self.nodes.get(entity)
+            if point is not None:
+                self.add_used(node["type"] if node else None, point)
+
     def snapshot(self, now=None):
         now = time.time() if now is None else now
         with self.lock:
@@ -543,11 +595,12 @@ class Tracker:
                         del self.nodes[entity]
                         continue
                     nodes.append(dict(id=entity, type=item["type"], xyz=list(item["xyz"])))
-            return dict(own=self.own, own_name=self.own_name, position=list(self.position) if self.position else None,
+            return dict(own=self.own, own_name=self.own_name, own_char_no=self.own_char_no, position=list(self.position) if self.position else None,
                         nodes=nodes,
                         position_age=max(0, now - self.position_time) if self.position else None,
                         position_source=self.position_source, position_updates=self.position_updates,
                         position_time=self.position_time if self.position else None,
                         pet=dict(self.pet, xyz=list(self.pet["xyz"])) if self.pet else None,
                         cubes=cubes, monsters=monsters, kills=self.kills, messages=self.messages,
-                        detections=self.detections, last_detection=self.last_detection)
+                        detections=self.detections, last_detection=self.last_detection,
+                        used=list(self.used), used_count=self.used_count)

@@ -119,6 +119,13 @@ assert t.snapshot(now=2.0)['pet']['xyz'] == [1500.0, 2500.0, 300.0] and t.pet['v
 t.feed([b'B6' + venc(PET) + b'\x00\x07'], 3.0); assert t.pet is None
 print('pet: recognised, moved, dismissed')
 
+# 9) character ID from the login message (bit 7 of its first byte is a per-login flag)
+for first in (0x5e, 0xde):
+    login = b'36' + venc(5898) + bytes([first, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)
+    assert cf.login_name(login) == (5898, 'Noragiri', 684294494), cf.login_name(login)
+t = cf.Tracker(); t.feed([login], 1.0); assert t.snapshot(now=1)['own_char_no'] == 684294494
+print('character ID: 684294494 from both flag variants')
+
 # 8) gathering groups from the item ids in the map data
 md = cf.MapData()
 assert md.group_of('Orichalcum Ore') == 'Ore' and md.group_of('Odyle') == 'Odyle' and md.group_of('Ruby Gemstone') == 'Gem'
@@ -129,5 +136,32 @@ print('groups:', {g: sum(1 for n in md.names() if md.group_of(n) == g) for g, _ 
 for key, spawns in md.cubes.items():
     at, at2 = md.to_world(*spawns[0], 500.0), md.to_world(*spawns[1], 500.0)
     assert md.cube_map([at]) is None and md.cube_map([at, at2]) == key and at in md.cubes_nearby(key, at, 10), key
+# 10) feathers: a '46' object on an Empyrean Trace spot, then picked up -> a used-up event with its type
+spot = md.traces['verteron'][0]
+fx, fy, _ = md.to_world(*spot, 0.0)
+here = b'*8' + venc(OWN) + b'\x00' * 28 + struct.pack('<fff', fx + 500.0, fy, 0.0)
+feather = b'46' + venc(555) + b'\x04\x00' + struct.pack('<I', 424242) + struct.pack('<fff', fx + 30.0, fy, 80.0)
+t = cf.Tracker(); t.feed([me_id, here, feather], 1.0)
+n = t.snapshot(now=1.0)['nodes']; assert n and n[0]['type'] == 424242 and md.trace_at('verteron', n[0]['xyz'], 2) == spot
+t.feed([b'56' + venc(555) + b'\x04\x03\x00'], 2.0)
+s = t.snapshot(now=2.0); assert s['nodes'] == [] and s['used_count'] == 1 and s['used'][0]['type'] == 424242
+t.feed([feather], 3.0); t.feed([b'56' + venc(555) + b'\x01\x01\x00'], 3.5)  # only left range: not used up
+assert t.snapshot(now=4.0)['used_count'] == 1
+print('feathers: spot matched, pick-up reported;', {k: len(v) for k, v in md.traces.items()})
+# 11) a real feather pickup (recorded 2026-10-15, Verteron): '46' with flags 0c 00, then ':6' feather <- you,
+# ':\xe3' (to you only), then ':6' feather <- another player (not yours)
+ME = 10646
+real = [bytes.fromhex(h) for h in (
+    '3436a8d9010c00e1521200edea89c7d1288bc788ca1e460000000000000000010101f4715f39a101000000000000000000006c9f854d080015352707',
+    '3a36a8d90196530000000000000000',
+    '3ae3a86c0000edea89c7d1288bc788ca1e46016107aa2503000000',
+    '3a36a8d901a4410000000000000000')]
+assert cf.object_intro(real[0])[:2] == (27816, 1200865)
+near = b'*8' + venc(ME) + b'\x00' * 28 + struct.pack('<fff', -71597.0, -71663.0, 9097.0)  # where you stood
+t = cf.Tracker(); t.feed([b'36' + venc(ME) + b'\x00' * 5, near], 1.0); t.feed([real[0]], 2.0)
+n = t.snapshot(now=2.0)['nodes']; assert n[0]['type'] == 1200865 and md.trace_at('verteron', n[0]['xyz'], 1) == (1695, 1692)
+t.feed([real[1]], 3.0); t.feed([real[2]], 3.1); t.feed([real[3]], 5.0)
+s = t.snapshot(now=5.0); assert s['used_count'] == 2 and {e['type'] for e in s['used']} == {1200865}, s['used']
+print('real feather: 0c-flag spawn parsed, your pickup reported (twice), the other player\'s not')
 print('cube spawns:', {k: len(v) for k, v in md.cubes.items()})
 print('ALL OK')

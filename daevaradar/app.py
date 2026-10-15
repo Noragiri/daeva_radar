@@ -10,6 +10,7 @@ from .follow import PositionFusion
 from .game import MapData, map_name
 from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, Toast, button, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
+from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
 from .features.alerts import AlertsFeature
@@ -19,7 +20,7 @@ from .features.viewcone import ViewFeature
 class App:
     """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
     whatever is shown; only the shown feature/tab is redrawn."""
-    FEATURES = (CubesFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk
@@ -359,7 +360,7 @@ class App:
         if self.debug:
             self.debug.update(snap)
         if snap["own_name"]:
-            who = "playing as %s" % snap["own_name"]
+            who = "playing as %s (ID %s)" % (snap["own_name"], snap["own_char_no"])
         else:
             who = ("character #%d" % snap["own"]) if snap["own"] else "character not identified yet: relog or change zone"
         parts = [self.engine.status, who] + [s for s in (f.status(snap) for f in self.features.values() if f.enabled) if s]

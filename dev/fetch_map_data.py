@@ -1,4 +1,4 @@
-"""One-time download of map reference data (gathering nodes and hidden cubes) into data/maps/.
+"""One-time download of map reference data (gathering nodes, hidden cubes and Empyrean Traces) into data/maps/.
 
     python dev/fetch_map_data.py
 
@@ -19,7 +19,7 @@ from pathlib import Path
 MAPS = ("poeta", "verteron", "eltnen", "ishalgen", "altgard", "morheim",
         "reshanta-lower", "reshanta-middle", "reshanta-upper")
 KEEP = ("Resources",)  # marker groups kept (category ids starting with Gather_)
-KEEP_IDS = ("HiddenCube",)
+KEEP_IDS = ("HiddenCube", "EmpyreanTrace")
 OUT = Path(__file__).resolve().parent.parent / "data" / "maps"
 
 
@@ -31,7 +31,7 @@ def fetch(key):
 
 
 def slim(data):
-    """Keep only resource and hidden-cube markers: {category: {name, item, points: [[x, y], ...]}}."""
+    """Keep only resource, hidden-cube and Empyrean Trace markers: {category: {name, item, points: [[x, y], ...]}}."""
     cats = {c["id"]: c for c in data["categories"] if c.get("group") in KEEP or c["id"] in KEEP_IDS}
     out = {}
     for t_index, t in enumerate(data["templates"]):
