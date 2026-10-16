@@ -1,5 +1,14 @@
 # Game data tables
 
+## Credits
+
+AION 2 game data and map art © NCSOFT (official AION 2 web API), collected via Shugo.GG and metabot.gg. The data comes from NCSOFT's official AION 2 web endpoints and the game client;
+the sites below are where these copies were downloaded from, per file. Names, data and art are AION 2 game
+content © NCSOFT, kept here as reference data for this personal tool, not to be redistributed as a dataset of
+its own.
+
+## Monster and skill names (`monsters.json`, `skills.json`)
+
 - `monsters.json`: monster type id -> `[name, level, rank]` (7,545 entries).
 - `skills.json`: skill id -> name (412 entries).
 

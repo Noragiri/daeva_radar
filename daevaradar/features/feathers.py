@@ -246,7 +246,7 @@ class FeathersFeature(Feature):
     # ---- Settings tab
     def build_settings(self, f):
         tk = self.tk
-        heading(tk, f, "Feather settings", "Empyrean Trace spots from the local map data (credit Shugo.GG). The game's "
+        heading(tk, f, "Feather settings", "Empyrean Trace spots from the local map data (© NCSOFT, via Shugo.GG). The game's "
                 "id for feathers is learned the first time one is near you; picking one up marks its spot collected.")
         section(tk, f, "Show")
         self.flags = {}

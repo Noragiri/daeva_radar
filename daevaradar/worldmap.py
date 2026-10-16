@@ -114,8 +114,8 @@ class WorldMap:
 
         bottom = tk.Frame(win, bg=SIDEBAR)
         bottom.pack(side="bottom", fill="x")
-        tk.Label(bottom, text="Spawns and nodes: Shugo.GG · soul drops: metabot.gg · map art © NCSOFT · wheel: zoom · "
-                 "drag: pan · click a point", bg=SIDEBAR, fg=MUTED, font=(FONT, 8), anchor="w").pack(fill="x", padx=12, pady=4)
+        tk.Label(bottom, text="AION 2 data and map art © NCSOFT (official AION 2 web API), via Shugo.GG and metabot.gg · "
+                 "wheel: zoom · drag: pan · click a point", bg=SIDEBAR, fg=MUTED, font=(FONT, 8), anchor="w").pack(fill="x", padx=12, pady=4)
         legend = tk.Frame(win, bg=BG)
         legend.pack(side="bottom", fill="x", padx=12, pady=6)
         for genus, color in GENUS_COLOR.items():

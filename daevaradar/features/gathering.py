@@ -214,7 +214,7 @@ class GatherFeature(Feature):
     def build_settings(self, f):
         tk = self.tk
         heading(tk, f, "Gathering settings", "Pick the resources to watch; each gets its own colour. Names come "
-                "from the local map data (credit Shugo.GG), learned once per node type and remembered.")
+                "from the local map data (© NCSOFT, via Shugo.GG), learned once per node type and remembered.")
         section(tk, f, "Find a resource")
         self.search = tk.StringVar()
         entry = tk.Entry(f, textvariable=self.search, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",

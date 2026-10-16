@@ -198,7 +198,7 @@ class CubesFeature(Feature):
         tk.Label(row, text="%", bg=BG, fg=MUTED, font=(FONT, 10)).pack(side="left")
         section(tk, f, "Show")
         self.spawns_var = tk.BooleanVar(value=self.cfg["spawns"])
-        checkbox(tk, f, "Spawn points from the map data (hollow; credit Shugo.GG)", self.spawns_var,
+        checkbox(tk, f, "Spawn points from the map data (hollow; © NCSOFT, via Shugo.GG)", self.spawns_var,
                  self.set_spawns).pack(fill="x")
         section(tk, f, "Cube types tracked")
         tk.Label(f, bg=BG, fg=MUTED, font=(MONO, 9), anchor="w", justify="left", wraplength=380,

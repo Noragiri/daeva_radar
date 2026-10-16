@@ -247,7 +247,7 @@ class ShopFeature(Feature):
     # ---- Settings tab
     def build_settings(self, f):
         tk = self.tk
-        heading(tk, f, "Shop settings", "Item names: Shugo.GG (data/shop_items.json). Pets are checked against your "
+        heading(tk, f, "Shop settings", "Item names: AION 2 data © NCSOFT (official AION 2 web API), via Shugo.GG. Pets are checked against your "
                 "pet collection, skins against your wardrobe.")
         section(tk, f, "Pop up for offers with at least")
         row = tk.Frame(f, bg=BG)
