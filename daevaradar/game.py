@@ -346,6 +346,50 @@ def pet_souls(data):
     except (ValueError, IndexError, struct.error):
         pass
     return None
+def wardrobe(data):
+    """'5b 8d' your appearance (wardrobe) collection, sent when you enter the world (live 2026-10-15, 219 pieces):
+    count (LEB128) | count x (skin item id u32, a small number u32: 1 for most, up to 8) | slot data.
+    Skin ids are set x 100 + piece (30063103: set 300631, piece 3). -> {skin id: number} or None."""
+    if data[:2] != b"[\x8d":
+        return None
+    try:
+        n, p = varint(data, 2)
+        if not 0 < n < 5000 or len(data) < p + 8 * n:
+            return None
+        out = {}
+        for i in range(n):
+            skin, value = struct.unpack_from("<II", data, p + 8 * i)
+            if not 10_000_000 <= skin < 100_000_000 or value > 1000:
+                return None
+            out[skin] = value
+        return out
+    except (ValueError, struct.error):
+        return None
+SHOP_TABS = {0x65: "Special", 0x68: "Pets", 0x67: "Skins"}  # the rotating shop's tabs (refreshes at x:00)
+SHOP_DISCOUNT = {0: 10, 1: 20, 2: 30, 3: 50}  # discount code -> percent (checked against the prices)
+def shop_tab(data):
+    """'91 56' one tab of the rotating shop, sent when you open it / switch tabs (live 2026-10-15, 3 tabs x 10):
+    tab u8 | count u8 | count x record; a record is product u32 | item u32 | quantity u32 | 0 u32 | discount u8 |
+    5d | original price u64 | price u64 (one record had an extra byte in front: records are found by their 5d
+    marker and prices). -> (tab name, [dict(item, quantity, discount %, original, price)]) or None."""
+    if data[:2] != b"\x91V" or len(data) < 40:
+        return None
+    tab, count = data[2], data[3]
+    items = []
+    for p in range(21, len(data) - 16):
+        if data[p] != 0x5d:
+            continue
+        original, price = struct.unpack_from("<QQ", data, p + 1)
+        if not 0 < price <= original < 10 ** 11:
+            continue
+        product, item, quantity, zero = struct.unpack_from("<IIII", data, p - 17)
+        if zero or not 0 < quantity < 1000 or not 100_000_000 <= item < 1_000_000_000:
+            continue
+        percent = SHOP_DISCOUNT.get(data[p - 1], round(100 - 100 * price / original))
+        items.append(dict(item=item, quantity=quantity, discount=percent, original=original, price=price))
+    if not items or len(items) != count:
+        return None
+    return SHOP_TABS.get(tab, "Tab %02x" % tab), items
 NODE_RANGE_M = 200  # objects further than this are dropped (they leave range silently too)
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
@@ -380,6 +424,10 @@ class Tracker:
         self.soul_sync_count = 0
         self.soul_events = []  # the last soul updates: dict(kind, pairs, time, n), n counting up
         self.soul_count = 0
+        self.wardrobe = None  # dict(skins={id: number}, time) from the last '5b 8d'
+        self.wardrobe_count = 0
+        self.shop = {}  # tab -> dict(items, time) from the last '91 56' of that tab
+        self.shop_count = 0
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
         # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
         # players land on the same teleport spots, and ids may be reused between sessions.)
@@ -495,6 +543,18 @@ class Tracker:
             kind = data[:2]
             if kind[1:] == b"\x90" and self.note_souls(data, when):
                 continue
+            if kind == b"\x91V":
+                tab = shop_tab(data)
+                if tab:
+                    self.shop[tab[0]] = dict(items=tab[1], time=when)
+                    self.shop_count += 1
+                    continue
+            if kind == b"[\x8d":
+                skins = wardrobe(data)
+                if skins:
+                    self.wardrobe = dict(skins=skins, time=when)
+                    self.wardrobe_count += 1
+                    continue
             if kind == b"#6" and len(data) == 26 and data[2:8] == bytes(6):  # teleport / zone-in
                 point = xyz(data, 8)
                 if point is not None:
@@ -679,4 +739,6 @@ class Tracker:
                         detections=self.detections, last_detection=self.last_detection,
                         used=list(self.used), used_count=self.used_count,
                         soul_sync=self.soul_sync, soul_sync_count=self.soul_sync_count,
-                        soul_events=list(self.soul_events), soul_count=self.soul_count)
+                        soul_events=list(self.soul_events), soul_count=self.soul_count,
+                        wardrobe=self.wardrobe, wardrobe_count=self.wardrobe_count,
+                        shop=dict(self.shop), shop_count=self.shop_count)

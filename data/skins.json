@@ -1,0 +1,2495 @@
+{
+ "_source": "metabot.gg skin pages (global client data), fetched 2026-10-15 by dev/fetch_skin_data.py",
+ "sets": {
+  "300801": {
+   "name": "Ascended Daeva",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "ascended-daeva"
+  },
+  "400421": {
+   "name": "Dreamy Day Uniform",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "6": "Shoes"
+   },
+   "slug": "dreamy-day-uniform"
+  },
+  "400621": {
+   "name": "Floofy Shugo Friend",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "3": "Helm",
+    "6": "Shoes"
+   },
+   "slug": "floofy-shugo-friend"
+  },
+  "400641": {
+   "name": "Genesis Daeva",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "genesis-daeva"
+  },
+  "400481": {
+   "name": "Leather Crop Fit",
+   "kind": "Special",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "6": "Shoes"
+   },
+   "slug": "leather-crop-fit"
+  },
+  "400461": {
+   "name": "Loose-Fit Streetwear",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "5": "Gloves",
+    "6": "Shoes"
+   },
+   "slug": "loose-fit-streetwear"
+  },
+  "400611": {
+   "name": "Mischievous Shugo",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "3": "Helm",
+    "6": "Shoes"
+   },
+   "slug": "mischievous-shugo"
+  },
+  "400671": {
+   "name": "Moonlit Aria",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "moonlit-aria"
+  },
+  "301401": {
+   "name": "Shadowlight Wind",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "shadowlight-wind"
+  },
+  "400631": {
+   "name": "Snowy Sheer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "snowy-sheer"
+  },
+  "300411": {
+   "name": "Anguished Darkness",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "anguished-darkness"
+  },
+  "300701": {
+   "name": "Awakened",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "awakened"
+  },
+  "300081": {
+   "name": "Blessing of Life",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "blessing-of-life"
+  },
+  "300201": {
+   "name": "Centurion Armor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "centurion-armor"
+  },
+  "300051": {
+   "name": "Dawnbreaker",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "dawnbreaker"
+  },
+  "301811": {
+   "name": "Decanus Armor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "decanus-armor"
+  },
+  "300441": {
+   "name": "Destruction Spearhead",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "destruction-spearhead"
+  },
+  "300611": {
+   "name": "Draconic Aura",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "draconic-aura"
+  },
+  "300601": {
+   "name": "Draconic Benediction",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "draconic-benediction"
+  },
+  "300621": {
+   "name": "Draconic Rage",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "draconic-rage"
+  },
+  "300551": {
+   "name": "Eternal Horn",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "eternal-horn"
+  },
+  "300071": {
+   "name": "Forest Guardian",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "forest-guardian"
+  },
+  "300681": {
+   "name": "Forgotten Recon Team",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "forgotten-recon-team"
+  },
+  "400151": {
+   "name": "Guardian of Honor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "guardian-of-honor"
+  },
+  "300461": {
+   "name": "Howling Dragon",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "howling-dragon"
+  },
+  "300111": {
+   "name": "Moon Luster",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "moon-luster"
+  },
+  "300121": {
+   "name": "Nameless Savior",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "nameless-savior"
+  },
+  "301081": {
+   "name": "Netherworld Seeker",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "netherworld-seeker"
+  },
+  "301491": {
+   "name": "Pitch Black Night",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "pitch-black-night"
+  },
+  "301041": {
+   "name": "Rage Ironclad",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "rage-ironclad"
+  },
+  "300451": {
+   "name": "Roaring Dragon",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "roaring-dragon"
+  },
+  "300281": {
+   "name": "Ruinous Devourer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "ruinous-devourer"
+  },
+  "400561": {
+   "name": "Shadow Slayer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "shadow-slayer"
+  },
+  "300961": {
+   "name": "Silent Forest",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-forest"
+  },
+  "300531": {
+   "name": "Skilled Expert",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "skilled-expert"
+  },
+  "300101": {
+   "name": "Soul Pledge",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "soul-pledge"
+  },
+  "300591": {
+   "name": "Storm Legacy",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "storm-legacy"
+  },
+  "301521": {
+   "name": "Amethyst Scale",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "amethyst-scale"
+  },
+  "400041": {
+   "name": "Ancient Guardian",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "ancient-guardian"
+  },
+  "301481": {
+   "name": "Argent Light",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "argent-light"
+  },
+  "300541": {
+   "name": "Azure Aura",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "azure-aura"
+  },
+  "300231": {
+   "name": "Battle Spirit",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "battle-spirit"
+  },
+  "301391": {
+   "name": "Bloodscent Image",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "bloodscent-image"
+  },
+  "400021": {
+   "name": "Dream Executor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "dream-executor"
+  },
+  "300291": {
+   "name": "Dusk Silk",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "dusk-silk"
+  },
+  "301501": {
+   "name": "Duskpath",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "duskpath"
+  },
+  "300061": {
+   "name": "Flash Ironclad",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "flash-ironclad"
+  },
+  "300361": {
+   "name": "Forest Scholar",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "forest-scholar"
+  },
+  "301371": {
+   "name": "Gilded Guardian",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "gilded-guardian"
+  },
+  "300321": {
+   "name": "Hallowed Promise",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "hallowed-promise"
+  },
+  "300161": {
+   "name": "Hidden Escaper",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "hidden-escaper"
+  },
+  "300561": {
+   "name": "Immortal Heart",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "immortal-heart"
+  },
+  "300191": {
+   "name": "Iron Heart",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "iron-heart"
+  },
+  "300131": {
+   "name": "Ironclad Vow",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "ironclad-vow"
+  },
+  "300211": {
+   "name": "Judgment of Glory",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "judgment-of-glory"
+  },
+  "300091": {
+   "name": "Keeper",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "keeper"
+  },
+  "300311": {
+   "name": "Knightly Conviction",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "knightly-conviction"
+  },
+  "300931": {
+   "name": "Knowledge Successor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "knowledge-successor"
+  },
+  "400301": {
+   "name": "Kromede's Desire",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "kromedes-desire"
+  },
+  "300811": {
+   "name": "Lightpath Trace",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "lightpath-trace"
+  },
+  "300301": {
+   "name": "Lone Chaser",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "lone-chaser"
+  },
+  "300021": {
+   "name": "Meteor's Benediction",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "meteors-benediction"
+  },
+  "300431": {
+   "name": "Night Dragon",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "night-dragon"
+  },
+  "300351": {
+   "name": "Night Mist Phantom",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "night-mist-phantom"
+  },
+  "300421": {
+   "name": "Night Shadow",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "night-shadow"
+  },
+  "400281": {
+   "name": "North Wind Ironclad",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "north-wind-ironclad"
+  },
+  "400031": {
+   "name": "Oblivion Mediator",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "oblivion-mediator"
+  },
+  "400601": {
+   "name": "Promise Legion",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "promise-legion"
+  },
+  "301131": {
+   "name": "Radiant Heart",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "radiant-heart"
+  },
+  "300941": {
+   "name": "Researcher",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "researcher"
+  },
+  "300671": {
+   "name": "Restored Recon Team",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "restored-recon-team"
+  },
+  "300971": {
+   "name": "Sage of Destiny",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "sage-of-destiny"
+  },
+  "301091": {
+   "name": "Sandstorm Wanderer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "sandstorm-wanderer"
+  },
+  "300951": {
+   "name": "Scribe",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "scribe"
+  },
+  "300371": {
+   "name": "Shadow Mask",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "shadow-mask"
+  },
+  "301641": {
+   "name": "Silent Breath",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-breath"
+  },
+  "300171": {
+   "name": "Silent Hunter",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-hunter"
+  },
+  "301761": {
+   "name": "Silent Resolve",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-resolve"
+  },
+  "300151": {
+   "name": "Silent Wraith",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-wraith"
+  },
+  "301231": {
+   "name": "Silver Barrier",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silver-barrier"
+  },
+  "300491": {
+   "name": "Silver Bell Fairy's Dream",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silver-bell-fairys-dream"
+  },
+  "300271": {
+   "name": "Sky Feather",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "sky-feather"
+  },
+  "400141": {
+   "name": "Skybright Oath",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "skybright-oath"
+  },
+  "300721": {
+   "name": "Skyfeather Guardian",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "skyfeather-guardian"
+  },
+  "300181": {
+   "name": "Solar Radiance",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "solar-radiance"
+  },
+  "300221": {
+   "name": "Star Prophet",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "star-prophet"
+  },
+  "300401": {
+   "name": "Steel Endurance",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "steel-endurance"
+  },
+  "300141": {
+   "name": "Steel Fortress",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "steel-fortress"
+  },
+  "301061": {
+   "name": "Steel Heavy Armor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "steel-heavy-armor"
+  },
+  "301221": {
+   "name": "Steel Wall",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "steel-wall"
+  },
+  "301111": {
+   "name": "Tailor of Fate",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "tailor-of-fate"
+  },
+  "300981": {
+   "name": "Whisper of the Ether",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "whisper-of-the-ether"
+  },
+  "400591": {
+   "name": "Wild Wanderer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "5": "Gloves",
+    "6": "Shoes"
+   },
+   "slug": "wild-wanderer"
+  },
+  "301461": {
+   "name": "Wilderness Grain",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "wilderness-grain"
+  },
+  "300011": {
+   "name": "Adamant Guardian",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "adamant-guardian"
+  },
+  "301101": {
+   "name": "Blue Breath Searcher",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "blue-breath-searcher"
+  },
+  "300041": {
+   "name": "Chivalrous Will",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "chivalrous-will"
+  },
+  "300641": {
+   "name": "Dark Fang",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "dark-fang"
+  },
+  "300581": {
+   "name": "Divine Benediction",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "divine-benediction"
+  },
+  "300881": {
+   "name": "Forest Hermit",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "forest-hermit"
+  },
+  "300661": {
+   "name": "Illusionary Shadow",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "illusionary-shadow"
+  },
+  "301011": {
+   "name": "Journey Flow",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "journey-flow"
+  },
+  "301001": {
+   "name": "Journey Progress",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "journey-progress"
+  },
+  "300261": {
+   "name": "Nature Greenwood",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "nature-greenwood"
+  },
+  "301561": {
+   "name": "Sand Dunes Workshop",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "sand-dunes-workshop"
+  },
+  "301051": {
+   "name": "Silent Steel",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-steel"
+  },
+  "301581": {
+   "name": "Silent Wind",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silent-wind"
+  },
+  "300331": {
+   "name": "Silver Executioner",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "silver-executioner"
+  },
+  "300921": {
+   "name": "Start of Training",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "start-of-training"
+  },
+  "300651": {
+   "name": "Steadfast Advisor",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "steadfast-advisor"
+  },
+  "301071": {
+   "name": "Unknown Pursuer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "unknown-pursuer"
+  },
+  "300891": {
+   "name": "Wayfarer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "wayfarer"
+  },
+  "300241": {
+   "name": "Contemplator",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "contemplator"
+  },
+  "301711": {
+   "name": "Dawn Frost",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "dawn-frost"
+  },
+  "300381": {
+   "name": "Direction Setter",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "direction-setter"
+  },
+  "300631": {
+   "name": "Light of Genesis",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "light-of-genesis"
+  },
+  "300521": {
+   "name": "Netherworld Explorer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "netherworld-explorer"
+  },
+  "300031": {
+   "name": "Noble Vow",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "noble-vow"
+  },
+  "300991": {
+   "name": "Senior Inquirer",
+   "kind": "Armour",
+   "pieces": {
+    "1": "Top",
+    "2": "Legs",
+    "3": "Helm",
+    "4": "Pauldrons",
+    "5": "Gloves",
+    "6": "Shoes",
+    "7": "Cloak"
+   },
+   "slug": "senior-inquirer"
+  },
+  "100061": {
+   "name": "Abandoned Legacy",
+   "kind": "Weapon",
+   "slug": "abandoned-legacy",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100491": {
+   "name": "Abyssal Fragment",
+   "kind": "Weapon",
+   "slug": "abyssal-fragment",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100201": {
+   "name": "Ancient Oath",
+   "kind": "Weapon",
+   "slug": "ancient-oath",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100191": {
+   "name": "Ancient Remnant",
+   "kind": "Weapon",
+   "slug": "ancient-remnant",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100431": {
+   "name": "Balance Arbiter",
+   "kind": "Weapon",
+   "slug": "balance-arbiter",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100021": {
+   "name": "Battlefield Debris",
+   "kind": "Weapon",
+   "slug": "battlefield-debris",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100141": {
+   "name": "Black Moonlight",
+   "kind": "Weapon",
+   "slug": "black-moonlight",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100081": {
+   "name": "Blue Dawn",
+   "kind": "Weapon",
+   "slug": "blue-dawn",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100541": {
+   "name": "Rending Roar",
+   "kind": "Weapon",
+   "slug": "rending-roar",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100481": {
+   "name": "Crimson Eclipse",
+   "kind": "Weapon",
+   "slug": "crimson-eclipse",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100301": {
+   "name": "Dark Abyssal Scale",
+   "kind": "Weapon",
+   "slug": "dark-abyssal-scale",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100221": {
+   "name": "Dark Whisper",
+   "kind": "Weapon",
+   "slug": "dark-whisper",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100091": {
+   "name": "Decanus Staff",
+   "kind": "Weapon",
+   "slug": "decanus-staff",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100241": {
+   "name": "Divine Light",
+   "kind": "Weapon",
+   "slug": "divine-light",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100251": {
+   "name": "Dragonscale",
+   "kind": "Weapon",
+   "slug": "dragonscale",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100601": {
+   "name": "Dusk Ritual",
+   "kind": "Weapon",
+   "slug": "dusk-ritual",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100281": {
+   "name": "Endless Prelude",
+   "kind": "Weapon",
+   "slug": "endless-prelude",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100391": {
+   "name": "Endless Veil",
+   "kind": "Weapon",
+   "slug": "endless-veil",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100331": {
+   "name": "Endsong",
+   "kind": "Weapon",
+   "slug": "endsong",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100171": {
+   "name": "Eternal Crest",
+   "kind": "Weapon",
+   "slug": "eternal-crest",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100791": {
+   "name": "Fate Daeva",
+   "kind": "Weapon",
+   "slug": "fate-daeva",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100511": {
+   "name": "Forbidden Ritual",
+   "kind": "Weapon",
+   "slug": "forbidden-ritual",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100361": {
+   "name": "Forgotten Melody",
+   "kind": "Weapon",
+   "slug": "forgotten-melody",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100261": {
+   "name": "Frozen Time",
+   "kind": "Weapon",
+   "slug": "frozen-time",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100121": {
+   "name": "Glacier's Judgment",
+   "kind": "Weapon",
+   "slug": "glaciers-judgment",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100071": {
+   "name": "Golden Legacy",
+   "kind": "Weapon",
+   "slug": "golden-legacy",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100781": {
+   "name": "Golden Vow",
+   "kind": "Weapon",
+   "slug": "golden-vow",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100131": {
+   "name": "Heart of Royalty",
+   "kind": "Weapon",
+   "slug": "heart-of-royalty",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100521": {
+   "name": "Judicator of Truth",
+   "kind": "Weapon",
+   "slug": "judicator-of-truth",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100111": {
+   "name": "Legacy of the Forest",
+   "kind": "Weapon",
+   "slug": "legacy-of-the-forest",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100101": {
+   "name": "Master's Legacy",
+   "kind": "Weapon",
+   "slug": "masters-legacy",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100161": {
+   "name": "Midnight Veil",
+   "kind": "Weapon",
+   "slug": "midnight-veil",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100011": {
+   "name": "Nameless Master",
+   "kind": "Weapon",
+   "slug": "nameless-master",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100411": {
+   "name": "Pyromancer",
+   "kind": "Weapon",
+   "slug": "pyromancer",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100861": {
+   "name": "Radiant Boundary",
+   "kind": "Weapon",
+   "slug": "radiant-boundary",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100811": {
+   "name": "Ring of Light",
+   "kind": "Weapon",
+   "slug": "ring-of-light",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100591": {
+   "name": "Royal Crest",
+   "kind": "Weapon",
+   "slug": "royal-crest",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100381": {
+   "name": "Savage Tread",
+   "kind": "Weapon",
+   "slug": "savage-tread",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100681": {
+   "name": "Seal Guardian",
+   "kind": "Weapon",
+   "slug": "seal-guardian",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100151": {
+   "name": "Shadow Whisper",
+   "kind": "Weapon",
+   "slug": "shadow-whisper",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100551": {
+   "name": "Shaman's Prayer",
+   "kind": "Weapon",
+   "slug": "shamans-prayer",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100351": {
+   "name": "Shattered Fragment",
+   "kind": "Weapon",
+   "slug": "shattered-fragment",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100651": {
+   "name": "Skybound Oath",
+   "kind": "Weapon",
+   "slug": "skybound-oath",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100671": {
+   "name": "Sleeping Token",
+   "kind": "Weapon",
+   "slug": "sleeping-token",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100181": {
+   "name": "Starless Night",
+   "kind": "Weapon",
+   "slug": "starless-night",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100581": {
+   "name": "Steel Solidarity",
+   "kind": "Weapon",
+   "slug": "steel-solidarity",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100641": {
+   "name": "Strange Rift",
+   "kind": "Weapon",
+   "slug": "strange-rift",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100561": {
+   "name": "Veiled Arbiter",
+   "kind": "Weapon",
+   "slug": "veiled-arbiter",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100661": {
+   "name": "Veiled Blessing",
+   "kind": "Weapon",
+   "slug": "veiled-blessing",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100471": {
+   "name": "Verdant Melody",
+   "kind": "Weapon",
+   "slug": "verdant-melody",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100841": {
+   "name": "Vitalis Root",
+   "kind": "Weapon",
+   "slug": "vitalis-root",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100971": {
+   "name": "Wind Feather",
+   "kind": "Weapon",
+   "slug": "wind-feather",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  },
+  "100311": {
+   "name": "Zikel's Apparition",
+   "kind": "Weapon",
+   "slug": "zikels-apparition",
+   "pieces": {
+    "1": "Greatsword",
+    "2": "Longsword",
+    "3": "Dagger",
+    "4": "Bow",
+    "5": "Spellbook",
+    "6": "Orb",
+    "7": "Mace",
+    "8": "Staff"
+   },
+   "total": 8
+  }
+ }
+}

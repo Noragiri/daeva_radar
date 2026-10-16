@@ -194,4 +194,29 @@ tiles = Path(__file__).resolve().parent.parent / 'data' / 'map_tiles'
 for key in ('verteron', 'altgard', 'reshanta-lower'):  # zoom 4 = the 4096 px map: 16 x 16 tiles of 256 px
     assert (tiles / key / '0' / '0_0.webp').exists() and len(list((tiles / key / '4').glob('*.webp'))) == 256, key
 print('pets: sync + live drops + level up parsed;', len(pd.collection), 'pets, spawn maps', pd.keys())
+# 13) wardrobe ('5b 8d', recorded 2026-10-15: 219 pieces incl. the 8 equipped skins): count | (skin u32, n u32) | slots
+ward = (b'[\x8d' + venc(3) + struct.pack('<II', 30063103, 1) + struct.pack('<II', 30063101, 2)
+        + struct.pack('<II', 10014106, 1) + venc(1) + b'\x01' + struct.pack('<I', 31))
+assert cf.wardrobe(ward) == {30063103: 1, 30063101: 2, 10014106: 1}
+assert cf.wardrobe(b'[\x8d' + venc(1) + struct.pack('<II', 5, 1)) is None  # not an item id
+t = cf.Tracker(); t.feed([ward], 1.0)
+assert len(t.snapshot(now=1.0)['wardrobe']['skins']) == 3
+from daevaradar.features.wardrobe import SkinData
+sd = SkinData()
+assert sd.describe(300631)[0] == 'Light of Genesis' and sd.describe(300631)[2][3] == 'Helm', sd.describe(300631)
+assert sd.describe(100141)[0] == 'Black Moonlight' and sd.describe(100141)[1] == 'Weapon'
+assert sd.label(50006101) == 'Earrings' and sd.label(50006103) == 'Necklace' and sd.label(70002103) == 'Dagger'
+assert sd.describe(400481)[1] == 'Special' and sd.label(10014106) == 'Orb'
+print('wardrobe: parsed;', len(sd.sets), 'sets in data/skins.json')
+# 14) the rotating shop ('91 56', recorded 2026-10-15): tab | count | records (one with an extra byte in front)
+def offer(product, item, code, original, price):
+    return struct.pack('<IIIIB', product, item, 1, 0, code) + b'\x5d' + struct.pack('<QQ', original, price)
+shop = b'\x91V\x68\x02' + offer(120054, 534760058, 2, 100000, 70000) + b'\x55' + offer(120179, 534760190, 0, 100000, 90000)
+tab = cf.shop_tab(shop)
+assert tab[0] == 'Pets' and [(o['item'], o['discount'], o['price']) for o in tab[1]] == \
+    [(534760058, 30, 70000), (534760190, 10, 90000)], tab
+assert cf.shop_tab(b'\x91V\x68\x03' + shop[4:]) is None  # says 3 items, has 2
+t = cf.Tracker(); t.feed([shop], 1.0)
+assert t.snapshot(now=1.0)['shop']['Pets']['items'][0]['price'] == 70000
+print('shop: tab parsed, discounts', [o['discount'] for o in tab[1]])
 print('ALL OK')

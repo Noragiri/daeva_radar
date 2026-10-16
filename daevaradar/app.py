@@ -15,12 +15,14 @@ from .features.monsters import MonstersFeature
 from .features.gathering import GatherFeature
 from .features.alerts import AlertsFeature
 from .features.viewcone import ViewFeature
+from .features.wardrobe import WardrobeFeature
+from .features.shop import ShopFeature
 
 
 class App:
     """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
     whatever is shown; only the shown feature/tab is redrawn."""
-    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, ShopFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk
@@ -33,6 +35,9 @@ class App:
         self.world_map = None  # the Map window (worldmap.py), shared by Monsters (pets) and Gathering
         self.root = root = tk.Tk()
         root.title("Daeva Radar")
+        # errors in window callbacks go to the log (the app runs without a console: they'd be lost otherwise)
+        root.report_callback_exception = lambda kind, error, tb: engine.say(
+            "ERROR in the window: " + "".join(__import__("traceback").format_exception(kind, error, tb)))
         self.icon = set_icon(root)
         root.configure(bg=BG)
         settings = load_settings()

@@ -24,7 +24,7 @@ daevaradar/          the program
   app.py               the main window
   update.py            update check and in-place install from GitHub releases
   main.py              startup, demo, console mode, shortcut
-  features/            cubes.py, feathers.py, monsters.py (+ pets.py: its Pets tab), gathering.py, alerts.py, viewcone.py
+  features/            cubes.py, feathers.py, monsters.py (+ pets.py: its Pets tab), gathering.py, wardrobe.py, alerts.py, viewcone.py
 assets/              icons
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
@@ -37,6 +37,7 @@ dev/                 tests and tools, not needed to run:
   make_icon.py          regenerates assets/ (needs Pillow)
   fetch_map_data.py     refreshes data/maps/ from Shugo.GG's public marker files (one-time, after patches)
   fetch_pet_data.py     refreshes data/pets.json and data/pet_spawns/ (soul drops: metabot.gg; spawns: Shugo.GG)
+  fetch_skin_data.py    refreshes data/skins.json (wardrobe sets and pieces; metabot.gg)
   fetch_map_tiles.py    refreshes data/map_tiles/ (Shugo.GG's map images; one-time, after patches that change maps)
   daeva_radar.spec      PyInstaller recipe for the Windows build (DaevaRadar.exe; the release workflow runs it)
   linux_test/           Docker end-to-end test with a fake game and server
@@ -69,6 +70,8 @@ dev/                 tests and tools, not needed to run:
     - `00 90`: your whole collection when you enter the world: each pet's level, then souls in its current stage
     - `0d 90`: a soul drop (pet, souls gained); several pets can come in one message
     - `14 90` then `0e 90`: a level up (pet, new level) and the souls it used (5 to unlock, 25 to Lv2, 75 to Lv3)
+  - `5b 8d`: your wardrobe when you enter the world: every appearance piece you own (skin item id = set x 100 + piece;
+    checked live 2026-10-15 against a character's equipped skins, 219 pieces)
 
 You only see cubes the server sends to your client, which means nearby objects. This is not a whole-map scan. All data stays on this PC.
 
@@ -166,6 +169,7 @@ Every feature's background work keeps running whichever feature or tab is shown:
 
   Names: the game announces each node with a type id (Diamond = 1500021) but no name. The first time a type shows up, its position is matched against the local map data (`data/maps`, credit Shugo.GG). The name is then saved for that type for good. Which map is used comes from the sidebar **Map** picker (see below). Map data exists for Verteron, Altgard and Lower Reshanta so far.
 - **Map** (sidebar, under the features): the map used for the map data, shared by Cubes (spawn points) and Gathering (names, map-only nodes). **Auto** uses the detected map: live gathering nodes decide when there are any, else live cubes (at least two must sit on spawn points). Pick a map by hand when detection is slow or wrong; detection still runs, and the label under the picker warns if it disagrees. A pick made in Gathering's old dropdown carries over.
+- **Wardrobe:** your appearance collection (the game's Closet, account-wide like pets: any character's login updates it), read when you enter the world: pieces owned, sets started and complete, Armour and Accessories against the Closet's totals (134/766 · 17%) and each weapon type out of 56 (the same numbers as its Collection Effect screen), and a list of sets (armour, weapon series, accessories, the special kind) with owned / total pieces; select one for its pieces (✓ owned, · missing). Filters: kind, Owned / Incomplete / Complete / Not started / All sets, and **Missing pieces**: every piece you don't own, one per line, sets you've started first. **Copy list** puts the shown list on the clipboard. Set and piece names: data/skins.json (metabot.gg); accessory sets (Earrings, Necklace) aren't in it yet and show by id. The Closet's totals are fixed numbers in features/wardrobe.py (CLOSET_TOTALS): update them when a patch adds skins.
 - **Map window** (needs Pillow; from Monsters → Pets or Gathering → Radar, one window for both): the world map (Shugo.GG's images) with layers for pets' soul spawns (coloured by genus), hidden cubes and each gathering group (Ore, Gems, Odyle, Herbs, Wood, Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side panel has two sides:
   - **Pets:** the pets with soul spawns on that map (type filter, "unfinished only", search by pet or monster), their level and souls; click one to see its spawns, double-click to target it. Totals: how many are Lv3 and the souls still to go.
   - **Resources:** every resource on that map with its node count (Orichalcum Ore, Diamond Gemstone, Aria...); click one to see its nodes, double-click (or ★) to highlight it. Highlighted resources are the ones watched in Gathering, so the Gathering radar and overlay follow too; they're drawn bigger in their watch colour even with their layer off.

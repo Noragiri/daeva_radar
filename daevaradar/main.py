@@ -173,6 +173,9 @@ def demo(tracker, engine):
                   + b"".join(struct.pack("<III", p, p, lv) for p, (lv, s) in pets.items())
                   + varint_bytes(len(pets)) + b"".join(struct.pack("<II", p, s) for p, (lv, s) in pets.items())],
                  time.time())
+    # your wardrobe ('5b 8d'): a few Light of Genesis and Black Moonlight pieces, and a costume without a name
+    skins = (30063101, 30063102, 30063103, 30063105, 10014105, 10014106, 50006103)
+    tracker.feed([b"[\x8d" + varint_bytes(len(skins)) + b"".join(struct.pack("<II", s, 1) for s in skins)], time.time())
     while not engine.stop:
         step += 1
         angle = step * 0.01  # one lap of a 40 m circle every ~2.5 minutes

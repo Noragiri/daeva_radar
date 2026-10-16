@@ -67,6 +67,8 @@ def click_through(window, on):
     user32.GetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int]
     user32.SetWindowLongPtrW.restype = ctypes.c_ssize_t
     user32.SetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_ssize_t]
+    # until Tk has laid the window out, wm_frame() is the inner window: made layered, its content never shows
+    window.update_idletasks()
     hwnd = int(window.wm_frame(), 16)
     style = user32.GetWindowLongPtrW(hwnd, -20)  # GWL_EXSTYLE
     style |= 0x80000 | 0x80 | 0x08000000  # LAYERED | TOOLWINDOW | NOACTIVATE
@@ -291,6 +293,80 @@ class Toast:
             self.win.destroy()
         except Exception:
             pass
+class LiveToast:
+    """One notification that grows instead of stacking (many soul drops at once): add(key, text) adds a line, or
+    updates that key's line, newest on top, and restarts the timer. When nothing has been added for `seconds`, it
+    fades out; adding during the fade brings it back. Click to dismiss. Doesn't take focus from the game."""
+    FADE_MS, FADE_STEPS = 600, 12
+
+    def __init__(self, root, title, color=ACCENT, seconds=6, max_lines=6):
+        self.root, self.title, self.color, self.seconds, self.max_lines = root, title, color, seconds, max_lines
+        self.win = None
+        self.lines = {}  # key -> (text, colour), most recent last
+        self.timer = None
+
+    @property
+    def visible(self):
+        return self.win is not None
+
+    def add(self, key, text, color=None):
+        self.lines.pop(key, None)
+        self.lines[key] = (text, color or TEXT)
+        if self.win is None:
+            self.open()
+        self.render()
+        self.win.attributes("-alpha", 1.0)
+        if self.timer:
+            self.win.after_cancel(self.timer)
+        self.timer = self.win.after(self.seconds * 1000, lambda: self.fade(self.FADE_STEPS))
+
+    def open(self):
+        tk = __import__("tkinter")
+        self.win = win = tk.Toplevel(self.root)
+        win.overrideredirect(True)
+        win.attributes("-topmost", True)
+        win.configure(bg="#000000")
+        self.frame = tk.Frame(win, bg=PANEL, highlightbackground=self.color, highlightthickness=2)
+        self.frame.pack(padx=1, pady=1)
+        self.head = tk.Label(self.frame, text=self.title, bg=PANEL, fg=self.color, font=(FONT, 11, "bold"), padx=16,
+                             pady=(8), anchor="w")
+        self.head.pack(fill="x")
+        self.body = tk.Frame(self.frame, bg=PANEL)
+        self.body.pack(fill="x", padx=16, pady=(0, 10))
+        click_through(win, False)  # tool window, never activated: the game keeps focus
+        for widget in (win, self.frame, self.head, self.body):
+            widget.bind("<Button-1>", lambda e: self.close())
+
+    def render(self):
+        tk = __import__("tkinter")
+        for child in self.body.winfo_children():
+            child.destroy()
+        shown = list(self.lines.items())[::-1][:self.max_lines]
+        for key, (text, color) in shown:
+            label = tk.Label(self.body, text=text, bg=PANEL, fg=color, font=(FONT, 11, "bold"), justify="left", anchor="w")
+            label.pack(fill="x")
+            label.bind("<Button-1>", lambda e: self.close())
+        more = len(self.lines) - len(shown)
+        self.head.config(text=self.title + ("   (+%d more)" % more if more > 0 else ""))
+        self.win.update_idletasks()
+        x = (self.root.winfo_screenwidth() - self.win.winfo_reqwidth()) // 2
+        self.win.geometry("+%d+%d" % (x, 60))
+
+    def fade(self, step):
+        if self.win is None:
+            return
+        if step <= 0:
+            return self.close()
+        self.win.attributes("-alpha", step / self.FADE_STEPS)
+        self.timer = self.win.after(self.FADE_MS // self.FADE_STEPS, lambda: self.fade(step - 1))
+
+    def close(self):
+        try:
+            self.win.destroy()
+        except Exception:
+            pass
+        self.win, self.timer = None, None
+        self.lines.clear()
 def draw_cone(canvas, cx, cy, length, cone, fill=None, outline=None, below=False):
     """The vision cone as a wedge from (cx, cy): filled (the app's radars) or outlined (overlays, so the
     game's minimap stays visible underneath)."""

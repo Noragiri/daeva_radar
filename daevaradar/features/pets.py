@@ -7,7 +7,7 @@ import time
 from ..common import ROOT, load_settings, save_settings
 from ..game import SOUL_STAGES, MapData, map_name
 from ..sound import play
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, Toast, WATCH_COLORS, button, checkbox, dim, draw_text, label_side, radar_point, relative, section
+from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, LiveToast, Toast, WATCH_COLORS, button, checkbox, dim, draw_text, label_side, radar_point, relative, section
 
 
 PET_DEFAULT = dict(targets=[], notify="all", sound=True, spawns=True, live=True, filter="open")
@@ -90,6 +90,7 @@ class Pets:
         self.selected = None
         self.last_beep = 0
         self.alerted = set()
+        self.toast, self.burst = None, {}  # the soul-drop notification and the gains it shows
         self.version = 0  # counts collection / target changes, for the Map window
 
     # ---- state
@@ -181,8 +182,15 @@ class Pets:
         self.app.engine.say("Pets: %s %s (%s)" % (name, what, line))
         target = pid in self.cfg["targets"]
         if self.cfg["notify"] == "all" or (self.cfg["notify"] == "targets" and target):
-            Toast(self.root, "❀ %s  %s\n%s" % (name, what, line), color=self.target_color(pid) if target else "#7cf08a",
-                  seconds=6)
+            # one notification for a burst of drops: a line per pet, its gains added up while it's shown
+            if self.toast is None or not self.toast.visible:
+                self.toast, self.burst = LiveToast(self.root, "❀ Pet souls", color="#7cf08a", seconds=6), {}
+            self.burst[pid] = self.burst.get(pid, 0) + gained
+            if level > before or (before == 0 and level > 0):
+                what = "unlocked" if before == 0 else "Lv%d!" % level
+            else:
+                what = "+%d" % self.burst[pid]
+            self.toast.add(pid, "%s  %s   %s" % (name, what, line), color=self.target_color(pid) if target else TEXT)
             if self.cfg["sound"] and time.time() - self.last_beep > 1:
                 self.last_beep = time.time()
                 play("system beep")

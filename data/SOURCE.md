@@ -32,6 +32,16 @@ Written once on 2026-10-15 by `dev/fetch_pet_data.py`; re-run it after a game pa
   `41 36`; where a map's templates don't, the id comes from `monsters.json` by name and level. Shugo.GG had no
   monster markers for Eltnen or Morheim yet, so pets that only drop there show no spawn points.
 
+## Wardrobe (`skins.json`)
+
+Written once on 2026-10-15 by `dev/fetch_skin_data.py` from metabot.gg's public skin pages (global client data;
+credit metabot.gg): armour and cloak sets (`/en/aion-2/skins`, `/skins/sets/<set>`) and weapon skin series
+(`/skins/weapons/<series>`). A skin's item id is set id x 100 + piece: armour 01 Top, 02 Legs, 03 Helm,
+04 Pauldrons, 05 Gloves, 06 Shoes, 07 Cloak; weapons 01 Greatsword, 02 Longsword, 03 Dagger, 04 Bow,
+05 Spellbook, 06 Orb, 07 Mace, 08 Staff. Accessories (ids 500..., 01 Earrings, 03 Necklace) aren't on those pages
+yet and show by id; 700... ids are weapon skins numbered like the series. Leather Crop Fit (400481) is the special
+kind: the Closet doesn't count it as Armor. All checked against the in-game Closet's counts on 2026-10-15.
+
 ## World map images (`map_tiles/<map>/<z>/<x>_<y>.webp`)
 
 Downloaded once on 2026-10-15 by `dev/fetch_map_tiles.py` from Shugo.GG's public map tiles (the images of its
