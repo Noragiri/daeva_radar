@@ -349,8 +349,8 @@ class LiveToast:
         more = len(self.lines) - len(shown)
         self.head.config(text=self.title + ("   (+%d more)" % more if more > 0 else ""))
         self.win.update_idletasks()
-        x = (self.root.winfo_screenwidth() - self.win.winfo_reqwidth()) // 2
-        self.win.geometry("+%d+%d" % (x, 60))
+        # left edge, below the game's top-left icons and well above the chat
+        self.win.geometry("+%d+%d" % (24, int(self.root.winfo_screenheight() * 0.15)))
 
     def fade(self, step):
         if self.win is None:

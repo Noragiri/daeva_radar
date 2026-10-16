@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 root = Path(SPECPATH).parent
-datas = [(str(root / d), d) for d in ("data", "assets", "sounds", "windivert")]
+datas = [(str(root / d), d) for d in ("data", "assets", "sounds", "windivert", "docs")]
 datas += [(str(root / f), ".") for f in ("README.md", "VERSION") if (root / f).exists()]
 
 a = Analysis(
