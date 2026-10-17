@@ -16,6 +16,9 @@ SOUL_CAP = sum(SOUL_STAGES)
 PET_COLORS = WATCH_COLORS[::-1]  # target pets, in the order picked (reversed: watched monsters start at the front)
 
 
+FARM_MAPS = ("verteron", "altgard", "reshanta-lower")  # where pet souls are farmed; pets with none there are marked
+
+
 class PetData:
     """data/pets.json (pets, genus, which monsters drop each soul) and data/pet_spawns/<map>.json (where those
     monsters spawn, map px, credit Shugo.GG), both written by dev/fetch_pet_data.py."""
@@ -41,6 +44,11 @@ class PetData:
 
     def keys(self):
         return sorted(self.spawns, key=map_name)
+
+    def farmable(self, pid):
+        """Does a monster that drops this pet's souls spawn on one of FARM_MAPS?"""
+        return any(t in self.spawns.get(key, {}) for s in self.pets.get(pid, {}).get("souls", ()) for t in s["types"]
+                   for key in FARM_MAPS)
 
     def types_for(self, pets):
         """Monster type id -> the (first) of these pets whose soul it drops."""
@@ -195,8 +203,8 @@ class Pets:
                 self.last_beep = time.time()
                 play("system beep")
 
-    def summary(self):
-        ids = self.data.collection
+    def summary(self, farmable_only=False):
+        ids = [i for i in self.data.collection if self.data.farmable(i)] if farmable_only else self.data.collection
         owned = sum(1 for i in ids if self.levels.get(i))
         maxed = sum(1 for i in ids if self.levels.get(i, 0) >= MAX_LEVEL)
         souls = sum(self.pet(i)[3] for i in ids)
@@ -220,7 +228,7 @@ class Pets:
         self.search.trace_add("write", lambda *a: self.refresh_list())
         self.filter_var = tk.StringVar(value=self.cfg["filter"])
         for value, text in (("open", "Not Lv3"), ("missing", "Missing"), ("souls", "Has souls"), ("targets", "Targets"),
-                            ("all", "All")):
+                            ("nofarm", "Not farmable"), ("all", "All")):
             tk.Radiobutton(row, text=text, value=value, variable=self.filter_var, command=self.set_filter, bg=BG,
                            fg=TEXT, selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 9),
                            indicatoron=False, padx=6, pady=2, relief="flat", bd=0, offrelief="flat",
@@ -249,8 +257,10 @@ class Pets:
         if not hasattr(self, "listbox"):
             return
         owned, maxed, souls, total = self.summary()
-        self.summary_label.config(text="Collected %d/%d · Lv3 %d/%d · souls %d%%" % (
-            owned, total, maxed, total, 100 * souls / max(1, total * SOUL_CAP)))
+        f_owned, f_maxed, f_souls, f_total = self.summary(farmable_only=True)  # (x%): without the unfarmable pets
+        self.summary_label.config(text="Collected %d/%d (%d%%) · Lv3 %d/%d (%d%%) · souls %d%% (%d%%)" % (
+            owned, total, 100 * f_owned / max(1, f_total), maxed, total, 100 * f_maxed / max(1, f_total),
+            100 * souls / max(1, total * SOUL_CAP), 100 * f_souls / max(1, f_total * SOUL_CAP)))
         by = {}
         for i in self.data.collection:
             g = by.setdefault(self.data.pets[i]["genus"], [0, 0])
@@ -266,7 +276,8 @@ class Pets:
             if text and text not in p["name"].lower():
                 continue
             if (mode == "open" and level >= MAX_LEVEL or mode == "missing" and level or
-                    mode == "souls" and (level >= MAX_LEVEL or not souls) or mode == "targets" and pid not in self.cfg["targets"]):
+                    mode == "souls" and (level >= MAX_LEVEL or not souls) or mode == "targets" and pid not in self.cfg["targets"] or
+                    mode == "nofarm" and self.data.farmable(pid)):
                 continue
             rows.append((pid not in self.cfg["targets"], -bool(souls), SOUL_CAP - done, p["name"], pid))
         rows.sort()
@@ -274,7 +285,7 @@ class Pets:
         self.listbox.delete(0, "end")
         for i, pid in enumerate(self.list_ids):
             level, souls, need, done = self.pet(pid)
-            mark = "★" if pid in self.cfg["targets"] else " "
+            mark = "★" if pid in self.cfg["targets"] else " " if self.data.farmable(pid) else "⊘"
             stage = "Lv3 ✓" if level >= MAX_LEVEL else "%2d/%-2d" % (souls, need)
             self.listbox.insert("end", "%s %-26.26s Lv%d %s %s %3d/%d" % (
                 mark, self.data.pets[pid]["name"], level, self.bar(level, souls), stage, done, SOUL_CAP))
@@ -303,7 +314,8 @@ class Pets:
         p = self.data.pets[pid]
         level, souls, need, done = self.pet(pid)
         lines = ["%s (%s) · %s" % (p["name"], p["genus"], "maxed" if level >= MAX_LEVEL else
-                                    "%d souls to Lv%d" % (SOUL_CAP - done, MAX_LEVEL))]
+                                    "%d souls to Lv%d" % (SOUL_CAP - done, MAX_LEVEL)) +
+                 ("" if self.data.farmable(pid) else " · ⊘ not farmable in %s" % ", ".join(map(map_name, FARM_MAPS)))]
         for s in sorted(p.get("souls", ()), key=lambda s: -s["chance"])[:4]:
             counts = {k: sum(len(self.data.spawns[k][t]["points"]) for t in s["types"] if t in self.data.spawns[k])
                       for k in self.data.keys()}

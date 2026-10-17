@@ -51,14 +51,26 @@ class ShopFeature(Feature):
     def info(self, item):
         return self.names.get(item, dict(name="Item %d" % item, kind="other", grade=""))
 
+    def pet_of(self, item):
+        """-> (Pets helper, pet id) for a pet item, else (None, None)."""
+        info = self.info(item)
+        monsters = self.app.features.get("Monsters")
+        pets = monsters.pets if monsters else None
+        if info["kind"] != "pet" or not pets:
+            return None, None
+        name = info["name"].replace("Pet: ", "")
+        return pets, next((i for i, p in pets.data.pets.items() if p["name"] == name), None)
+
+    def unfarmable(self, item):
+        """A pet whose soul monsters spawn in none of pets.FARM_MAPS (dungeons, other regions only)."""
+        pets, pid = self.pet_of(item)
+        return pid is not None and not pets.data.farmable(pid)
+
     def status_of(self, item):
         """-> "owned" | "missing" | "target" | None (can't tell: theostones, accessories without names)."""
         info = self.info(item)
         if info["kind"] == "pet":
-            monsters = self.app.features.get("Monsters")
-            pets = monsters.pets if monsters else None
-            name = info["name"].replace("Pet: ", "")
-            pid = next((i for i, p in pets.data.pets.items() if p["name"] == name), None) if pets else None
+            pets, pid = self.pet_of(item)
             if pid is None:
                 return None
             if pets.levels.get(pid):
@@ -149,7 +161,8 @@ class ShopFeature(Feature):
         self.refresh()
 
     def notify(self, fresh):
-        lines = ["-%d%% %s %s" % (o["discount"], self.info(o["item"])["name"], "{:,}".format(o["price"]))
+        lines = ["-%d%% %s %s%s" % (o["discount"], self.info(o["item"])["name"], "{:,}".format(o["price"]),
+                                    " (not farmable)" if self.unfarmable(o["item"]) else "")
                  for tab, o in sorted(fresh, key=lambda f: -f[1]["discount"])]
         self.app.engine.say("Shop deals: " + "; ".join(lines))
         Toast(self.root, "⚖ %s's shop: %d deal%s\n%s" % (self.name_of(self.char), len(lines), "" if len(lines) == 1 else "s",
@@ -191,7 +204,8 @@ class ShopFeature(Feature):
         self.listbox = tk.Listbox(f, height=24, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
                                   highlightthickness=0, font=(MONO, 9), activestyle="none")
         self.listbox.pack(fill="x")
-        tk.Label(f, text="✓ owned · ✗ missing · ★ target pet · green: passes your notification rules (Settings)",
+        tk.Label(f, text="✓ owned · ✗ missing · ★ target pet · ⊘ pet not farmable in Verteron, Altgard or Lower "
+                 "Reshanta · green: passes your notification rules (Settings)", wraplength=640, justify="left",
                  bg=BG, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x", pady=(6, 0))
         self.refresh()
 
@@ -234,8 +248,9 @@ class ShopFeature(Feature):
             for o in sorted(self.offers[tab]["items"], key=lambda o: -o["discount"]):
                 info, status = self.info(o["item"]), self.status_of(o["item"])
                 mark = {"owned": "✓", "missing": "✗", "target": "★"}.get(status, " ")
-                self.listbox.insert("end", " %s -%2d%%  %-40.40s %10s  %s" % (
-                    mark, o["discount"], info["name"], "{:,}".format(o["price"]), info["grade"]))
+                self.listbox.insert("end", " %s -%2d%%  %-40.40s %10s  %s%s" % (
+                    mark, o["discount"], info["name"], "{:,}".format(o["price"]), info["grade"],
+                    "  ⊘ not farmable" if self.unfarmable(o["item"]) else ""))
                 self.listbox.itemconfig("end", fg=DEAL if self.wanted(o) and not self.stale(tab) else
                                         (MUTED if status == "owned" else TEXT))
 
