@@ -100,24 +100,17 @@ tp = b'#6' + bytes(6) + struct.pack('<fff', 500.0, 600.0, 7.0) + bytes(6)
 assert len(tp) == 26
 t.feed([tp], 6.0); assert t.snapshot(now=6)['position'] == [500.0, 600.0, 7.0]
 
-# 7) your summoned pet: the 'A6' spawn on you right after your skill, then its '29 37' moves, then dismissed
-ME, PET, FAR = 77, 4242, 4343
+# 7) summoned pets (anyone's) aren't monsters: their 'A6' spawn starts with 1f 10 after the id
+ME, PET, MOB = 77, 4242, 4444
 t = cf.Tracker()
 me_pos = b'*8' + venc(ME) + bytes(28) + struct.pack('<fff', 1000.0, 2000.0, 300.0)
-skill = b'\x028' + venc(ME) + bytes(10)
 def spawn(e, x, y, head=b'\x1f\x10\x00'):  # pets' spawns start with 1f 10 after the id, monsters' don't
     return b'A6' + venc(e) + head + struct.pack('<I', 2920114) + bytes(2) + struct.pack('<fff', x, y, 300.0) + bytes(4)
-pet_move = b')7' + venc(PET) + b'\x02' + struct.pack('<fff', 1500.0, 2500.0, 300.0) + struct.pack('<fff', 600.0, 0.0, 0.0) + b'\x01\x02\x03'
 t.feed([b'36' + venc(ME)], 1.0); t.feed([me_pos], 1.1)
-t.feed([spawn(FAR, 9000.0, 9000.0)], 1.2); assert t.pet is None  # a monster far away is not your pet
-t.feed([skill], 1.3); t.feed([spawn(4444, 1100.0, 2100.0, head=b'\x04\x20\x00')], 1.35); assert t.pet is None  # a monster beside you
-t.feed([spawn(PET, 1200.0, 2150.0)], 1.4)  # your pet, 2.5 m beside you
-s = t.snapshot(now=1.5)
-assert s['pet'] and s['pet']['id'] == PET and all(m['id'] != PET for m in s['monsters'])
-t.feed([pet_move], 2.0)
-assert t.snapshot(now=2.0)['pet']['xyz'] == [1500.0, 2500.0, 300.0] and t.pet['velocity'][0] == 600.0
-t.feed([b'B6' + venc(PET) + b'\x00\x07'], 3.0); assert t.pet is None
-print('pet: recognised, moved, dismissed')
+t.feed([spawn(PET, 1200.0, 2150.0), spawn(MOB, 1100.0, 2100.0, head=b'\x04\x20\x00')], 1.4)
+ids = [m['id'] for m in t.snapshot(now=1.5)['monsters']]
+assert MOB in ids and PET not in ids, ids
+print('pet: summoned pet left off the monsters')
 
 # 9) character ID from the login message (bit 7 of its first byte is a per-login flag)
 for first in (0x5e, 0xde):

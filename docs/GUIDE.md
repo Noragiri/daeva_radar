@@ -13,7 +13,7 @@ The sidebar lists the features; each has its own tabs, overlay and settings.
 - Every feature's background work keeps running whichever feature or tab is shown: alerts, pop-ups and overlays.
 - **Keep on top** (bottom of the sidebar) keeps the window, and the Map window, above the game.
 - **Map** (sidebar): which map the map data is for (see [Map picker](#map-picker)).
-- **⌖ Position debug** (sidebar) shows where your position comes from.
+- **⌖ Position debug** (sidebar) shows your position, its last packet and how often it updates.
 - The last feature and tab you used are remembered.
 
 ## Features
@@ -146,9 +146,8 @@ It reopens at start if it was open when the app closed, and follows **Keep on to
 - **Hollow red circle:** a hidden-cube spawn point (they have no height; one with a tracked cube on it is hidden).
 - Changing character, teleporting or losing the stream clears pins and position.
 
-**Your position:** the server sends it only when you teleport, dash or have an aura ticking. Walking isn't sent,
-so **summon your pet**: the app follows you through it. Without a pet or an aura, your position only updates on
-dashes and teleports.
+**Your position:** the server sends it only when you teleport, dash or have an aura ticking (about once a second).
+Walking isn't sent, so without an aura your position only updates on dashes and teleports.
 
 ## Minimap overlays
 

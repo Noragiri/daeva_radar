@@ -16,7 +16,6 @@ daevaradar/          the program
   capture.py           WinDivert / Linux capture, finding the game's connections, the engine
   sound.py             alert sounds
   vision.py            reading the vision cone from the minimap
-  follow.py            following your position between packets with your summoned pet
   debug.py             the Position debug window
   worldmap.py          the Map window (world map images: pets' soul spawns, hidden cubes, gathering nodes)
   ui.py                shared drawing, overlay window, widgets, popups
@@ -68,12 +67,10 @@ stays on this PC.
 - `36` / `J6`: your entity id
 - `*8` / `+8`: your position. The server doesn't send it for plain walking. It arrives when you dash or use a similar
   movement skill (`*8`), and about once a second while an **aura** is active (`+8`, 46 bytes, one per aura effect;
-  checked live 2026-10-15). With no aura on, your position only changes on dashes and teleports, so between
-  packets it's followed with your pet (see [Following your position](#following-your-position)).
-- Your summoned pet (checked live 2026-10-15 with 4 different pets): it spawns with an `41 36` marked as a pet
-  (`1f 10` right after the id; monsters differ) 0-2.5 m beside you right after your summon skill (`02 38`),
-  moves with `28 37` / `29 37` (position + velocity, 33 bytes) and `1a 37` (stopped), and `42 36` removes it.
-  Its type is remembered, so it's recognised again when it comes back with you.
+  checked live 2026-10-15). Plain walking is reported by your client (encrypted) and never sent back, so with no
+  aura on your position only changes on dashes and teleports.
+- Summoned pets (anyone's; checked live 2026-10-15 with 4 different pets) spawn with an `41 36` marked as a pet
+  (`1f 10` right after the id; monsters differ), so they're left off the monster list.
 - `#6`: teleport or zone-in (clears pins)
 - `46` with a cube type id: a cube appears, with xyz. Known ids: 1200039 (Verteron, confirmed), 1301199 / 1301200
   (Altgard), 1301242-1301245 (Morheim, unconfirmed)
@@ -102,20 +99,6 @@ Checked live on 2026-10-14: Drana and Krall monsters at 11-29 m with the right n
 
 To find a cube id for a new zone, run with `--log`, open a cube, and look for `object event: ... message 3536 040300`
 in the log. To work out a new message, `--record FILE` saves every decoded message as JSON lines.
-
-## Following your position
-
-The server sends your position only when it moves you or something on you: teleports, dashes and similar skills,
-and aura ticks (about once a second). Plain walking is reported by your client (encrypted) and never sent back, so
-without one of those your position only changes on dashes and teleports. Your summoned pet fills the gap:
-
-- **Your pet:** the server sends where your pet is while it follows you (about 1–1.5 s behind), so its position
-  projected about 1.25 s ahead along its velocity is where you are. In a live session (2026-10-15) it was
-  1.6–11 m off when the last packet was 13–54 m off. It's left off the Monsters radar.
-- **Packets win:** your own position packets are exact. The pet's estimate is only used once it's newer than
-  the last packet and says you've moved more than 4 m from it.
-- **Check it:** the **⌖ Position debug** window (sidebar, or `--debug`) shows where your position comes from
-  (packets or pet), your pet, and how far off the pet estimate was when the next packet arrived.
 
 ## How the view cone is read
 

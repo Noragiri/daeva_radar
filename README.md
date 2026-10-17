@@ -29,9 +29,7 @@ It only listens: it reads the game's network traffic on your PC and never change
    - Just looking around? `DaevaRadar.exe --demo` runs the window on simulated data, without the game or admin rights.
 3. **Start the radar before you enter the world** (or teleport / change zone once it's running), so it learns your
    character, your position, your pets and your wardrobe.
-4. **Summon your pet.** The game only reports your position when you teleport or dash; the radar follows you
-   through your pet the rest of the time.
-5. Play in **borderless or windowed** mode if you want the overlays on top of the game.
+4. Play in **borderless or windowed** mode if you want the overlays on top of the game.
 
 From source, or on Linux under Wine / Proton: see [Running from source](docs/GUIDE.md#running-from-source).
 
@@ -62,7 +60,8 @@ latest version and sends nothing about you or the game.)
 
 - **Nothing shows up:** teleport, change zone or relog once with the radar running, so it learns your character.
   Check the status bar at the bottom: it should say "playing as …".
-- **My position doesn't move when I walk:** summon your pet (or keep an aura active). See
+- **My position doesn't move when I walk:** the game only reports it when you teleport, dash or have an aura
+  active; keep an aura on for steady updates. See
   [Reading the radar](docs/GUIDE.md#reading-the-radar).
 - **No pets or wardrobe yet:** they're read when you enter the world: relog once with the radar running.
 - **The shop list is out of date:** the game only sends it when you open the shop; open it again after x:00.

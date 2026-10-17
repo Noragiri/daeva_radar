@@ -29,9 +29,8 @@ class PositionWindow:
         grid.pack(fill="x", padx=12, pady=(10, 4))
         for row, (key, label) in enumerate((
                 ("who", "Character"), ("world", "World (units)"), ("metres", "World (m)"),
-                ("radar", "Radar map px"), ("map", "4096 map px"), ("follow", "Position from"),
-                ("age", "Last packet"), ("source", "Packet message"), ("rate", "Packets"), ("pet", "Pet"),
-                ("fixerr", "Off at last fix"), ("speed", "Speed"),
+                ("radar", "Radar map px"), ("map", "4096 map px"),
+                ("age", "Last packet"), ("source", "Packet message"), ("rate", "Packets"), ("speed", "Speed"),
                 ("heading", "Heading"))):
             tk.Label(grid, text=label, bg=BG, fg=MUTED, font=(FONT, 9), anchor="w").grid(
                 row=row, column=0, sticky="w", padx=(0, 12), pady=1)
@@ -42,7 +41,7 @@ class PositionWindow:
         button(tk, row, "Copy position", self.copy).pack(side="left")
         self.copied = tk.Label(row, text="", bg=BG, fg=ACCENT, font=(FONT, 9))
         self.copied.pack(side="left", padx=8)
-        tk.Label(win, text="RECENT CHANGES (P = packet fix, m = pet estimate; Δ m from the previous one)", bg=BG, fg="#6b7590",
+        tk.Label(win, text="RECENT CHANGES (Δ m from the previous one)", bg=BG, fg="#6b7590",
                  font=(FONT, 8, "bold"), anchor="w").pack(fill="x", padx=12, pady=(6, 2))
         self.history_label = tk.Label(win, text="", bg=PANEL, fg=TEXT, font=(MONO, 9), anchor="nw",
                                       justify="left", width=62, height=self.HISTORY, padx=8, pady=6)
@@ -66,8 +65,7 @@ class PositionWindow:
         while self.samples and now - self.samples[0][0] > 5:
             self.samples.popleft()
         if pos is None:
-            for key in ("world", "metres", "radar", "map", "follow", "age", "source", "pet", "fixerr",
-                        "speed", "heading"):
+            for key in ("world", "metres", "radar", "map", "age", "source", "speed", "heading"):
                 f[key].config(text="–")
             f["age"].config(text="no position yet (teleport or change zone)", fg="#ff9ad9")
             f["rate"].config(text="%d total" % updates)
@@ -80,21 +78,8 @@ class PositionWindow:
         mx, my = MapData.to_px(pos)
         f["radar"].config(text="%10.1f %10.1f" % (rx, ry))
         f["map"].config(text="%10.1f %10.1f" % (mx, my))
-        follow = snap.get("follow") or {}
-        by_pet = follow.get("source") == "pet"
-        f["follow"].config(text="pet + packets" if by_pet else "packets only", fg="#7cf08a" if by_pet else "#ffd24a")
-        pet = snap.get("pet")
-        if pet:
-            moving = math.hypot(*pet["velocity"][:2]) / 100
-            f["pet"].config(text="#%d · %.1f m from you · %s · %.1f s ago" % (
-                pet["id"], math.dist(pet["xyz"][:2], pos[:2]) / 100,
-                "moving %.0f m/s" % moving if moving else "resting", now - pet["time"]), fg=TEXT)
-        else:
-            f["pet"].config(text="none (summon it: it follows you)", fg=MUTED)
-        err = follow.get("fix_error")
-        f["fixerr"].config(text="–" if err is None else "%.1f m" % err)
         age = snap["position_age"] or 0
-        stale = "  · no aura or pet? (walking alone sends nothing)" if age >= 5 and not by_pet else ""
+        stale = "  · no aura? (walking alone sends nothing)" if age >= 5 else ""
         f["age"].config(text="%.1f s ago%s" % (age, stale),
                         fg="#7cf08a" if age < 2 else "#ffd24a" if age < 10 else "#ff5c5c")
         f["source"].config(text=snap.get("position_source") or "?")
@@ -112,9 +97,8 @@ class PositionWindow:
             if math.hypot(dx, dy) > 0.05:
                 angle = math.degrees(math.atan2(dx, -dy)) % 360  # 0 = map top (N), as on the radar
                 f["heading"].config(text="%3.0f° %s" % (angle, COMPASS[int((angle + 22.5) // 45) % 8]))
-            fix = updates != self.last_updates
-            self.history.appendleft("%s %s %9.2f %9.2f %8.2f   Δ %6.2f  z%+6.2f" % (
-                time.strftime("%H:%M:%S"), "P" if fix else "m", x / 100, y / 100, z / 100, math.hypot(dx, dy), dz))
+            self.history.appendleft("%s %9.2f %9.2f %8.2f   Δ %6.2f  z%+6.2f" % (
+                time.strftime("%H:%M:%S"), x / 100, y / 100, z / 100, math.hypot(dx, dy), dz))
             self.history_label.config(text="\n".join(self.history))
         self.last, self.last_updates = pos, updates
 

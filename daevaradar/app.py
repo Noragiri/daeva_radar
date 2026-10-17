@@ -6,7 +6,6 @@ from . import update
 from .common import ASSETS, WINDOWS, load_settings, save_settings
 from .vision import ViewCone
 from .debug import PositionWindow
-from .follow import PositionFusion
 from .game import MapData, map_name
 from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, Toast, button, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
@@ -29,7 +28,6 @@ class App:
         self.tk = tk
         self.tracker, self.engine, self.args = tracker, engine, args
         self.view = ViewCone()
-        self.fusion = PositionFusion()
         self.mapdata = MapData()  # shared by the features that use the map data
         self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
         self.world_map = None  # the Map window (worldmap.py), shared by Monsters (pets) and Gathering
@@ -294,10 +292,7 @@ class App:
         feature.update(self.snapshot(), feature.tab)
 
     def snapshot(self):
-        """The tracker's snapshot with your position followed between packets (by your pet)."""
-        snap = self.fusion.apply(self.tracker.snapshot())
-        self.tracker.estimate = snap["position"]
-        return snap
+        return self.tracker.snapshot()
 
     def feature_state_changed(self, feature):
         """Sidebar entry: '(off)' and dimmed when the feature is switched off."""

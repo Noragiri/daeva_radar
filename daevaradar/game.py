@@ -264,29 +264,8 @@ def entity_move(data):
         return None
     point = xyz(data, len(data) - 12)
     return (entity, point) if point else None
-def pet_move(data):
-    """Your summoned pet's movement (live 2026-10-15): '28 37' starts / '29 37' moves: id (LEB128) | 1 byte |
-    x, y, z | velocity x, y, z (units/s) | ...; '1a 37' stops: id | 2 bytes | x, y, z.
-    -> (entity, point, velocity) or None."""
-    kind = data[:2]
-    if kind not in (b"(7", b")7", b"\x1a7"):
-        return None
-    try:
-        entity, p = varint(data, 2)
-    except ValueError:
-        return None
-    if kind == b"\x1a7":
-        point = xyz(data, p + 2)
-        return (entity, point, (0.0, 0.0, 0.0)) if point else None
-    point = xyz(data, p + 1)
-    if point is None or len(data) < p + 25:
-        return None
-    velocity = struct.unpack_from("<fff", data, p + 13)
-    if not all(math.isfinite(v) and abs(v) < 1e5 for v in velocity):
-        return None
-    return entity, point, velocity
-PET_SPAWN_CM = 500  # your pet appears beside you (0-2.5 m seen): within this, right after one of your skills
 PET_MARK = b"\x1f\x10"  # an 'A6' spawn of a summoned pet (anyone's) starts with this after the id; monsters don't
+                       # (summoned pets aren't monsters: they're left off the monster list)
 def is_pet_intro(data):
     """Is this 'A6' spawn a summoned pet's? (5 of 5 pets, 4 kinds, live 2026-10-15: '1f 10 00' after the id;
     monsters had '04 20 00', '0c 20 00', '0c 2c 00', '0d 20 00'.)"""
@@ -411,7 +390,6 @@ class Tracker:
         self.position_time = 0
         self.position_source = None  # the message that last set your position (for the debug window)
         self.position_updates = 0
-        self.estimate = None  # your position followed between packets (the app's, via your pet), for range checks
         self.cubes = {}
         self.monsters = {}  # entity -> dict(type, xyz, seen)
         self.track_cubes = self.track_monsters = True  # a feature switched off: its messages aren't parsed
@@ -434,12 +412,6 @@ class Tracker:
         self.own_name = None  # display only, from the login message
         self.own_char_no = None  # your character's permanent number, from the login message
         self.client_messages = 0  # messages from your client to the server
-        # Your summoned pet: the server sends its movement while yours goes unsent, and it follows you (about
-        # 1-1.5 s behind). Recognised as the 'A6' spawn on top of you right after one of your skills ('02 38');
-        # its type is then remembered, so it's also recognised when it reappears with you (teleport, relog).
-        self.pet = None  # dict(id, type, xyz, velocity, time) while it's out
-        self.pet_types = set()
-        self.last_cast = 0.0  # when you last used a skill
         self.kills = 0
         self.messages = 0
         self.detections = 0
@@ -455,8 +427,6 @@ class Tracker:
         self.nodes.clear()
         self.position = None
         self.position_time = 0
-        self.estimate = None
-        self.pet = None
 
     def set_position(self, point, when, source=None):
         if when < self.position_time:
@@ -488,17 +458,6 @@ class Tracker:
             self.reported.add(key)
             self.log("object event: id %d template %d at %.1f m, message %s %s" % (
                 entity, obj[0], dist, data[:2].hex(), bytes(data[p:]).hex()))
-
-    def is_pet_spawn(self, data, spawn, when):
-        """Is this 'A6' spawn your pet? A pet's spawn beside you right after a skill of yours (the summon), or
-        a type already known as your pet appearing near you (it comes along through teleports)."""
-        entity, type_id, point = spawn
-        if when - self.position_time > 3 or not is_pet_intro(data):
-            return False
-        dist = math.dist(point[:2], self.position[:2])
-        if type_id in self.pet_types:
-            return dist < 1000
-        return dist < PET_SPAWN_CM and 0 <= when - self.last_cast <= 2
 
     def feed_client(self, batch, when):
         """Messages your own client sends to the server (recorded for now; your movement is in here)."""
@@ -565,36 +524,11 @@ class Tracker:
                 self.set_position(point, when, "%s move, %d bytes" % (kind.decode("latin-1"), len(data)))
             if self.log:
                 self.diagnose(data)
-            if kind == b"\x028" and self.own is not None:  # a skill used
-                try:
-                    if varint(data, 2)[0] == self.own:
-                        self.last_cast = when
-                except ValueError:
-                    pass
-            if kind == b"A6" and self.position:
-                spawn = monster_intro(data)
-                if spawn and self.is_pet_spawn(data, spawn, when):
-                    entity, type_id, point = spawn
-                    self.pet_types.add(type_id)
-                    self.pet = dict(id=entity, type=type_id, xyz=point, velocity=(0.0, 0.0, 0.0), time=when)
-                    self.monsters.pop(entity, None)
-                    continue
-            if self.pet:
-                move = pet_move(data)
-                if move and move[0] == self.pet["id"]:
-                    self.pet.update(xyz=move[1], velocity=move[2], time=when)
-                    continue
-                if kind in (b"B6", b"\x04\x8d"):  # dismissed / gone
-                    try:
-                        if varint(data, 2)[0] == self.pet["id"]:
-                            self.pet = None
-                    except ValueError:
-                        pass
             if kind in (b"A6", b"*8", b"+8", b"\x04\x8d") and not self.track_monsters:
                 continue
             if kind == b"A6":
                 spawn = monster_intro(data)
-                if spawn:
+                if spawn and not is_pet_intro(data):  # summoned pets (yours, others') aren't monsters
                     entity, type_id, point = spawn
                     self.monsters[entity] = dict(id=entity, type=type_id, xyz=point, seen=when)
                     if len(self.monsters) > 3000:
@@ -711,7 +645,7 @@ class Tracker:
                     continue
                 status = "last seen" if item["status"] == "nearby" and age > 60 else item["status"]
                 cubes.append(dict(id=item["id"], xyz=list(item["xyz"]), status=status, age=round(age)))
-            here = self.estimate or self.position
+            here = self.position
             monsters = []
             if here:
                 for entity in list(self.monsters):
@@ -734,7 +668,6 @@ class Tracker:
                         position_age=max(0, now - self.position_time) if self.position else None,
                         position_source=self.position_source, position_updates=self.position_updates,
                         position_time=self.position_time if self.position else None,
-                        pet=dict(self.pet, xyz=list(self.pet["xyz"])) if self.pet else None,
                         cubes=cubes, monsters=monsters, kills=self.kills, messages=self.messages,
                         detections=self.detections, last_detection=self.last_detection,
                         used=list(self.used), used_count=self.used_count,

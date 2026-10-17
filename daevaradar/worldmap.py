@@ -472,7 +472,8 @@ class WorldMap:
         c = self.canvas
         c.delete("me")
         snap = self.app.snapshot()
-        if snap["position"] and self.view and self.current_map() == self.view[0]:
+        here = self.current_map()  # unknown yet (Auto, nothing seen to tell): you're on the map shown
+        if snap["position"] and self.view and here in (None, self.view[0]):
             sx, sy = self.to_screen(*MapData.to_px(snap["position"]))
             c.create_oval(sx - 9, sy - 9, sx + 9, sy + 9, outline=ACCENT, width=2, tags="me")
             c.create_oval(sx - 7, sy - 7, sx + 7, sy + 7, fill="#000000", outline="", tags="me")
@@ -506,7 +507,7 @@ class WorldMap:
 
     def center_me(self):
         snap = self.app.snapshot()
-        key = self.current_map()
+        key = self.current_map() or (self.view and self.view[0])
         if snap["position"] and key in self.keys:
             if self.view[0] != key:
                 self.map_var.set(map_name(key))
