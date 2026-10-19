@@ -22,8 +22,15 @@ app: closing it quits.)
   a card's right edge to resize, snapping to the grid (off / 10-80 px in the bar at the top). Hidden ones are dashed
   boxes you can place too. **Done** or **Esc** locks everything back as it was.
 - **Characters** (under General) lists every character the radar has seen log in, by name, with when you last
-  played it and the maps it was detected on. Set each one's faction, **Elyos** or **Asmodian** (click again to
+  played it and the maps it was detected on, and its **checklist** read from the game at login (and live while you
+  play it): Nightmare runs, Ascension Trial entries and Abyss time left, and its currencies (Kinah, Abyss Points,
+  Nightmare Points, Oath Coin, Silver Medal of Merit, Centuryroot Token). Other characters show their last reading. Set each one's faction, **Elyos** or **Asmodian** (click again to
   unset); unset, it's guessed from those maps. **Forget** removes one until it logs in again.
+- **Checklist** (under Characters): per character, read from the game at login and live while you play it, like the
+  game's own lists: Stock and keys (Nightmare, Shugo keys, Invasion keys), Weekly (Unknown Fissure, Ascension Trial,
+  Abyss time) with the time to the daily (09:00) and weekly (Wednesday 09:00) resets, and the currencies. CHAR / SERVER
+  says whether a count is the character's own or shared on the server; "(+26)" is bonus entries. A reading from before
+  the last reset is marked as refilled since. More lists are added as they're decoded.
 - **On/Off switch** (top right of each feature's page, or the dot beside it in the sidebar): a feature that's off does nothing in the background: no
   alerts, its overlay hidden (it comes back when switched on), and View cone doesn't read the screen. The sidebar
   dims it. Its settings can still be changed.

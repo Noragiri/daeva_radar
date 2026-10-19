@@ -344,6 +344,98 @@ def wardrobe(data):
         return out
     except (ValueError, struct.error):
         return None
+# ---- your character's sheet: currencies and content counters (Settings → Characters' checklist)
+# Recorded 2026-10-19 on Noragiri, against the game's own screens:
+# '11 56' at login lists the inventory, currencies too; '1b 56' updates counts. A record is
+# [3 bytes] 00 [u16] 00 | item id u32 | count u64 | 01 ...  The currencies' item ids:
+CURRENCIES = {930100031: "Kinah", 930100001: "Kinah (bound)", 930100003: "Abyss Points", 930100017: "Nightmare Points",
+              930100019: "Oath Coin", 930100013: "Silver Medal of Merit", 930100011: "Centuryroot Token",
+              930100024: "Daeva Season Pass Coin", 930100023: "Enhancement Stone",
+              930100021: "Customization Voucher",
+              960300012: "Pumpkin Coin"}  # 9603…: event currencies (Halloween 2026)
+CURRENCY_RANGES = ((930100000, 930100100), (960300000, 960300100))  # unnamed ones are kept too
+
+
+def currencies(data):
+    """'11 56' / '1b 56' -> {item id: count} of the currency records in it."""
+    out = {}
+    b = bytes(data)
+    for lo, hi in CURRENCY_RANGES:
+        prefix = (lo // 0x100).to_bytes(3, "little")[1:]  # the id's top bytes, to find candidates fast
+        p = b.find(prefix)
+        while p >= 0:
+            start = p - 2
+            if start >= 7 and start + 12 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
+                item = int.from_bytes(b[start:start + 4], "little")
+                if lo <= item < hi:
+                    count = int.from_bytes(b[start + 4:start + 12], "little")
+                    if count < 10 ** 12:
+                        out[item] = count
+            p = b.find(prefix, p + 1)
+    return out
+
+
+# '0b 61' at login: every content counter; '0c 61': one counter changed. An entry is [type][u32 id][value], the
+# value's size by type: 00 none (= 0 left), 01 u64, 03 two u64, 04 / 08 one byte, 0c two LEB128 numbers. Values
+# are what's LEFT (entries, attempts, time in ms). Named ones: 4 = Nightmare runs (went 2 -> 1 on a run,
+# 2026-10-19), 80000001 = Ascension Trial, 3 = Abyss time (ms; 7 h = 25,200,000).
+# Checked 2026-10-19 on three characters against the game and aion2t: 1 Shugo keys (12), 8 Invasion keys (5 / 7),
+# 4 Nightmare ([8, 2] = "8 (+2) / 14"), 6 Unknown Fissure with its bonus in 101 ("0 (+26) / 14"), 80000001
+# Ascension Trial, 3 Abyss time (ms: 25,138,000 = "6h58m58s / 7h"), 60000001 Odyle energy ([325, 970] = "325 (+970)").
+# A two-number value is [left, bonus]. Server = shared by the account's characters on the server.
+COUNTERS = {
+    4: dict(name="Nightmare", max=14, group="stock", scope="char"),
+    1: dict(name="Shugo keys", max=None, group="stock", scope="server"),
+    8: dict(name="Invasion keys", max=7, group="stock", scope="server"),
+    6: dict(name="Unknown Fissure", max=14, group="weekly", scope="server", bonus=101, note="14 entries a week"),
+    80000001: dict(name="Ascension Trial", max=3, group="weekly", scope="char", note="3 entries a week"),
+    3: dict(name="Abyss time", max=7 * 3600 * 1000, group="weekly", scope="char", unit="ms", note="7 hours a week"),
+}
+ENERGY = 60000001  # Odyle energy: [now, bonus]
+
+
+def _counter(b, p):
+    """-> (id, value, next offset) of the entry at p; value None = none left."""
+    kind, ident = b[p], int.from_bytes(b[p + 1:p + 5], "little")
+    p += 5
+    if kind == 0:
+        return ident, 0, p
+    if kind == 1:
+        return ident, int.from_bytes(b[p:p + 8], "little", signed=True), p + 8
+    if kind == 3:
+        return ident, int.from_bytes(b[p:p + 8], "little", signed=True), p + 16
+    if kind in (4, 8):
+        return ident, b[p], p + 1
+    if kind == 0x0c:
+        first, p = varint(b, p)
+        second, p = varint(b, p)
+        return ident, [first, second], p
+    raise ValueError("counter type %x" % kind)
+
+
+def counters(data):
+    """'0b 61' -> {id: value} (every counter), or None if it doesn't parse cleanly."""
+    b = bytes(data)
+    try:
+        n, p, out = b[2], 3, {}
+        while p < len(b):
+            ident, value, p = _counter(b, p)
+            out[ident] = value
+        return out if len(out) == n else None
+    except (ValueError, IndexError):
+        return None
+
+
+def counter_update(data):
+    """'0c 61' (00 | one entry | reason byte) -> (id, value) or None."""
+    b = bytes(data)
+    try:
+        ident, value, p = _counter(b, 3)
+        return (ident, value) if p == len(b) - 1 else None
+    except (ValueError, IndexError):
+        return None
+
+
 SHOP_TABS = {0x65: "Special", 0x68: "Pets", 0x67: "Skins"}  # the rotating shop's tabs (refreshes at x:00)
 SHOP_DISCOUNT = {0: 10, 1: 20, 2: 30, 3: 50}  # discount code -> percent (checked against the prices)
 def shop_tab(data):
@@ -382,6 +474,27 @@ def login_name(data):
         return entity, bytes(data[p + 6:p + 6 + n]).decode("utf-8"), int.from_bytes(data[p:p + 4], "little") & ~0x80
     except (ValueError, IndexError, UnicodeDecodeError):
         return None
+# the login message, after the name: 28 05 | class u32 | 01 | level u32 (checked 2026-10-19: Noragiri 22 / 45,
+# NoragiriTwo 30 / 23, WaitingSkip 30 / 45 against the game). Class ids seen so far:
+CLASSES = {22: "Spiritmaster", 30: "Cleric"}
+CLASS_ICONS = {"Spiritmaster": "elementalist", "Cleric": "cleric", "Chanter": "chanter", "Gladiator": "gladiator",
+               "Templar": "templar", "Assassin": "assassin", "Ranger": "ranger", "Sorcerer": "sorcerer"}
+
+
+def login_profile(data):
+    """'33 36' -> (class id, level) or None."""
+    b = bytes(data)
+    try:
+        _, p = varint(b, 2)
+        n = b[p + 5]
+        q = p + 6 + n
+        if b[q:q + 2] != b"\x28\x05" or b[q + 6] != 1:
+            return None
+        return int.from_bytes(b[q + 2:q + 6], "little"), int.from_bytes(b[q + 7:q + 11], "little")
+    except (ValueError, IndexError):
+        return None
+
+
 class Tracker:
     def __init__(self):
         self.lock = threading.Lock()
@@ -406,6 +519,11 @@ class Tracker:
         self.wardrobe_count = 0
         self.shop = {}  # tab -> dict(items, time) from the last '91 56' of that tab
         self.shop_count = 0
+        # your sheet: dict(owner, counters, currencies, time). A login sends the counters and the inventory just
+        # BEFORE the message with the name: a full counter list starts a new sheet, the next login names it.
+        self.sheet = None
+        self.sheet_count = 0
+        self.own_profile = None  # (class id, level) from the login message
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
         # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
         # players land on the same teleport spots, and ids may be reused between sessions.)
@@ -471,6 +589,31 @@ class Tracker:
         with self.lock:
             self._feed(batch, when)
 
+    def note_sheet(self, kind, data, when):
+        """Counters and currencies -> self.sheet (see __init__)."""
+        if kind == b"\x0ba":
+            found = counters(data)
+            if found is None:
+                return False
+            self.sheet = dict(owner=None, counters=found, currencies={}, time=when)  # named by the login after it
+        elif kind == b"\x0ca":
+            change = counter_update(data)
+            if change is None:
+                return False
+            if self.sheet is None:
+                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, time=when)
+            self.sheet["counters"][change[0]] = change[1]
+        else:
+            found = currencies(data)
+            if not found:
+                return False
+            if self.sheet is None:
+                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, time=when)
+            self.sheet["currencies"].update(found)
+        self.sheet["time"] = when
+        self.sheet_count += 1
+        return True
+
     def set_own(self, own):
         """You are `own`. Switching from another character drops everything about the old one."""
         if own == self.own:
@@ -492,6 +635,10 @@ class Tracker:
                 login = login_name(data)
                 if login:
                     self.own_name, self.own_char_no = login[1], login[2]
+                    self.own_profile = login_profile(data)
+                    if self.sheet is not None and self.sheet["owner"] is None:
+                        self.sheet["owner"] = login[1]
+                        self.sheet_count += 1
             elif kind == b"J6":
                 try:
                     self.set_own(varint(data, 2)[0])
@@ -501,6 +648,8 @@ class Tracker:
         for data in batch:
             kind = data[:2]
             if kind[1:] == b"\x90" and self.note_souls(data, when):
+                continue
+            if kind in (b"\x0ba", b"\x0ca", b"\x11V", b"\x1bV") and self.note_sheet(kind, data, when):
                 continue
             if kind == b"\x91V":
                 tab = shop_tab(data)
@@ -674,4 +823,7 @@ class Tracker:
                         soul_sync=self.soul_sync, soul_sync_count=self.soul_sync_count,
                         soul_events=list(self.soul_events), soul_count=self.soul_count,
                         wardrobe=self.wardrobe, wardrobe_count=self.wardrobe_count,
-                        shop=dict(self.shop), shop_count=self.shop_count)
+                        shop=dict(self.shop), shop_count=self.shop_count,
+                        sheet=None if self.sheet is None else dict(self.sheet, counters=dict(self.sheet["counters"]),
+                                                                   currencies=dict(self.sheet["currencies"])),
+                        sheet_count=self.sheet_count, own_profile=self.own_profile)

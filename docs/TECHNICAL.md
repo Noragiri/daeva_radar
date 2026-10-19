@@ -89,6 +89,15 @@ stays on this PC.
   - `14 90` then `0e 90`: a level up (pet, new level) and the souls it used (5 to unlock, 25 to Lv2, 75 to Lv3)
 - `5b 8d`: your wardrobe when you enter the world: every appearance piece you own (skin item id = set x 100 + piece;
   checked live 2026-10-15 against a character's equipped skins, 219 pieces, and the Closet's own counts)
+- Your sheet (checked live 2026-10-19 on two characters against the game's screens), sent at login just before
+  the message with your name:
+  - `11 56`: the inventory; currencies are items (Kinah 930100031, bound Kinah 930100001, Abyss Points 930100003,
+    Nightmare Points 930100017, Oath Coin 930100019, Silver Medal of Merit 930100013, Centuryroot Token 930100011, Daeva Season Pass Coin 930100024, Enhancement Stone 930100023, Customization Voucher 930100021, the Halloween event's Pumpkin Coin
+    960300012).
+    A record is `[3 bytes] 00 [u16] 00 | item id u32 | count u64 | 01 …`; `1b 56` updates counts.
+  - `0b 61`: every content counter as `[type][u32 id][value]` (type 00 none = 0 left, 01 u64, 03 two u64, 04 / 08 one
+    byte, 0c two LEB128); values are what's left. Named: 4 Nightmare runs, 80000001 Ascension Trial, 3 Abyss time
+    (ms). `0c 61` changes one (`00 | entry | reason byte`): Nightmare went 2 → 1 at the end of a run.
 - `91 56`: one tab of the rotating shop (Special `65`, Pets `68`, Skins `67`), sent when you open it: item id,
   quantity, discount code (0-3 = 10/20/30/50 %), original price and price. Each character has its own shop; the
   server doesn't push new offers at the hourly refresh.

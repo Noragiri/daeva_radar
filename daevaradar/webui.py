@@ -83,8 +83,12 @@ class WebUI:
                         return self.json(ui.app.call(lambda: ui.page(query.get("feature"), query.get("tab"))))
                     except Exception as e:
                         return self.reply(500, str(e).encode("utf-8"))
-                folder, name = (TILES, path[len("/tiles/"):]) if path.startswith("/tiles/") else \
-                    (WEB, "index.html" if path == "/" else path.lstrip("/"))
+                if path.startswith("/tiles/"):
+                    folder, name = TILES, path[len("/tiles/"):]
+                elif path.startswith("/classes/"):  # the class icons (64 px)
+                    folder, name = ASSETS / "classes" / "64", path[len("/classes/"):]
+                else:
+                    folder, name = WEB, "index.html" if path == "/" else path.lstrip("/")
                 file = (folder / name).resolve()
                 if folder.resolve() not in file.parents or not file.is_file():
                     return self.reply(404)

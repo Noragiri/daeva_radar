@@ -212,4 +212,21 @@ assert cf.shop_tab(b'\x91V\x68\x03' + shop[4:]) is None  # says 3 items, has 2
 t = cf.Tracker(); t.feed([shop], 1.0)
 assert t.snapshot(now=1.0)['shop']['Pets']['items'][0]['price'] == 70000
 print('shop: tab parsed, discounts', [o['discount'] for o in tab[1]])
+# 15) your sheet (recorded 2026-10-19): the counters ('0b 61') and inventory ('11 56') come at login BEFORE the
+# message with your name, which names them; '0c 61' updates one counter (Nightmare 2 -> 1 after a run)
+import struct
+t = cf.Tracker()
+listing = b'\x0ba' + bytes([3]) + b'\x04' + struct.pack('<I', 4) + b'\x02' + b'\x01' + struct.pack('<Iq', 3, 25200000) + \
+    b'\x00' + struct.pack('<I', 80000001)
+assert cf.counters(listing) == {4: 2, 3: 25200000, 80000001: 0}
+inventory = b'\x11V' + bytes(5) + b'\x2f\xa4\x13\x00\x9c\x01\x00' + struct.pack('<IQ', 930100031, 86997) + b'\x01' + bytes(4)
+assert cf.currencies(inventory) == {930100031: 86997}
+t.feed([listing, inventory], 1.0)
+assert t.snapshot(now=1)['sheet']['owner'] is None  # not named until the login message
+t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 2.0)
+t.feed([b'\x0ca' + b'\x00\x04' + struct.pack('<I', 4) + b'\x01\x03'], 3.0)
+s = t.snapshot(now=3)['sheet']
+assert s['owner'] == 'Noragiri' and s['counters'][4] == 1 and s['currencies'][930100031] == 86997, s
+print('sheet: counters + currencies named by the login; Nightmare 2 -> 1')
+
 print('ALL OK')

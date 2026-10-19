@@ -10,6 +10,59 @@ from urllib.parse import parse_qs, urlsplit
 from .common import ASSETS, CONFIG, WINDOWS
 
 NO_WEBVIEW = 3
+ERROR_LOG = CONFIG / "DaevaRadar" / "window_error.log"  # why the last web window couldn't open (App reads it)
+
+
+def fail(reason):
+    """Can't show the window: say why (the radar logs it and opens the page in the browser)."""
+    import traceback
+    try:
+        ERROR_LOG.parent.mkdir(parents=True, exist_ok=True)
+        ERROR_LOG.write_text("%s\n%s" % (reason, traceback.format_exc()), encoding="utf-8")
+    except OSError:
+        pass
+    sys.exit(NO_WEBVIEW)
+
+
+WEBVIEW2_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
+NO_RUNTIME = "Microsoft Edge WebView2 Runtime isn't installed"
+
+
+def missing_runtime():
+    """Windows: what the window needs that this PC lacks (else None). pywebview needs the Edge WebView2 Runtime and
+    .NET Framework 4.6.2+; without them it falls back to Internet Explorer, which the app doesn't ship (and its pages
+    wouldn't run in)."""
+    if not WINDOWS:
+        return None
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full") as k:
+            if winreg.QueryValueEx(k, "Release")[0] < 394802:
+                return ".NET Framework 4.6.2 or newer isn't installed"
+    except OSError:
+        return ".NET Framework 4.6.2 or newer isn't installed"
+    client = r"Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"  # the WebView2 Runtime
+    for root, path in ((winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\" + client),
+                       (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\" + client), (winreg.HKEY_CURRENT_USER, "SOFTWARE\\" + client)):
+        try:
+            with winreg.OpenKey(root, path) as k:
+                if winreg.QueryValueEx(k, "pv")[0] not in ("", "0.0.0.0"):
+                    return None
+        except OSError:
+            continue
+    return NO_RUNTIME
+
+
+def data_folder():
+    """WebView2's data folder. Kept apart for an elevated window (the radar runs as administrator): WebView2 won't
+    share one folder between elevated and normal processes, and fails to start if asked to."""
+    admin = False
+    if WINDOWS:
+        try:
+            admin = bool(ctypes.windll.shell32.IsUserAnAdmin())
+        except OSError:
+            pass
+    return CONFIG / "DaevaRadar" / ("webview-admin" if admin else "webview")
 
 
 def set_window_icon(hwnd):
@@ -26,10 +79,13 @@ def set_window_icon(hwnd):
 
 
 def run(url):
+    lacking = missing_runtime()
+    if lacking:
+        fail(lacking)
     try:
         import webview
     except ImportError:
-        sys.exit(NO_WEBVIEW)
+        fail("pywebview isn't installed for this Python (python -m pip install pywebview)")
     query = parse_qs(urlsplit(url).query)
     solo = query.get("solo", [""])[0]
     if WINDOWS:  # the app's taskbar button (Settings and the World map stack on it), not Python's
@@ -88,6 +144,6 @@ def run(url):
                 pass
     window.events.shown += shown
     try:
-        webview.start(private_mode=False, storage_path=str(CONFIG / "DaevaRadar" / "webview"))
-    except Exception:
-        sys.exit(NO_WEBVIEW)
+        webview.start(private_mode=False, storage_path=str(data_folder()))
+    except Exception as e:
+        fail("the window couldn't start (Edge WebView2): %r" % e)

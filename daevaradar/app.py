@@ -272,6 +272,27 @@ class App:
         self.open_settings()
         self.focus_seq += 1
 
+    def explain_browser(self):
+        """A pop-up: why Settings opened in the browser, and (WebView2 missing) a click to Microsoft's download."""
+        from .settings_window import NO_RUNTIME, WEBVIEW2_DOWNLOAD
+        reason = self.window_error()
+        if reason == NO_RUNTIME:
+            Toast(self.root, "Settings opened in your browser\nMicrosoft Edge WebView2 Runtime isn't installed.\n"
+                  "Click to get it from Microsoft (free), then restart Daeva Radar.", color="#ffb347", seconds=None,
+                  label="Settings", on_click=lambda: webbrowser.open(WEBVIEW2_DOWNLOAD))
+        else:
+            Toast(self.root, "Settings opened in your browser\nIts own window couldn't start: %s" % reason,
+                  color="#ffb347", seconds=20, label="Settings")
+
+    @staticmethod
+    def window_error():
+        """The reason the last web window gave for not opening (settings_window.ERROR_LOG)."""
+        from .settings_window import ERROR_LOG
+        try:
+            return ERROR_LOG.read_text(encoding="utf-8").splitlines()[0]
+        except (OSError, IndexError):
+            return "unknown"
+
     def check_settings_window(self):
         """No pywebview / WebView2: the Settings window quits at once, so open the page in the browser instead.
         Without a tray icon, closing Settings quits the app (there'd be no way back in)."""
@@ -280,8 +301,9 @@ class App:
         if proc and proc.poll() is not None:
             self.settings_proc = None
             if proc.returncode == NO_WEBVIEW and time.time() - self.settings_started < 30:
-                self.engine.say("Settings window unavailable (pywebview / WebView2): opening it in the browser")
+                self.engine.say("Settings window unavailable: %s. Opening it in the browser" % self.window_error())
                 webbrowser.open(self.web.url)
+                self.explain_browser()
             elif not self.tray:
                 self.close()
         proc = self.map_proc

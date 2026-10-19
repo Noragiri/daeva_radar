@@ -43,6 +43,7 @@ const P = {
   Layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M10 10v10"/>',
   About: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   Characters: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>',
+  Checklist: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M8 14l1.5 1.5L12 13M14 8h3M14 14h3"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[name] || P.About}</svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -69,13 +70,13 @@ document.addEventListener("change", (e) => {
 
 // ---- navigation
 function pages() {
-  return [["General"], ["Characters"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["About"]];
+  return [["General"], ["Characters"], ["Checklist"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["About"]];
 }
 function renderNav() {
   const nav = document.getElementById("nav");
   const item = (name, f) => `<button data-page="${esc(name)}" class="${name === page ? "active" : ""} ${f && !f.enabled ? "off" : ""}">
     ${icon(name)}<span>${esc(name === "Layout" ? "Overlay layout" : name)}</span>${f ? `<i class="dot" data-switch="${esc(f.title)}" title="${f.enabled ? "On: click to turn off" : "Off: click to turn on"}"></i>` : ""}</button>`;
-  nav.innerHTML = item("General") + item("Characters") + '<div class="group">Features</div>' +
+  nav.innerHTML = item("General") + item("Characters") + item("Checklist") + '<div class="group">Features</div>' +
     state.features.map((f) => item(f.title, f)).join("") + '<div class="group">Overlays</div>' + item("Layout") +
     '<div class="group">Daeva Radar</div>' + item("About");
 }
@@ -174,16 +175,79 @@ function characters() {
     "seg faction " + f.toLowerCase() + (c.faction === f ? " on" : ""));
   const where = (c) => c.maps.length ? "seen in " + c.maps.map(label).join(", ") : "no map detected yet";
   return `<h2>${icon("Characters")}Characters</h2>
-  <p class="lead">Every character Daeva Radar has seen log in (by name). Set each one's faction: Elyos or Asmodian.
-  Unset, it's guessed from the maps the character was detected on.</p>
+  <p class="lead">Every character Daeva Radar has seen log in (by name). Set each one's faction: Elyos or Asmodian
+  (unset, it's guessed from the maps the character was detected on). Their keys, entries and currencies are on the
+  <b>Checklist</b> page.</p>
   ${rows.length ? rows.map((c) => `<div class="row"><div class="label"><b>${esc(c.name)}</b>
       ${c.playing ? '<span class="badge on">playing now</span>' : ""}
       <span class="hint">${c.last ? "Last played " + esc(c.last) : "Seen before this page existed"} · ${esc(where(c))}${
         !c.faction && c.guess ? ` · looks <b>${esc(c.guess)}</b>` : ""}</span></div>
       <div class="btns">${side(c, "Elyos")}${side(c, "Asmodian")}</div>
+      ${btn("Checklist", () => { store.set("checklist", c.name); page = "Checklist"; store.set("page", page); render(true); })}
       ${btn("Forget", () => confirm(`Forget ${c.name}? It comes back the next time it logs in.`) && act("forget_character", { name: c.name }), "danger")}
     </div>`).join("") : '<p class="muted">None yet: log in with Daeva Radar running.</p>'}`;
 }
+
+// ---- the checklist: each character's keys, entries and currencies, read from the game (like the game's own lists)
+const RESET_HOUR = 9, WEEKLY_DAY = 3;  // daily at 09:00, weekly on Wednesday 09:00 (EU servers)
+function lastReset(weekly, now = new Date()) {
+  const r = new Date(now);
+  r.setHours(RESET_HOUR, 0, 0, 0);
+  if (weekly) r.setDate(r.getDate() - ((r.getDay() - WEEKLY_DAY + 7) % 7));
+  if (r > now) r.setDate(r.getDate() - (weekly ? 7 : 1));
+  return r;
+}
+function untilReset(weekly) {
+  const next = lastReset(weekly), now = new Date();
+  next.setDate(next.getDate() + (weekly ? 7 : 1));
+  const s = Math.max(0, (next - now) / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
+  return { text: d ? `${d}d ${h}h` : `${h}h${String(m).padStart(2, "0")}m`, when: next.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" }) };
+}
+function checklist() {
+  const chars = state.characters.filter((c) => c.checklist && c.checklist.read);
+  if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs. Its keys, entries and currencies are read from the game at login.</p>`;
+  let pick = store.get("checklist", null);
+  if (!chars.some((c) => c.name === pick)) pick = (chars.find((c) => c.playing) || chars[0]).name;
+  const c = chars.find((x) => x.name === pick), k = c.checklist;
+  const fmt = (n) => Number(n).toLocaleString("en-US");
+  const hms = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 3600)}h${String(Math.floor(s / 60) % 60).padStart(2, "0")}m${String(s % 60).padStart(2, "0")}s`; };
+  const stale = (weekly) => !c.playing && k.read_at && k.read_at * 1000 < lastReset(weekly).getTime();
+  const tag = (scope) => `<span class="cl-tag ${scope}">${scope === "server" ? "SERVER" : "CHAR"}</span>`;
+  const amount = (r) => r.unit === "ms" ? `${hms(r.left)} / ${r.max / 3600000}h`
+    : `${r.left}${r.bonus ? ` (+${fmt(r.bonus)})` : ""}${r.max ? ` / ${r.max}` : ""}`;
+  const bar = (r) => r.max ? `<i class="cl-bar" style="--p:${Math.min(100, 100 * r.left / r.max)}%"></i>` : "";
+  const tabs = chars.map((x) => `<button class="cl-char ${x.name === pick ? "on" : ""}" data-char="${esc(x.name)}">
+      ${x.checklist.icon ? `<img src="/classes/${x.checklist.icon}.png" alt="">` : '<span class="cl-noicon"></span>'}
+      <span><b>${esc(x.name)}</b>${x.playing ? ' <em>in game</em>' : ""}<small>${esc([x.checklist.cls, x.checklist.level && "Level " + x.checklist.level].filter(Boolean).join(" · ") || "class not read yet")}</small>
+      ${x.checklist.energy ? `<span class="cl-energy" title="Odyle energy">◆ ${fmt(x.checklist.energy[0])}${x.checklist.energy[1] ? ` (+${fmt(x.checklist.energy[1])})` : ""}</span>` : ""}</span></button>`).join("");
+  const stock = k.stock.map((r) => `<div class="cl-stock"><div class="cl-row-head"><b>${esc(r.name)}</b>${tag(r.scope)}<span class="cl-amount">${amount(r)}</span></div>${bar(r)}</div>`).join("");
+  const rows = (list, weekly) => list.map((r) => {
+    const done = r.left <= 0 && !r.bonus;  // bonus entries (the "+26") still count as left
+    return `<div class="cl-row ${done ? "done" : ""}"><span class="cl-check">${done ? "✓" : ""}</span>
+      <div class="cl-what"><b>${esc(r.name)}</b>${tag(r.scope)}<small>${esc(r.note || "")}</small></div>
+      <div class="cl-right"><span class="cl-amount">${amount(r)}</span>${bar(r)}${done ? '<span class="cl-done">Done</span>' : ""}</div></div>`;
+  }).join("") || '<p class="muted">Nothing decoded for this list yet.</p>';
+  const panel = (title, list, weekly, sym) => {
+    const reset = untilReset(weekly), doneN = list.filter((r) => r.left <= 0 && !r.bonus).length;
+    return `<section class="cl-panel"><header><span class="cl-sym">${sym}</span><div><h3>${title} · ${esc(c.name)}</h3>
+      <small>${doneN} of ${list.length} done · resets ${reset.when}${stale(weekly) ? ' · <span class="warn">read before this reset: refilled since</span>' : ""}</small></div>
+      <span class="cl-timer">⏱ ${reset.text}</span></header>${rows(list, weekly)}</section>`;
+  };
+  return `<h2>${icon("Checklist")}Characters checklist</h2>
+  <div class="cl-chars">${tabs}</div>
+  <section class="cl-panel"><header><div><h3>Stock and keys</h3><small>Read from the game ${esc(k.read)}${c.playing ? " · live while you play" : ""}</small></div></header>
+    <div class="cl-stocks">${stock || '<p class="muted">Not read yet.</p>'}</div></section>
+  <div class="cl-two">${panel("Daily", k.daily, false, "☀")}${panel("Weekly", k.weekly, true, "▦")}</div>
+  <section class="cl-panel"><header><div><h3>Currencies</h3></div></header>
+    <div class="ck-money">${k.currencies.map(([n, v]) => `<span><small>${esc(n)}</small><b>${fmt(v)}</b></span>`).join("")}</div></section>
+  <p class="muted cl-foot">Counts are what's left, read from the game when the character logs in and live while you play it. More of the game's lists (Abyss Corridors, Supply Requests, Daeva Pass…) will be added as they're decoded.</p>`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-char]");
+  if (!b) return;
+  store.set("checklist", b.dataset.char);
+  render(true);
+});
 
 function about() {
   return `<h2>${icon("About")}About</h2>
@@ -233,7 +297,7 @@ function render(fresh) {
   } else {
     el.dataset.view = "";
     FeaturePage.stop();
-    el.innerHTML = page === "General" ? general() : page === "Characters" ? characters() : page === "Layout" ? layout() : about();
+    el.innerHTML = page === "General" ? general() : page === "Characters" ? characters() : page === "Checklist" ? checklist() : page === "Layout" ? layout() : about();
     el.scrollTop = scroll;
   }
   renderFooter();
