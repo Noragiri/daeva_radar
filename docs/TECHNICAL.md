@@ -24,7 +24,7 @@ daevaradar/          the program
   page.py              the blocks feature pages are made of (for assets/web/page.js), and a canvas that records radars
   layout.py            overlay layout mode: a see-through grid over the game window to place them
   characters.py        the characters seen logging in (by name) and the faction set for each
-  worldmap.py          the Map window (world map images: pets' soul spawns, hidden cubes, gathering nodes)
+  worldmap.py          the World map's data for its page (assets/web/map.js; tiles served at /tiles/)
   ui.py                shared drawing, overlay window, widgets, popups
   feature.py           the Feature base (tabs, On/Off switch, overlay controls)
   app.py               the main window
@@ -110,7 +110,8 @@ in the log. To work out a new message, `--record FILE` saves every decoded messa
 ## Tray, Settings and threads
 
 The app runs from a tray icon (pystray, on its own thread). Tk keeps the main thread for the windows over the
-game: the overlays, info cards, pop-ups, the World map and Position debug (its root window is never shown). Settings is a web page (`assets/web/`) served by
+game: the overlays, info cards, pop-ups and Position debug (its root window is never shown). The World map is a
+web page like Settings, in a second window process (`?solo=map`). Settings is a web page (`assets/web/`) served by
 a local server (`webui.py`): bound to 127.0.0.1 on a random port, every API call needs the random token from the
 page's URL and the server's own Host header. Its window is a separate process (`--settings-window URL`, pywebview /
 Edge WebView2), because pywebview and Tk both need a main thread; if it can't start (no pywebview or WebView2), the

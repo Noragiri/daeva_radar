@@ -1,6 +1,7 @@
 // Daeva Radar Settings: talks to the radar's local server (webui.py). The token comes from this page's URL.
 "use strict";
 const TOKEN = new URLSearchParams(location.search).get("t") || "";
+const SOLO = new URLSearchParams(location.search).get("solo");  // "map": this window is the World map (map.js)
 let state = null, page = null, focusSeen = null;
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -303,5 +304,7 @@ function windowControls() {
 window.addEventListener("pywebviewready", windowControls);
 if (window.pywebview && window.pywebview.api) windowControls();
 
-refresh();
-setInterval(refresh, 1000);
+if (!SOLO) {
+  refresh();
+  setInterval(refresh, 1000);
+}

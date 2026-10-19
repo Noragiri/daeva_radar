@@ -4,6 +4,8 @@ random token from the page's URL, and the Host header must be this server's, so 
 it. API calls run on the Tk thread (App.call), so they can touch the windows and the features.
   GET  /api/state           everything the page shows (polled about once a second)
   GET  /api/page?feature=F&tab=T   that feature tab's blocks (Feature.page, page.py), polled while it's shown
+  GET  /api/map/data?map=K  the World map's fixed data for map K (worldmap.py); /api/map/state its live part
+  GET  /tiles/<map>/<z>/<x>_<y>.webp   the world map images (data/map_tiles)
   POST /api/action          {"action": name, "args": {...}}: one of ACTIONS"""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ctypes
@@ -15,11 +17,12 @@ import time
 from urllib.parse import parse_qs
 
 from .common import ASSETS, WINDOWS, load_settings, save_settings
+from .worldmap import TILES
 from . import update
 
 WEB = ASSETS / "web"
 TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-         ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon"}
+         ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".webp": "image/webp"}
 
 
 class WebUI:
@@ -68,16 +71,22 @@ class WebUI:
                 path = self.path.split("?", 1)[0]
                 if not self.trusted(path.startswith("/api/")):
                     return self.reply(403)
-                if path in ("/api/state", "/api/page"):
+                if path in ("/api/state", "/api/page", "/api/map/data", "/api/map/state"):
                     query = {k: v[0] for k, v in parse_qs(self.path.partition("?")[2]).items()}
                     try:
                         if path == "/api/state":
                             return self.json(ui.app.call(ui.state))
+                        if path == "/api/map/data":
+                            return self.json(ui.app.call(lambda: ui.app.world_map.data(query.get("map"))))
+                        if path == "/api/map/state":
+                            return self.json(ui.app.call(ui.app.world_map.state))
                         return self.json(ui.app.call(lambda: ui.page(query.get("feature"), query.get("tab"))))
                     except Exception as e:
                         return self.reply(500, str(e).encode("utf-8"))
-                file = (WEB / ("index.html" if path == "/" else path.lstrip("/"))).resolve()
-                if WEB.resolve() not in file.parents or not file.is_file():
+                folder, name = (TILES, path[len("/tiles/"):]) if path.startswith("/tiles/") else \
+                    (WEB, "index.html" if path == "/" else path.lstrip("/"))
+                file = (folder / name).resolve()
+                if folder.resolve() not in file.parents or not file.is_file():
                     return self.reply(404)
                 self.reply(200, file.read_bytes(), TYPES.get(file.suffix, "application/octet-stream"))
 
@@ -126,7 +135,7 @@ class WebUI:
                          debug=bool(app.debug), tray=bool(app.tray)),
             features=features, overlays=overlays(app), screens=screens(app),
             layout=bool(app.layout), characters=app.characters.listing(),
-            focus=app.focus_seq, goto=getattr(app, "web_goto", None))
+            focus=app.focus_seq, map_focus=app.map_focus, goto=getattr(app, "web_goto", None))
 
 
 # ---- overlays: the minimap overlays (one per feature) and the info panels, for the layout grid
@@ -235,6 +244,18 @@ def feature_act(app, feature, id, value=None):
     return app.features[feature].act(id, value)
 
 
+def map_cfg(app, values):
+    app.world_map.set_cfg(values)
+
+
+def map_target(app, pid):
+    app.world_map.toggle_target(pid)
+
+
+def map_watch(app, name):
+    app.world_map.toggle_watch(name)
+
+
 def set_faction(app, name, faction=None):
     app.characters.set_faction(name, faction)
 
@@ -290,4 +311,4 @@ def quit_app(app):
 ACTIONS = {f.__name__: f for f in (feature_act, set_feature, overlay_show, overlay_lock, overlay_move, overlay_scale,
                                    overlay_cone, overlay_recenter, edit_layout, lock_all, set_map, set_topmost,
                                    set_settings_at_start, check_updates, install_update, open_map, toggle_debug,
-                                   quit_app, set_faction, forget_character)}
+                                   quit_app, set_faction, forget_character, map_cfg, map_target, map_watch)}

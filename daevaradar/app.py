@@ -12,6 +12,7 @@ from pathlib import Path
 from . import update
 from .common import FROZEN, NO_WINDOW, WINDOWS, launch_command, load_settings, save_settings
 from .characters import Characters
+from .worldmap import WorldMap
 from .vision import ViewCone
 from .debug import PositionWindow
 from .game import MapData, map_name
@@ -41,10 +42,10 @@ class App:
         self.view = ViewCone()
         self.mapdata = MapData()  # shared by the features that use the map data
         self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
-        self.world_map = None  # the Map window (worldmap.py), shared by Monsters (pets) and Gathering
+        self.map_proc = None  # the World map's window (its own process, like Settings)
         self.debug = None  # the Position debug window
         self.calls = queue.Queue()  # work handed to the Tk thread (the web server's and the tray's threads)
-        self.focus_seq = 0  # bumped to ask the open Settings window to come to the front
+        self.focus_seq = self.map_focus = 0  # bumped to ask the open Settings / map window to come to the front
         self.settings_proc, self.settings_started, self.tray = None, 0, None
         self.panels = {}
         self.layout, self.layout_seen = None, None  # overlay layout mode (layout.py) while it's on
@@ -73,6 +74,7 @@ class App:
         for cls in self.FEATURES:
             self.features[cls.title] = cls(self)
         self.panels = {cls.key: cls(self) for cls in PANELS}
+        self.world_map = WorldMap(self)  # the World map page's data; the page shows in its own window
         self.web = WebUI(self)
         self.engine.say("Settings page on " + self.web.url.split("?")[0])
         self.tray = start_tray(self)
@@ -172,29 +174,33 @@ class App:
                   label="Update")
         self.close()
 
-    # ---- windows over the game
+    # ---- windows
     def open_map(self, mode=None):
-        """The Map window (world map images; needs Pillow): mode "Pets" or "Resources" for its side panel."""
-        if self.world_map:
-            if mode:
-                self.world_map.set_mode(mode)
-            self.world_map.win.deiconify()
-            self.world_map.win.lift()
+        """The World map in its own window (assets/web/map.js): mode "Pets" or "Resources" for its side panel."""
+        if mode:
+            self.world_map.set_cfg(dict(mode=mode))
+        if self.map_proc and self.map_proc.poll() is None:
+            self.map_focus += 1  # the page sees it, switches to the mode and comes to the front
             return
-        try:
-            from .worldmap import WorldMap
-            self.world_map = WorldMap(self, mode)
-            self.engine.say("Map window opened")
-        except ImportError:
-            import traceback
-            self.engine.say("Map: Pillow missing: " + traceback.format_exc())
-            Toast(self.root, "The Map needs Pillow\nInstall it once with:  python -m pip install pillow",
-                  color="#ffb347", seconds=12, label="World map")
-        except Exception as e:  # never silently: the build has no console
-            import traceback
-            self.engine.say("Map failed: " + traceback.format_exc())
-            Toast(self.root, "Couldn't open the Map\n%s" % e, color="#ffb347", seconds=12, label="World map")
+        self.world_map.cfg["open"] = True
+        self.world_map.save()
+        url = self.web.url + "&solo=map" + ("&ontop=1" if self.topmost.get() else "")
+        self.map_proc = self.launch_window(url)
+        self.engine.say("World map opened")
 
+    def launch_window(self, url):
+        """A web window (settings_window.py) for url, as its own process; the browser if that can't start."""
+        exe = Path(sys.executable)
+        if not FROZEN and exe.with_name("pythonw.exe").exists():
+            exe = exe.with_name("pythonw.exe")
+        try:
+            proc = subprocess.Popen([str(exe)] + launch_command()[1:] + ["--settings-window", url], creationflags=NO_WINDOW)
+            proc.started = time.time()
+            return proc
+        except OSError as e:
+            self.engine.say("Window failed (%s): opening it in the browser" % e)
+            webbrowser.open(url)
+            return None
     def toggle_debug(self):
         """Show or hide the position debug window (remembered for the next start)."""
         if self.debug:
@@ -255,16 +261,8 @@ class App:
         if self.settings_proc and self.settings_proc.poll() is None:
             self.focus_seq += 1  # the page sees it and brings its window forward
             return
-        exe = Path(sys.executable)
-        if not FROZEN and exe.with_name("pythonw.exe").exists():
-            exe = exe.with_name("pythonw.exe")
-        command = [str(exe)] + launch_command()[1:] + ["--settings-window", self.web.url]
-        try:
-            self.settings_proc = subprocess.Popen(command, creationflags=NO_WINDOW)
-            self.settings_started = time.time()
-        except OSError as e:
-            self.engine.say("Settings window failed (%s): opening it in the browser" % e)
-            webbrowser.open(self.web.url)
+        self.settings_proc = self.launch_window(self.web.url)
+        self.settings_started = time.time()
 
     def open_settings_general(self):
         """Settings at General (the update notice's click): the page goes there on the next focus request."""
@@ -284,6 +282,14 @@ class App:
                 webbrowser.open(self.web.url)
             elif not self.tray:
                 self.close()
+        proc = self.map_proc
+        if proc and proc.poll() is not None:  # the World map window was closed
+            self.map_proc = None
+            if proc.returncode == NO_WEBVIEW and time.time() - proc.started < 30:
+                webbrowser.open(self.web.url + "&solo=map")
+            else:
+                self.world_map.cfg["open"] = False
+                self.world_map.save()
 
     # ---- every overlay: the features' minimap overlays and the info panels
     def overlay_list(self):
@@ -371,8 +377,6 @@ class App:
                 self.layout_seen = shown
                 self.layout.draw()
         self.check_settings_window()
-        if self.world_map:
-            self.world_map.update()
         if self.debug:
             self.debug.update(snap)
         self.root.after(100, self.tick)
@@ -392,8 +396,8 @@ class App:
             self.layout.close()
         for feature in self.features.values():
             feature.close()
-        if self.world_map:
-            self.world_map.close(quitting=True)
+        if self.map_proc and self.map_proc.poll() is None:  # open at the next start, as now
+            self.map_proc.terminate()
         if self.debug:
             self.debug.close()
         if self.tray:

@@ -138,7 +138,8 @@ when detection is slow or wrong; the line under it shows what was detected.
 
 ## Map window
 
-Opened with **Map ↗** from Monsters → Pets or Gathering → Radar (one window for both): the world map with layers for
+Opened with **Map ↗** from Monsters → Pets or Gathering → Radar, **World map** in the tray or Settings → General (one
+window for all, in the Settings style with its own top bar): the world map with layers for
 pets' soul spawns (coloured by genus), hidden cubes and each gathering group (Ore, Gems, Odyle, Herbs, Wood,
 Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side panel has two sides:
 
@@ -149,7 +150,8 @@ Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side
   highlight it. Highlighted resources are the ones watched in Gathering, so its radar and overlay follow; they're
   drawn bigger in their watch colour even with their layer off.
 
-It reopens at start if it was open when the app closed, and follows **Keep on top**.
+It reopens at start if it was open when the app closed, and stays above the game with **Keep the World map and
+Position debug on top** (Settings → General).
 
 ## Reading the radar
 
