@@ -74,6 +74,34 @@ def click_through(window, on):
     style |= 0x80000 | 0x80 | 0x08000000  # LAYERED | TOOLWINDOW | NOACTIVATE
     style = style | 0x20 if on else style & ~0x20  # TRANSPARENT = click-through
     user32.SetWindowLongPtrW(hwnd, -20, style)
+_exe_of = {}  # pid -> lower-case exe name (a pid keeps its program)
+
+
+def foreground_exe():
+    """Windows: (pid, exe name) of the program whose window has the focus, or (None, None)."""
+    from ctypes import wintypes
+    user32, kernel32 = ctypes.windll.user32, ctypes.windll.kernel32
+    hwnd = user32.GetForegroundWindow()
+    if not hwnd:
+        return None, None
+    pid = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    pid = pid.value
+    if pid not in _exe_of:
+        name = ""
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if handle:
+            buf, size = ctypes.create_unicode_buffer(1024), wintypes.DWORD(1024)
+            if kernel32.QueryFullProcessImageNameW(ctypes.c_void_p(handle), 0, buf, ctypes.byref(size)):
+                name = buf.value.replace("/", "\\").rsplit("\\", 1)[-1].lower()
+            kernel32.CloseHandle(ctypes.c_void_p(handle))
+        if len(_exe_of) > 200:
+            _exe_of.clear()
+        _exe_of[pid] = name
+    return pid, _exe_of[pid]
+
+
 def hotkey_thread(flag):
     """Windows: global Ctrl+Shift+O (works while the game has focus) sets flag."""
     from ctypes import wintypes
@@ -180,6 +208,11 @@ class Overlay:
         if not self.cfg["locked"]:
             self.cfg["ppm"] = max(0.05, min(20.0, self.cfg["ppm"] * (1.1 if up else 1 / 1.1)))
             self.save()
+
+    def set_visible(self, on):
+        """Shown only while the game has the focus (App.tick)."""
+        if on != (self.win.state() != "withdrawn"):
+            self.win.deiconify() if on else self.win.withdraw()
 
     def set_locked(self, locked):
         self.cfg["locked"] = locked

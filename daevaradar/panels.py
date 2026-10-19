@@ -4,6 +4,7 @@ drag the right edge to change the width, right-click to lock. Locked: it stays p
 card never takes focus from the game, so clicking one doesn't pull you out of it).
 Ctrl+Shift+O, the tray and Settings → Overlay layout lock and unlock them with the minimap overlays."""
 import math
+import time
 
 from .common import WINDOWS, load_settings, save_settings
 from .ui import FONT, click_through
@@ -20,6 +21,7 @@ class Panel:
     while that's on)."""
     key, title, feature, defaults = "", "", "", {}
     MIN_W, MAX_W, GRIP = 220, 520, 8
+    ALPHA = 0.93
 
     def __init__(self, app):
         self.app, self.tk = app, app.tk
@@ -28,6 +30,7 @@ class Panel:
         self.win = self.canvas = None
         self.drag, self.drawn, self.height = None, None, 120
         self.hot = []  # (x0, y0, x1, y1, action) clickable areas while unlocked
+        self.focus_hidden = False  # hidden while the game doesn't have the focus (App.overlays_visible)
 
     # ---- state
     def save(self):
@@ -77,9 +80,11 @@ class Panel:
     def open(self):
         tk = self.tk
         self.win = win = tk.Toplevel(self.app.root)
+        self.focus_hidden = False
         win.overrideredirect(True)
         win.attributes("-topmost", True)
-        win.attributes("-alpha", 0.93)
+        win.attributes("-alpha", self.ALPHA)
+        self.alpha, self.hidden = self.ALPHA, False
         win.configure(bg=CARD)
         self.canvas = c = tk.Canvas(win, bg=CARD, highlightthickness=0, bd=0)
         c.pack(fill="both", expand=True)
@@ -124,10 +129,20 @@ class Panel:
 
     # ---- drawing
     def update(self, snap):
-        """Every tick (App): open / close with the feature, and repaint when the content changed."""
+        """Every tick (App): open / close with the feature, hide while the game isn't focused, and repaint when the
+        content changed."""
         self.sync_window()
         if not self.win:
             return
+        if not self.app.overlays_visible:
+            if not self.focus_hidden:
+                self.win.withdraw()
+                self.focus_hidden = True
+            return
+        if self.focus_hidden:
+            self.focus_hidden = False
+            if not getattr(self, "hidden", False):  # unless it had faded out (PetPanel)
+                self.win.deiconify()
         content = self.content(snap)
         key = (content, self.cfg["w"], self.cfg["locked"])
         if key == self.drawn:
@@ -182,7 +197,8 @@ class PetPanel(Panel):
     level) with how many of its soul monsters are within VIEW_M of you, its souls to the next level; then the other
     unfinished pets whose soul monsters are within VIEW_M now, by genus (click the line to fold it)."""
     key, title, feature = "pet_tracker", "Pet tracker", "Monsters"
-    defaults = dict(expanded=True, rows=8, shown=True)  # on by default: soul drops show here (no pop-up)
+    defaults = dict(expanded=True, rows=8, shown=True, fade=True)  # on by default: soul drops show here (no pop-up)
+    FADE_AFTER, FADE_STEP = 60, 0.08  # seconds without a soul drop; alpha per tick (100 ms: about a second)
 
     def __init__(self, app):
         super().__init__(app)
@@ -223,6 +239,28 @@ class PetPanel(Panel):
     def toggle(self):
         self.cfg["expanded"] = not self.cfg["expanded"]
         self.save()
+
+    def update(self, snap):
+        """Also: fade out FADE_AFTER s after the last soul drop, back in with the next one. Always shown while it's
+        being placed (unlocked, or Overlay layout)."""
+        super().update(snap)
+        if not self.win or self.focus_hidden:
+            return
+        pets = self.pets()
+        idle = (self.cfg["fade"] and self.cfg["locked"] and not self.app.layout and
+                time.time() - (pets.last_gain if pets else 0) > self.FADE_AFTER)
+        goal = 0.0 if idle else self.ALPHA
+        if abs(self.alpha - goal) < 1e-3 and not (self.hidden and goal > 0):
+            return
+        self.alpha = max(goal, self.alpha - self.FADE_STEP) if idle else min(goal, self.alpha + 2 * self.FADE_STEP)
+        if self.alpha <= 0:
+            self.win.withdraw()  # gone: it doesn't catch clicks either
+            self.hidden = True
+            return
+        if self.hidden:
+            self.win.deiconify()
+            self.hidden = False
+        self.win.attributes("-alpha", self.alpha)
 
     def track(self, pid):
         """☆ / ★: make the pet a target (its soul monsters on the radar, the overlay and this card) or stop."""

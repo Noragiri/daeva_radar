@@ -105,6 +105,7 @@ class Pets:
         self.search = ""
         self.alerted = set()
         self.version = 0  # counts collection / target changes, for the Map window
+        self.last_gain = 0.0  # when a soul last dropped (the Pet tracker card fades out a while after)
 
     # ---- state
     def save(self):
@@ -179,6 +180,7 @@ class Pets:
                 self.levels[pid], self.souls[pid] = level, (0 if level >= MAX_LEVEL else souls)
         self.events_seen = snap["soul_count"]
         if changed:
+            self.last_gain = time.time()
             self.save_collection()
             self.drop_maxed([pid for pid, _, before in changed if before < MAX_LEVEL])
             self.changed()
@@ -381,7 +383,16 @@ class Pets:
     def settings_blocks(self):
         return [P.section("Pets"),
                 P.toggle("pet_flag_spawns", "Spawn points of target pets' soul monsters (hollow)", self.cfg["spawns"]),
-                P.toggle("pet_flag_live", "Target pets' soul monsters in range (solid)", self.cfg["live"])]
+                P.toggle("pet_flag_live", "Target pets' soul monsters in range (solid)", self.cfg["live"]),
+                P.toggle("pet_card_fade", "Fade the Pet tracker card out 60 s after the last soul drop",
+                         self.app.panels["pet_tracker"].cfg["fade"] if "pet_tracker" in self.app.panels else True,
+                         hint="It comes back with the next soul. Unlocked or in Overlay layout, it always shows.")]
+
+    def on_pet_card_fade(self, on):
+        card = self.app.panels.get("pet_tracker")
+        if card:
+            card.cfg["fade"] = bool(on)
+            card.save()
 
     def set_flag(self, key, on):
         self.cfg[key] = bool(on)

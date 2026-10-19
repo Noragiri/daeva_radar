@@ -1,6 +1,7 @@
 """The app: the tray icon, the Settings window (webui.py + settings_window.py), the overlays and info panels, and the
 loop that drives everything. Tk runs the windows that sit over the game (overlays, cards, pop-ups, the World map,
 Position debug); its root window is never shown."""
+import os
 import queue
 import subprocess
 import sys
@@ -16,7 +17,7 @@ from .worldmap import WorldMap
 from .vision import ViewCone
 from .debug import PositionWindow
 from .game import MapData, map_name
-from .ui import OVERLAY_CONE, Toast, draw_cone, hotkey_thread, set_icon
+from .ui import OVERLAY_CONE, Toast, draw_cone, foreground_exe, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
@@ -50,6 +51,7 @@ class App:
         self.panels = {}
         self.layout, self.layout_seen = None, None  # overlay layout mode (layout.py) while it's on
         self.web_view = None  # (feature, tab, when) last asked for by the Settings page
+        self.overlays_visible = True  # overlays and cards show only while the game has the focus
         self.closing = False
         self.root = root = tk.Tk()
         root.withdraw()  # only the windows over the game show; Settings is the web page
@@ -349,6 +351,14 @@ class App:
             return title == "View cone" or tab == "Radar"
         return False
 
+    def game_focused(self):
+        """Show the overlays and cards? Only while AION 2 (or one of this app's own windows, e.g. while placing
+        them in Overlay layout) has the focus. Always in the demo and off Windows (no focus check there)."""
+        if not WINDOWS or self.args.demo or self.layout:
+            return True
+        pid, exe = foreground_exe()
+        return pid is None or exe == "aion2.exe" or pid == os.getpid()
+
     def on_hotkey(self):
         """Ctrl+Shift+O: lock every shown overlay and card if any is unlocked, else unlock them all."""
         self.lock_overlays(not self.overlays_locked())
@@ -366,9 +376,12 @@ class App:
         if self.hotkey.is_set():
             self.hotkey.clear()
             self.on_hotkey()
+        self.overlays_visible = self.game_focused()
         for feature in self.features.values():
             if feature.enabled:
                 feature.background(snap)
+            if feature.overlay:
+                feature.overlay.set_visible(self.overlays_visible)
         for panel in self.panels.values():
             panel.update(snap)
         if self.layout:  # an overlay shown or hidden meanwhile: redraw the placeholders; keep them above the grid
