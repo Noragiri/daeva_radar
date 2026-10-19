@@ -22,6 +22,7 @@ daevaradar/          the program
   settings_window.py   the Settings window: its own process (--settings-window URL) showing that page (pywebview)
   panels.py            info cards over the game (the Pet tracker)
   page.py              the blocks feature pages are made of (for assets/web/page.js), and a canvas that records radars
+  haptics.py           Lovense Game Mode client (Cubes): vibration level by distance, short fail-safe commands
   layout.py            overlay layout mode: a see-through grid over the game window to place them
   characters.py        the characters seen logging in (by name) and the faction set for each
   worldmap.py          the World map's data for its page (assets/web/map.js; tiles served at /tiles/)

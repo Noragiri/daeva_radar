@@ -48,6 +48,12 @@ app: closing it quits.)
 - **Radar:** radar and cube list, plus hidden-cube spawn points from the map data as hollow red circles, so you can
   fly around them before any cube shows up.
 - **Overlay:** the cube minimap overlay.
+- **Haptics (Lovense):** off by default. In the Lovense Remote app on your phone (same Wi-Fi as the PC) open
+  Discover → Game Mode and switch it on, then enter the IP and port it shows in Cubes → Settings → Haptics. The
+  closer you get to a cube, the stronger the vibration: nothing beyond the *Starts at* distance, 1 at its edge and
+  your *Strongest level* (1-20) on top of the cube. It stops by itself when you leave the game window, the cube is
+  opened or gone, or your position is out of date (it only updates on dashes, teleports and aura ticks, so keep an
+  aura on); **Stop now** switches it off. Commands go to your phone over your own network, never the internet.
 - **Settings:** alert sound (a voice callout, a beep or your own file from `sounds/custom/`), volume, spawn points
   on/off, and the cube types being tracked.
 

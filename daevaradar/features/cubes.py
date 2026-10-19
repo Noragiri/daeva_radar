@@ -9,9 +9,11 @@ from ..sound import play, voices
 from ..ui import CUBE_SPAWN, FONT, HEIGHT, MUTED, PANEL, dim, draw_cone, draw_pin, draw_rings, draw_text, height_class, label_side, radar_point, relative
 from ..feature import Feature
 from .. import page as P
+from ..haptics import MAX_POSITION_AGE_S, Lovense, level_for
 
 
-CUBES_DEFAULT = dict(spawns=True)
+CUBES_DEFAULT = dict(spawns=True, haptics_on=False, haptics_host="", haptics_port=20010, haptics_max=10,
+                     haptics_range=60)  # Lovense: strongest level 1-20, and the distance (m) it starts at
 
 
 class CubesFeature(Feature):
@@ -30,6 +32,9 @@ class CubesFeature(Feature):
         self.cfg = dict(CUBES_DEFAULT, **load_settings().get("cubes", {}))
         self.mapdata = app.mapdata
         self.voice, self.volume = args.voice, args.volume
+        self.toy = Lovense(app.engine.say)
+        self.toy.configure(self.cfg["haptics_host"], self.cfg["haptics_port"])
+        self.haptic = None  # (level, distance m) now, for the Settings page
         super().__init__(app)
 
     # ---- Radar tab
@@ -177,6 +182,18 @@ class CubesFeature(Feature):
                    P.section("Show"),
                    P.toggle("flag_spawns", "Spawn points from the map data", self.cfg["spawns"],
                             hint="Hollow red circles; © NCSOFT, via Shugo.GG."),
+                   P.section("Haptics (Lovense)"),
+                   P.text("The closer you get to a cube, the stronger the vibration. Open Lovense Remote on your phone → "
+                          "Discover → Game Mode, switch it on, and type the IP and port it shows (same Wi-Fi as this PC). "
+                          "Nothing leaves your network. Your position only updates on dashes, teleports and aura ticks, so "
+                          "keep an aura on.", small=True),
+                   P.toggle("flag_haptics_on", "Vibrate as I get close to a cube", self.cfg["haptics_on"]),
+                   P.row(P.field("haptics_host", self.cfg["haptics_host"], "IP, e.g. 192.168.1.20", label="IP", width=200),
+                         P.number("haptics_port", self.cfg["haptics_port"], 1, 65535, label="Port")),
+                   P.slider("haptics_max", self.cfg["haptics_max"], 1, 20, 1, "", label="Strongest level"),
+                   P.slider("haptics_range", self.cfg["haptics_range"], 10, 150, 5, " m", label="Starts at"),
+                   P.row(P.button("haptics_test", "Test"), P.button("haptics_stop", "Stop now")),
+                   P.text(self.haptic_text(), small=True),
                    P.section("Cube types tracked"),
                    P.text("  ".join(str(t) for t in sorted(TEMPLATES)) + "\nAdd more with --template ID (find ids with --log).",
                           mono=True, small=True)]
@@ -218,6 +235,54 @@ class CubesFeature(Feature):
     def save(self):
         save_settings(dict(load_settings(), cubes=self.cfg))
 
+    # ---- haptics
+    def haptic_text(self):
+        if not self.cfg["haptics_on"]:
+            return "Off. Test works even when it's off."
+        if not self.toy.ready:
+            return "Enter the IP shown in Lovense Remote's Game Mode."
+        now = "" if not self.haptic else " · now level %d, nearest cube %d m" % (self.haptic[0], self.haptic[1])
+        return self.toy.status + now
+
+    def apply_haptics(self, snap):
+        """Every tick: the nearest cube you can still reach sets the level; any doubt means 0."""
+        level, nearest = 0, None
+        if (self.cfg["haptics_on"] and self.toy.ready and self.enabled and snap["position"] and
+                (snap["position_age"] or 0) <= MAX_POSITION_AGE_S and self.app.overlays_visible):
+            near = [math.dist(c["xyz"][:2], snap["position"][:2]) / 100 for c in snap["cubes"]
+                    if c["status"] == "nearby"]
+            nearest = min(near, default=None)
+            level = level_for(nearest, self.cfg["haptics_range"], self.cfg["haptics_max"])
+        self.haptic = (level, round(nearest)) if level else None
+        self.toy.update(level)
+
+    def on_haptics_host(self, value):
+        self.cfg["haptics_host"] = (value or "").strip()
+        self.toy.configure(self.cfg["haptics_host"], self.cfg["haptics_port"])
+        self.save()
+
+    def on_haptics_port(self, value):
+        self.cfg["haptics_port"] = int(value)
+        self.toy.configure(self.cfg["haptics_host"], self.cfg["haptics_port"])
+        self.save()
+
+    def on_haptics_max(self, value):
+        self.cfg["haptics_max"] = int(value)
+        self.save()
+
+    def on_haptics_range(self, value):
+        self.cfg["haptics_range"] = int(value)
+        self.save()
+
+    def on_haptics_test(self, _):
+        self.toy.test(min(self.cfg["haptics_max"], 5))
+
+    def on_haptics_stop(self, _):
+        self.toy.stop()
+        self.toy.test_until = 0
+        self.cfg["haptics_on"] = False
+        self.save()
+
     # ---- loop hooks
     def background(self, snap):
         if snap["detections"] > self.seen_detections:  # alerts: whatever is shown
@@ -229,7 +294,16 @@ class CubesFeature(Feature):
             self.app.engine.say("Cube!" + where)
             play(self.voice, self.app.args.sound, self.volume)
             self.seen_detections = snap["detections"]
+        self.apply_haptics(snap)
         super().background(snap)
+
+    def set_enabled(self, on):
+        super().set_enabled(on)
+        if not on:
+            self.toy.stop()
+
+    def close(self):
+        self.toy.close()
 
     def status(self, snap):
         nearby = sum(1 for c in snap["cubes"] if c["status"] == "nearby")

@@ -229,4 +229,10 @@ s = t.snapshot(now=3)['sheet']
 assert s['owner'] == 'Noragiri' and s['counters'][4] == 1 and s['currencies'][930100031] == 86997, s
 print('sheet: counters + currencies named by the login; Nightmare 2 -> 1')
 
+# 16) Lovense haptics: the level rises as the cube gets closer; none beyond the range or without a position
+from daevaradar import haptics
+assert [haptics.level_for(d, 60, 10) for d in (0, 30, 59, 60, 90, None)] == [10, 5, 1, 0, 0, 0]
+assert haptics.level_for(10, 60, 0) == 0
+print('haptics: level by distance')
+
 print('ALL OK')
