@@ -274,12 +274,12 @@ class App:
 
     def explain_browser(self):
         """A pop-up: why Settings opened in the browser, and (WebView2 missing) a click to Microsoft's download."""
-        from .settings_window import NO_RUNTIME, WEBVIEW2_DOWNLOAD
+        from .settings_window import DOTNET_DOWNLOAD, NO_RUNTIME, OLD_DOTNET, WEBVIEW2_DOWNLOAD
         reason = self.window_error()
-        if reason == NO_RUNTIME:
-            Toast(self.root, "Settings opened in your browser\nMicrosoft Edge WebView2 Runtime isn't installed.\n"
-                  "Click to get it from Microsoft (free), then restart Daeva Radar.", color="#ffb347", seconds=None,
-                  label="Settings", on_click=lambda: webbrowser.open(WEBVIEW2_DOWNLOAD))
+        if reason in (NO_RUNTIME, OLD_DOTNET):
+            Toast(self.root, "Settings opened in your browser\n%s.\nClick to get it from Microsoft (free), then restart "
+                  "Daeva Radar." % reason, color="#ffb347", seconds=None, label="Settings",
+                  on_click=lambda: webbrowser.open(WEBVIEW2_DOWNLOAD if reason == NO_RUNTIME else DOTNET_DOWNLOAD))
         else:
             Toast(self.root, "Settings opened in your browser\nIts own window couldn't start: %s" % reason,
                   color="#ffb347", seconds=20, label="Settings")

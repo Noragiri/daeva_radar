@@ -6,6 +6,7 @@ from .common import load_settings, save_settings
 from .game import CLASSES, CLASS_ICONS, COUNTERS, CURRENCIES, ENERGY
 
 FACTIONS = ("Elyos", "Asmodian")
+HISTORY_DAYS, HISTORY_CHANGES = 120, 300  # what's kept per character: a value per day, and the latest changes
 FACTION_MAPS = {"Elyos": {"poeta", "verteron", "eltnen"}, "Asmodian": {"ishalgen", "altgard", "morheim"}}
 HOME_MAP = {"Elyos": "verteron", "Asmodian": "altgard"}  # each side's land where pet souls are farmed
 SHARED_MAP = "reshanta-lower"  # both sides farm here
@@ -56,6 +57,7 @@ class Characters:
         self.sheet_seen = snap["sheet_count"]
         entry = self.data.setdefault(sheet["owner"], dict(faction=None, first=time.strftime("%Y-%m-%d"), last=None, maps=[]))
         kept = entry.get("sheet") or {}
+        self.note_history(entry, kept, sheet)
         entry["sheet"] = dict(counters=dict(kept.get("counters", {}), **{str(k): v for k, v in sheet["counters"].items()}),
                               currencies=dict(kept.get("currencies", {}), **{str(k): v for k, v in sheet["currencies"].items()}),
                               read=time.strftime("%Y-%m-%d %H:%M", time.localtime(sheet["time"])),
@@ -63,12 +65,47 @@ class Characters:
         self.save()
 
     @staticmethod
+    def tracked(counters, currencies):
+        """-> {name: value} of what the history keeps: the named currencies and counters (left; Odyle energy now)."""
+        out = {}
+        for ident, name in CURRENCIES.items():
+            if str(ident) in currencies:
+                out[name] = currencies[str(ident)]
+        for ident, c in COUNTERS.items():
+            value = counters.get(str(ident))
+            if value is not None:
+                out[c["name"]] = value[0] if isinstance(value, list) else value
+        energy = counters.get(str(ENERGY))
+        if energy is not None:
+            out["Odyle energy"] = energy[0] if isinstance(energy, list) else energy
+        return out
+
+    def note_history(self, entry, kept, sheet):
+        """A reading -> the day's values, and a change line for each value that moved since the last reading."""
+        new = self.tracked({str(k): v for k, v in sheet["counters"].items()} or kept.get("counters", {}),
+                           {str(k): v for k, v in sheet["currencies"].items()} or kept.get("currencies", {}))
+        old = self.tracked(kept.get("counters", {}), kept.get("currencies", {}))
+        history = entry.setdefault("history", dict(days={}, changes=[]))
+        stamp = time.localtime(sheet["time"])
+        day = history["days"].setdefault(time.strftime("%Y-%m-%d", stamp), {})
+        day.update(new)
+        for name, value in new.items():
+            if name in old and old[name] != value and name != "Odyle energy":  # energy ticks constantly
+                history["changes"].append([time.strftime("%Y-%m-%d %H:%M", stamp), name, old[name], value])
+        for date in sorted(history["days"])[:-HISTORY_DAYS]:
+            del history["days"][date]
+        del history["changes"][:-HISTORY_CHANGES]
+
+    @staticmethod
     def checklist(entry):
         """For the Checklist page: the last reading, grouped like the game's own lists."""
         sheet = entry.get("sheet")
         cls = CLASSES.get(entry.get("cls"), "Class %s" % entry["cls"] if entry.get("cls") else None)
+        history = entry.get("history") or {}
+        days = history.get("days", {})
         out = dict(cls=cls, icon=CLASS_ICONS.get(cls), level=entry.get("level"), read=None, read_at=None, energy=None,
-                   stock=[], daily=[], weekly=[], currencies=[])
+                   stock=[], daily=[], weekly=[], currencies=[],
+                   history=dict(days=[[d, days[d]] for d in sorted(days)], changes=history.get("changes", [])[-60:][::-1]))
         if not sheet:
             return out
         counters, money = sheet.get("counters", {}), sheet.get("currencies", {})

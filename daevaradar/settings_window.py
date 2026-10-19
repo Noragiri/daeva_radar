@@ -4,10 +4,11 @@ WebView2 on Windows). Separate, because pywebview and Tk each need a main thread
 running. Exit code 3: no pywebview / WebView2 (the radar then opens the page in the default browser instead).
 The URL says which window it is: "solo=map" is the World map ("ontop=1": above the game)."""
 import ctypes
+import os
 import sys
 from urllib.parse import parse_qs, urlsplit
 
-from .common import ASSETS, CONFIG, WINDOWS
+from .common import ASSETS, CONFIG, FROZEN, ROOT, WINDOWS
 
 NO_WEBVIEW = 3
 ERROR_LOG = CONFIG / "DaevaRadar" / "window_error.log"  # why the last web window couldn't open (App reads it)
@@ -15,10 +16,13 @@ ERROR_LOG = CONFIG / "DaevaRadar" / "window_error.log"  # why the last web windo
 
 def fail(reason):
     """Can't show the window: say why (the radar logs it and opens the page in the browser)."""
+    import platform
     import traceback
     try:
         ERROR_LOG.parent.mkdir(parents=True, exist_ok=True)
-        ERROR_LOG.write_text("%s\n%s" % (reason, traceback.format_exc()), encoding="utf-8")
+        ERROR_LOG.write_text("%s\n%s\nWindows %s, .NET Framework release %s, unblocked: %s, folder: %s\n" % (
+            reason, traceback.format_exc(), platform.version(), dotnet_release() if WINDOWS else "-",
+            ", ".join(UNBLOCKED) or "none", ROOT), encoding="utf-8")
     except OSError:
         pass
     sys.exit(NO_WEBVIEW)
@@ -26,6 +30,37 @@ def fail(reason):
 
 WEBVIEW2_DOWNLOAD = "https://developer.microsoft.com/microsoft-edge/webview2/"
 NO_RUNTIME = "Microsoft Edge WebView2 Runtime isn't installed"
+OLD_DOTNET = ".NET Framework 4.7.2 or newer isn't installed"
+DOTNET_DOWNLOAD = "https://dotnet.microsoft.com/download/dotnet-framework/net48"
+DOTNET_472 = 461808  # .NET Framework 4.7.2's release number: pythonnet 3 (the window's bridge to .NET) needs it
+NET_DLLS = ("pythonnet", "clr_loader", "webview")  # the build's folders with .NET libraries in them
+
+
+def dotnet_release():
+    """.NET Framework 4.x's release number from the registry, or 0."""
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full") as k:
+            return int(winreg.QueryValueEx(k, "Release")[0])
+    except OSError:
+        return 0
+
+
+def unblock():
+    """The build unzipped from a download carries Windows' "from the internet" mark on every file, and .NET Framework
+    won't load a library with it ("Failed to resolve Python.Runtime.Loader.Initialize"). Remove it from the build's
+    own .NET libraries, like Properties -> Unblock. -> the names of the ones that had it."""
+    if not (FROZEN and WINDOWS):
+        return []
+    done = []
+    for folder in NET_DLLS:
+        for path in (ROOT / folder).rglob("*.dll") if (ROOT / folder).exists() else ():
+            try:
+                os.remove(str(path) + ":Zone.Identifier")
+                done.append(path.name)
+            except OSError:
+                pass
+    return done
 
 
 def missing_runtime():
@@ -35,12 +70,8 @@ def missing_runtime():
     if not WINDOWS:
         return None
     import winreg
-    try:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full") as k:
-            if winreg.QueryValueEx(k, "Release")[0] < 394802:
-                return ".NET Framework 4.6.2 or newer isn't installed"
-    except OSError:
-        return ".NET Framework 4.6.2 or newer isn't installed"
+    if dotnet_release() < DOTNET_472:
+        return OLD_DOTNET
     client = r"Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"  # the WebView2 Runtime
     for root, path in ((winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\" + client),
                        (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\" + client), (winreg.HKEY_CURRENT_USER, "SOFTWARE\\" + client)):
@@ -78,7 +109,11 @@ def set_window_icon(hwnd):
             user32.SendMessageW(hwnd, 0x80, kind, icon)  # WM_SETICON
 
 
+UNBLOCKED = []
+
+
 def run(url):
+    UNBLOCKED[:] = unblock()
     lacking = missing_runtime()
     if lacking:
         fail(lacking)

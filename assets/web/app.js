@@ -221,21 +221,24 @@ function checklist() {
       <span><b>${esc(x.name)}</b>${x.playing ? ' <em>in game</em>' : ""}<small>${esc([x.checklist.cls, x.checklist.level && "Level " + x.checklist.level].filter(Boolean).join(" · ") || "class not read yet")}</small>
       ${x.checklist.energy ? `<span class="cl-energy" title="Odyle energy">◆ ${fmt(x.checklist.energy[0])}${x.checklist.energy[1] ? ` (+${fmt(x.checklist.energy[1])})` : ""}</span>` : ""}</span></button>`).join("");
   const stock = k.stock.map((r) => `<div class="cl-stock"><div class="cl-row-head"><b>${esc(r.name)}</b>${tag(r.scope)}<span class="cl-amount">${amount(r)}</span></div>${bar(r)}</div>`).join("");
-  const rows = (list, weekly) => list.map((r) => {
+  const rows = (list, weekly) => list.map((r0) => {
+    // read before this list's last reset: the game has refilled it since (weekly entries and time come back in full)
+    const refilled = stale(weekly) && r0.max;
+    const r = refilled ? { ...r0, left: r0.max } : r0;
     const done = r.left <= 0 && !r.bonus;  // bonus entries (the "+26") still count as left
     return `<div class="cl-row ${done ? "done" : ""}"><span class="cl-check">${done ? "✓" : ""}</span>
-      <div class="cl-what"><b>${esc(r.name)}</b>${tag(r.scope)}<small>${esc(r.note || "")}</small></div>
+      <div class="cl-what"><b>${esc(r.name)}</b>${tag(r.scope)}<small>${esc(r.note || "")}${refilled ? " · refilled at the reset" : ""}</small></div>
       <div class="cl-right"><span class="cl-amount">${amount(r)}</span>${bar(r)}${done ? '<span class="cl-done">Done</span>' : ""}</div></div>`;
   }).join("") || '<p class="muted">Nothing decoded for this list yet.</p>';
   const panel = (title, list, weekly, sym) => {
-    const reset = untilReset(weekly), doneN = list.filter((r) => r.left <= 0 && !r.bonus).length;
+    const reset = untilReset(weekly), doneN = stale(weekly) ? 0 : list.filter((r) => r.left <= 0 && !r.bonus).length;
     return `<section class="cl-panel"><header><span class="cl-sym">${sym}</span><div><h3>${title} · ${esc(c.name)}</h3>
-      <small>${doneN} of ${list.length} done · resets ${reset.when}${stale(weekly) ? ' · <span class="warn">read before this reset: refilled since</span>' : ""}</small></div>
+      <small>${doneN} of ${list.length} done · resets ${reset.when}${stale(weekly) && list.length ? " · shown refilled: last read before the reset" : ""}</small></div>
       <span class="cl-timer">⏱ ${reset.text}</span></header>${rows(list, weekly)}</section>`;
   };
   return `<h2>${icon("Checklist")}Characters checklist</h2>
   <div class="cl-chars">${tabs}</div>
-  <section class="cl-panel"><header><div><h3>Stock and keys</h3><small>Read from the game ${esc(k.read)}${c.playing ? " · live while you play" : ""}</small></div></header>
+  <section class="cl-panel"><header><div><h3>Stock and keys</h3><small>${c.playing ? "Live while you play" : "Saved from the last time " + esc(c.name) + " was played: " + esc(k.read)} · keys and Nightmare refill over time, so they may be higher now</small></div></header>
     <div class="cl-stocks">${stock || '<p class="muted">Not read yet.</p>'}</div></section>
   <div class="cl-two">${panel("Daily", k.daily, false, "☀")}${panel("Weekly", k.weekly, true, "▦")}</div>
   <section class="cl-panel"><header><div><h3>Currencies</h3></div></header>
