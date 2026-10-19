@@ -7,7 +7,8 @@ import time
 from ..common import ROOT, load_settings, save_settings
 from ..game import SOUL_STAGES, MapData, map_name
 from ..sound import play
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, LiveToast, Toast, WATCH_COLORS, button, checkbox, dim, draw_text, label_side, radar_point, relative, section
+from ..ui import FONT, MUTED, TEXT, LiveToast, Toast, WATCH_COLORS, dim, draw_text, label_side, radar_point, relative
+from .. import page as P
 
 
 PET_DEFAULT = dict(targets=[], notify="all", sound=True, spawns=True, live=True, filter="open")
@@ -44,6 +45,11 @@ class PetData:
 
     def keys(self):
         return sorted(self.spawns, key=map_name)
+
+    def farm_maps(self, pid):
+        """FARM_MAPS where a monster that drops this pet's souls spawns."""
+        types = {t for s in self.pets.get(pid, {}).get("souls", ()) for t in s["types"]}
+        return {key for key in FARM_MAPS if types & set(self.spawns.get(key, {}))}
 
     def farmable(self, pid):
         """Does a monster that drops this pet's souls spawn on one of FARM_MAPS?"""
@@ -94,8 +100,8 @@ class Pets:
         self.data = PetData()
         self.sync_seen = self.events_seen = None
         self.detected = None
-        self.list_ids = []
-        self.selected = None
+        self.selected = None  # the pet picked in the Pets tab's list
+        self.search = ""
         self.last_beep = 0
         self.alerted = set()
         self.toast, self.burst = None, {}  # the soul-drop notification and the gains it shows
@@ -128,7 +134,7 @@ class Pets:
         else:
             targets.append(pid)
         self.save()
-        self.refresh_list()
+        self.changed()
 
     def map_key(self):
         """The app's map when there's pet data for it, else the one the live soul monsters belong to."""
@@ -148,9 +154,9 @@ class Pets:
             self.save_collection()
             self.app.engine.say("Pets: collection synced (%d pets)" % len(self.levels))
             if gained and not first and self.cfg["notify"] != "off":
-                Toast(self.root, "❀ Pet collection synced\n%d pets progressed since last time" % len(gained),
-                      color="#7cf08a")
-            self.refresh_list()
+                Toast(self.root, "Pet collection synced\n%d pets progressed since last time" % len(gained),
+                      color="#7cf08a", label="Pets")
+            self.changed()
         if self.events_seen is None or snap["soul_count"] < self.events_seen:
             self.events_seen = snap["soul_count"]  # first tick, or the tracker was replaced
             return
@@ -174,7 +180,7 @@ class Pets:
         self.events_seen = snap["soul_count"]
         if changed:
             self.save_collection()
-            self.refresh_list()
+            self.changed()
             for pid, gained, before in changed:
                 self.notify(pid, gained, before)
 
@@ -192,7 +198,7 @@ class Pets:
         if self.cfg["notify"] == "all" or (self.cfg["notify"] == "targets" and target):
             # one notification for a burst of drops: a line per pet, its gains added up while it's shown
             if self.toast is None or not self.toast.visible:
-                self.toast, self.burst = LiveToast(self.root, "❀ Pet souls", color="#7cf08a", seconds=6), {}
+                self.toast, self.burst = LiveToast(self.root, "Pet souls", color="#7cf08a", seconds=6), {}
             self.burst[pid] = self.burst.get(pid, 0) + gained
             if level > before or (before == 0 and level > 0):
                 what = "unlocked" if before == 0 else "Lv%d!" % level
@@ -210,65 +216,16 @@ class Pets:
         souls = sum(self.pet(i)[3] for i in ids)
         return owned, maxed, souls, len(ids)
 
-    # ---- the Pets tab
-    def build(self, f):
-        tk = self.tk
-        top = tk.Frame(f, bg=BG)
-        top.pack(fill="x")
-        self.summary_label = tk.Label(top, text="", bg=BG, fg=TEXT, font=(FONT, 10, "bold"), anchor="w", justify="left")
-        self.summary_label.pack(side="left", fill="x")
-        button(tk, top, "Map ↗", lambda: self.app.open_map("Pets")).pack(side="right")
-        self.genus_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w", justify="left")
-        self.genus_label.pack(fill="x", pady=(0, 6))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.search = tk.StringVar()
-        tk.Entry(row, textvariable=self.search, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                 font=(FONT, 10), width=14).pack(side="left", ipady=3, padx=(0, 6))
-        self.search.trace_add("write", lambda *a: self.refresh_list())
-        self.filter_var = tk.StringVar(value=self.cfg["filter"])
-        for value, text in (("open", "Not Lv3"), ("missing", "Missing"), ("souls", "Has souls"), ("targets", "Targets"),
-                            ("nofarm", "Not farmable"), ("all", "All")):
-            tk.Radiobutton(row, text=text, value=value, variable=self.filter_var, command=self.set_filter, bg=BG,
-                           fg=TEXT, selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 9),
-                           indicatoron=False, padx=6, pady=2, relief="flat", bd=0, offrelief="flat",
-                           cursor="hand2").pack(side="left", padx=(0, 2))
-        self.listbox = tk.Listbox(f, height=13, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                  highlightthickness=0, font=(MONO, 9), activestyle="none")
-        self.listbox.pack(fill="x", pady=(6, 0))
-        self.listbox.bind("<<ListboxSelect>>", lambda e: self.select_row())
-        self.listbox.bind("<Double-Button-1>", lambda e: self.selected and self.toggle_target(self.selected))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        button(tk, row, "★ Target / untarget", lambda: self.selected and self.toggle_target(self.selected)).pack(side="left")
-        tk.Label(row, text="or double-click · targets' soul monsters show on the Radar and Overlay", bg=BG, fg=MUTED,
-                 font=(FONT, 9)).pack(side="left", padx=8)
-        self.detail = tk.Label(f, text="", bg=BG, fg=MUTED, font=(MONO, 9), anchor="nw", justify="left", height=6)
-        self.detail.pack(fill="x", pady=(6, 0))
-        self.refresh_list()
-
-    def set_filter(self):
-        self.cfg["filter"] = self.filter_var.get()
-        self.save()
-        self.refresh_list()
-
-    def refresh_list(self):
+    def changed(self):
+        """The collection or the targets changed (the Map window redraws its pet list)."""
         self.version += 1
-        if not hasattr(self, "listbox"):
-            return
-        owned, maxed, souls, total = self.summary()
-        f_owned, f_maxed, f_souls, f_total = self.summary(farmable_only=True)  # (x%): without the unfarmable pets
-        self.summary_label.config(text="Collected %d/%d (%d%%) · Lv3 %d/%d (%d%%) · souls %d%% (%d%%)" % (
-            owned, total, 100 * f_owned / max(1, f_total), maxed, total, 100 * f_maxed / max(1, f_total),
-            100 * souls / max(1, total * SOUL_CAP), 100 * f_souls / max(1, f_total * SOUL_CAP)))
-        by = {}
-        for i in self.data.collection:
-            g = by.setdefault(self.data.pets[i]["genus"], [0, 0])
-            g[0] += bool(self.levels.get(i))
-            g[1] += 1
-        sync = ("synced %s" % self.synced) if self.synced else "not synced yet: enter the world with the radar running"
-        self.genus_label.config(text="  ".join("%s %d/%d" % (g, o, t) for g, (o, t) in sorted(by.items())) + "  ·  " + sync)
-        text, mode = self.search.get().strip().lower(), self.cfg["filter"]
+
+    # ---- the Pets tab
+    FILTERS = (("open", "Not Lv3"), ("missing", "Missing"), ("souls", "Has souls"), ("targets", "Targets"),
+               ("nofarm", "Not farmable"), ("all", "All"))
+
+    def rows(self):
+        text, mode = self.search.strip().lower(), self.cfg["filter"]
         rows = []
         for pid in self.data.collection:
             p = self.data.pets[pid]
@@ -280,37 +237,52 @@ class Pets:
                     mode == "nofarm" and self.data.farmable(pid)):
                 continue
             rows.append((pid not in self.cfg["targets"], -bool(souls), SOUL_CAP - done, p["name"], pid))
-        rows.sort()
-        self.list_ids = [r[-1] for r in rows]
-        self.listbox.delete(0, "end")
-        for i, pid in enumerate(self.list_ids):
-            level, souls, need, done = self.pet(pid)
+        return [r[-1] for r in sorted(rows)]
+
+    def page(self, snap):
+        owned, maxed, souls, total = self.summary()
+        f_owned, f_maxed, f_souls, f_total = self.summary(farmable_only=True)  # (x%): without the unfarmable pets
+        by = {}
+        for i in self.data.collection:
+            g = by.setdefault(self.data.pets[i]["genus"], [0, 0])
+            g[0] += bool(self.levels.get(i))
+            g[1] += 1
+        sync = ("synced %s" % self.synced) if self.synced else "not synced yet: enter the world with the radar running"
+        ids = self.rows()
+        self.list_ids = ids
+        rows = []
+        for pid in ids:
+            level, souls_, need, done = self.pet(pid)
             mark = "★" if pid in self.cfg["targets"] else " " if self.data.farmable(pid) else "⊘"
-            stage = "Lv3 ✓" if level >= MAX_LEVEL else "%2d/%-2d" % (souls, need)
-            self.listbox.insert("end", "%s %-26.26s Lv%d %s %s %3d/%d" % (
-                mark, self.data.pets[pid]["name"], level, self.bar(level, souls), stage, done, SOUL_CAP))
-            self.listbox.itemconfig(i, fg=self.target_color(pid) if pid in self.cfg["targets"] else
-                                    (TEXT if souls or level else MUTED))
-        if not self.list_ids:
-            self.listbox.insert("end", "  Nothing matches.")
-        self.show_detail()
+            stage = "Lv3 ✓" if level >= MAX_LEVEL else "%2d/%-2d" % (souls_, need)
+            rows.append(("%s %-26.26s Lv%d %s %s %3d/%d" % (mark, self.data.pets[pid]["name"], level,
+                                                             self.bar(level, souls_), stage, done, SOUL_CAP),
+                         self.target_color(pid) if pid in self.cfg["targets"] else (None if souls_ or level else MUTED)))
+        return [
+            P.row(P.text("Collected %d/%d (%d%%) · Lv3 %d/%d (%d%%) · souls %d%% (%d%%)" % (
+                owned, total, 100 * f_owned / max(1, f_total), maxed, total, 100 * f_maxed / max(1, f_total),
+                100 * souls / max(1, total * SOUL_CAP), 100 * f_souls / max(1, f_total * SOUL_CAP)), bold=True),
+                P.button("pets_map", "Map ↗")),
+            P.text("  ".join("%s %d/%d" % (g, o, t) for g, (o, t) in sorted(by.items())) + "  ·  " + sync +
+                   "  ·  (%) without the pets you can't farm", small=True),
+            P.row(P.field("pet_search", self.search, "Search", width=180),
+                  P.choice("pet_filter", self.FILTERS, self.cfg["filter"])),
+            P.listbox("pet", rows, ids.index(self.selected) if self.selected in ids else None, height=14,
+                      empty="Nothing matches."),
+            P.row(P.button("pet_target", "★ Target / untarget", disabled=self.selected is None),
+                  P.text("or double-click · targets' soul monsters show on the Radar and the overlay", small=True)),
+            P.lines([(line, None if i else TEXT) for i, line in enumerate(self.detail())]),
+        ]
 
     @staticmethod
     def bar(level, souls):
         """[#+.]: one mark per stage, done / souls in / empty."""
         return "[%s]" % "".join("#" if level > i else ("+" if level == i and souls else ".") for i in range(MAX_LEVEL))
 
-    def select_row(self):
-        sel = self.listbox.curselection()
-        if sel and sel[0] < len(self.list_ids):
-            self.selected = self.list_ids[sel[0]]
-            self.show_detail()
-
-    def show_detail(self):
+    def detail(self):
         pid = self.selected
         if pid is None or pid not in self.data.pets:
-            self.detail.config(text="Select a pet for where its souls drop.")
-            return
+            return ["Select a pet for where its souls drop."]
         p = self.data.pets[pid]
         level, souls, need, done = self.pet(pid)
         lines = ["%s (%s) · %s" % (p["name"], p["genus"], "maxed" if level >= MAX_LEVEL else
@@ -323,7 +295,31 @@ class Pets:
             lines.append("  %-26.26s L%-2d %5.1f%%  %s" % (s["monster"], s["level"], s["chance"], where or "no map spawn"))
         if not p.get("souls"):
             lines.append("  No monster drops this soul (chests, shops, quests).")
-        self.detail.config(text="\n".join(lines))
+        return lines
+
+    # page actions (routed here by the Monsters feature)
+    def on_pets_map(self, _):
+        self.app.open_map("Pets")
+
+    def on_pet_search(self, text):
+        self.search = text or ""
+
+    def on_pet_filter(self, value):
+        self.cfg["filter"] = value
+        self.save()
+
+    def on_pet(self, index):
+        ids = getattr(self, "list_ids", None) or self.rows()
+        if 0 <= int(index) < len(ids):
+            self.selected = ids[int(index)]
+
+    def on_pet_open(self, index):
+        self.on_pet(index)
+        self.on_pet_target(None)
+
+    def on_pet_target(self, _):
+        if self.selected is not None:
+            self.toggle_target(self.selected)
 
     # ---- on the Monsters radar and overlay
     def soul_types(self):
@@ -385,25 +381,19 @@ class Pets:
                       anchor=anchor, size=9)
 
     # ---- in the Monsters Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        section(tk, f, "Pets: pop up on a soul drop")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.notify_var = tk.StringVar(value=self.cfg["notify"])
-        for value, text in (("all", "Every pet"), ("targets", "Target pets"), ("off", "Off")):
-            tk.Radiobutton(row, text=text, value=value, variable=self.notify_var, command=self.set_flags, bg=BG, fg=TEXT,
-                           selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 10),
-                           anchor="w").pack(side="left", padx=(0, 8))
-        self.flags = {}
-        for key, text in (("sound", "Beep with the pop-up"),
-                          ("spawns", "Spawn points of target pets' soul monsters (hollow)"),
-                          ("live", "Target pets' soul monsters in range (solid)")):
-            self.flags[key] = tk.BooleanVar(value=self.cfg[key])
-            checkbox(tk, f, text, self.flags[key], self.set_flags).pack(fill="x")
+    def settings_blocks(self):
+        return [P.section("Pets: pop up on a soul drop"),
+                P.choice("pet_notify", (("all", "Every pet"), ("targets", "Target pets"), ("off", "Off")), self.cfg["notify"]),
+                P.toggle("pet_flag_sound", "Beep with the pop-up", self.cfg["sound"]),
+                P.toggle("pet_flag_spawns", "Spawn points of target pets' soul monsters (hollow)", self.cfg["spawns"]),
+                P.toggle("pet_flag_live", "Target pets' soul monsters in range (solid)", self.cfg["live"])]
 
-    def set_flags(self):
-        self.cfg.update({k: v.get() for k, v in self.flags.items()}, notify=self.notify_var.get())
+    def on_pet_notify(self, value):
+        self.cfg["notify"] = value
+        self.save()
+
+    def set_flag(self, key, on):
+        self.cfg[key] = bool(on)
         self.save()
 
     # ---- loop hooks (from the Monsters feature)

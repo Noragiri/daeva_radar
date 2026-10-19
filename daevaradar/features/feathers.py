@@ -5,8 +5,9 @@ import time
 from ..common import load_settings, save_settings
 from ..game import MapData, map_name
 from ..sound import play
-from ..ui import BG, FONT, HEIGHT, MONO, MUTED, PANEL, TEXT, button, checkbox, dim, draw_cone, draw_me, draw_pin, draw_rings, draw_text, heading, height_class, label_side, radar_point, relative, section
+from ..ui import FONT, HEIGHT, MUTED, PANEL, dim, draw_cone, draw_me, draw_pin, draw_rings, draw_text, height_class, label_side, radar_point, relative
 from ..feature import Feature
+from .. import page as P
 
 
 FEATHER_DEFAULT = dict(spots=True, collected=False, alert=True, me_on_top=True)
@@ -21,12 +22,12 @@ class FeathersFeature(Feature):
     on a feather spot teaches the type (saved for good), and from then on live feathers show solid and beep.
     Picking one up ('56' 04 03 00 on a learned feather) marks its spot collected, per map, saved; collected
     spots are hidden unless asked for. Uses the app's map (sidebar picker, else detected)."""
-    title, icon, TABS = "Feathers", "✧", ("Radar", "Overlay", "Settings")
+    title, icon, TABS = "Feathers", "✧", ("Radar", "Settings")
     overlay_key, overlay_color = "feather_overlay", FEATHER
     overlay_text = "A see-through layer with the feather spots, to place over the game's minimap."
     tracks = "nodes"
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         settings = load_settings()
         self.cfg = dict(FEATHER_DEFAULT, **settings.get("feathers", {}))
         self.types = KNOWN_TYPES | set(settings.get("feather_types", []))
@@ -37,7 +38,8 @@ class FeathersFeature(Feature):
         self.used_seen = None  # the tracker's used_count already handled
         self.alerted = set()
         self.last_alert = 0
-        super().__init__(app, parent)
+        self.mark_text = ""
+        super().__init__(app)
 
     # ---- state
     def save(self):
@@ -63,7 +65,6 @@ class FeathersFeature(Feature):
                 self.types.add(n["type"])
                 self.app.engine.say("Feathers: learned type %d = Empyrean Trace" % n["type"])
                 self.save()
-                self.refresh_types()
 
     def note_collected(self, snap):
         """Feathers you picked up since the last tick: their spots are collected. A pickup without a type
@@ -103,27 +104,23 @@ class FeathersFeature(Feature):
         return open_, collected
 
     # ---- Radar tab
-    def build_radar(self, f):
-        tk = self.tk
-        self.size = size = 380
-        self.canvas = tk.Canvas(f, width=size, height=size, bg=PANEL, highlightthickness=0)
-        self.canvas.pack(anchor="w")
-        bar = tk.Frame(f, bg=BG)
-        bar.pack(fill="x", pady=(6, 0))
-        button(tk, bar, "−", lambda: self.zoom(1.5), width=3).pack(side="left", padx=(0, 4))
-        button(tk, bar, "+", lambda: self.zoom(1 / 1.5), width=3).pack(side="left", padx=(0, 8))
-        button(tk, bar, "✓ Mark nearest collected", self.mark_nearest).pack(side="left", padx=(0, 4))
-        button(tk, bar, "Undo", self.unmark_nearest).pack(side="left")
-        self.mark_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w")
-        self.mark_label.pack(fill="x", pady=(4, 0))
-        listing = tk.Frame(f, bg=BG)
-        listing.pack(fill="both", expand=True, pady=(4, 0))
-        self.rows = [tk.Label(listing, text="", bg=BG, fg=TEXT, anchor="w", font=(MONO, 10)) for _ in range(7)]
-        for row in self.rows:
-            row.pack(fill="x")
+    def page_radar(self, snap):
+        c = P.Canvas(380, 380, PANEL)
+        rows = self.draw_radar(c, snap)
+        return [c.block(),
+                P.row(P.button("zoom", "−", 1.5), P.button("zoom", "+", 1 / 1.5),
+                      P.button("mark", "✓ Mark nearest collected"), P.button("unmark", "Undo")),
+                P.text(self.mark_text, small=True) if self.mark_text else None,
+                P.lines(rows)]
 
-    def zoom(self, factor):
-        self.range = max(25, min(2000, self.range * factor))
+    def on_zoom(self, factor):
+        self.range = max(25, min(2000, self.range * float(factor)))
+
+    def on_mark(self, _):
+        self.mark_nearest()
+
+    def on_unmark(self, _):
+        self.unmark_nearest()
 
     def nearest_spot(self, collected):
         """The nearest open (or collected) spot within MARK_RANGE_M of you -> (key, spot) or (key, None)."""
@@ -142,21 +139,21 @@ class FeathersFeature(Feature):
         if spot:
             self.collected.setdefault(key, set()).add(spot)
             self.save()
-        self.mark_label.config(text="Marked the nearest spot collected." if spot else
-                               "No open feather spot within %d m." % MARK_RANGE_M)
+        self.mark_text = ("Marked the nearest spot collected." if spot else
+                          "No open feather spot within %d m." % MARK_RANGE_M)
 
     def unmark_nearest(self):
         key, spot = self.nearest_spot(collected=True)
         if spot:
             self.collected[key].discard(spot)
             self.save()
-        self.mark_label.config(text="Unmarked the nearest collected spot." if spot else
-                               "No collected spot within %d m." % MARK_RANGE_M)
+        self.mark_text = ("Unmarked the nearest collected spot." if spot else
+                          "No collected spot within %d m." % MARK_RANGE_M)
 
-    def draw_radar(self, snap):
-        c, size = self.canvas, self.size
+    def draw_radar(self, c, snap):
+        """Draws the radar on c -> the list lines [(text, colour)]."""
+        size = c.w
         mid = size / 2
-        c.delete("all")
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")
         scale = draw_rings(c, size, self.range)
         legend = [("▲ ■ ▼ live", FEATHER), ("○ spot", FEATHER)] + ([("○ collected", dim(FEATHER))] if self.cfg["collected"] else [])
@@ -167,9 +164,7 @@ class FeathersFeature(Feature):
         position = snap["position"]
         if not position:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
-            for row in self.rows:
-                row.config(text="")
-            return
+            return []
         open_, collected = self.spots(snap, self.range)
         if self.cfg["collected"]:
             for _, xyz in collected:
@@ -196,16 +191,14 @@ class FeathersFeature(Feature):
             lines.append(("  %5d m  %-2s  %s  live" % (dist, direction, height), FEATHER))
         for dist, direction in sorted(relative(position, xyz)[::2] for _, xyz in open_):
             lines.append(("○ %5d m  %-2s         spot" % (dist, direction), dim(FEATHER, 0.25)))
-        lines = lines[:len(self.rows) - 1] + [(self.summary(), MUTED)]
+        lines = lines[:12] + [(self.summary(), MUTED)]
         if len(lines) == 1:
             lines.insert(0, (self.empty_text(), MUTED))
-        for i, row in enumerate(self.rows):
-            text, color = lines[i] if i < len(lines) else ("", MUTED)
-            row.config(text=text, fg=color)
+        return lines
 
     def empty_text(self):
         if not self.app.map_key():
-            return "Map not known yet: pick it in the sidebar."
+            return "Map not known yet: pick it in Settings → General."
         if not self.map_key():
             return "No feather data for %s." % map_name(self.app.map_key())
         return "No feather spots within %d m." % self.range
@@ -218,10 +211,7 @@ class FeathersFeature(Feature):
         return "%s: %d / %d collected · %s" % (map_name(key), len(self.collected.get(key, ())),
                                               len(self.mapdata.traces[key]), learned)
 
-    # ---- Overlay tab
-    def build_overlay(self, f):
-        self.build_overlay_tab(f)
-
+    # ---- Overlay
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         w, h = overlay.cfg["w"], overlay.cfg["h"]
@@ -244,56 +234,40 @@ class FeathersFeature(Feature):
             draw_me(c, w / 2, h / 2, 5)
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Feather settings", "Empyrean Trace spots from the local map data (© NCSOFT, via Shugo.GG). The game's "
-                "id for feathers is learned the first time one is near you; picking one up marks its spot collected.")
-        section(tk, f, "Show")
-        self.flags = {}
-        for key, text in (("spots", "Feather spots from the map data (hollow)"),
-                          ("collected", "Collected spots too (dimmed)"),
-                          ("me_on_top", "Your position on top (radar and overlay)"),
-                          ("alert", "Beep when a feather appears")):
-            self.flags[key] = tk.BooleanVar(value=self.cfg[key])
-            checkbox(tk, f, text, self.flags[key], self.set_flags).pack(fill="x")
-        section(tk, f, "Feather type ids")
-        self.types_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(MONO, 9), anchor="w", justify="left",
-                                    wraplength=380)
-        self.types_label.pack(fill="x")
-        button(tk, f, "Forget learned ids", self.forget_types).pack(anchor="w", pady=(4, 0))
-        section(tk, f, "Collected")
-        self.collected_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w", justify="left")
-        self.collected_label.pack(fill="x")
-        button(tk, f, "Reset collected on this map", self.reset_collected).pack(anchor="w", pady=(4, 0))
-        self.refresh_types()
+    FLAGS = (("spots", "Feather spots from the map data (hollow)"),
+             ("collected", "Collected spots too (dimmed)"),
+             ("me_on_top", "Your position on top (radar and overlay)"),
+             ("alert", "Beep when a feather appears"))
 
-    def refresh_types(self):
-        if not hasattr(self, "types_label"):
-            return
-        self.types_label.config(text=", ".join(str(t) for t in sorted(self.types)) or
-                                "None yet. Fly near a feather with this feature on.")
-        self.collected_label.config(text="\n".join("%s: %d / %d" % (map_name(k), len(self.collected.get(k, ())), len(v))
-                                                   for k, v in sorted(self.mapdata.traces.items())))
+    def page_settings(self, snap):
+        key = self.map_key()
+        blocks = [P.heading("Feather settings", "Empyrean Trace spots from the local map data (© NCSOFT, via "
+                            "Shugo.GG). The game's id for feathers is learned the first time one is near you; picking "
+                            "one up marks its spot collected."),
+                  P.section("Show")]
+        blocks += [P.toggle("flag_" + k, text, self.cfg[k]) for k, text in self.FLAGS]
+        blocks += [P.section("Feather type ids"),
+                   P.text(", ".join(str(t) for t in sorted(self.types)) or "None yet. Fly near a feather with this "
+                          "feature on.", mono=True, small=True),
+                   P.row(P.button("forget_types", "Forget learned ids")),
+                   P.section("Collected"),
+                   P.lines([("%s: %d / %d" % (map_name(k), len(self.collected.get(k, ())), len(v)), None)
+                            for k, v in sorted(self.mapdata.traces.items())], mono=False),
+                   P.row(P.button("reset_collected", "Reset collected on this map",
+                                  disabled=not (key and self.collected.get(key)),
+                                  confirm="Forget the %d feathers collected on %s?" % (
+                                      len(self.collected.get(key, ())), map_name(key)) if key else None))]
+        return blocks
 
-    def set_flags(self):
-        self.cfg.update({k: v.get() for k, v in self.flags.items()})
-        self.save()
-
-    def forget_types(self):
+    def on_forget_types(self, _):
         self.types = set(KNOWN_TYPES)
         self.save()
-        self.refresh_types()
 
-    def reset_collected(self):
-        from tkinter import messagebox
+    def on_reset_collected(self, _):
         key = self.map_key()
-        if not key or not self.collected.get(key):
-            return
-        if messagebox.askyesno("Daeva Radar", "Forget the %d feathers collected on %s?" % (
-                len(self.collected[key]), map_name(key)), parent=self.root):
+        if key and self.collected.get(key):
             self.collected[key].clear()
             self.save()
-            self.refresh_types()
 
     # ---- loop hooks
     def background(self, snap):
@@ -307,13 +281,6 @@ class FeathersFeature(Feature):
             play("system beep")
         self.alerted = present
         super().background(snap)
-
-    def update(self, snap, tab):
-        if tab == "Radar":
-            self.draw_radar(snap)
-        elif tab == "Settings":
-            self.refresh_types()
-        super().update(snap, tab)
 
     def status(self, snap):
         n = len(self.live(snap))

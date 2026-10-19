@@ -373,9 +373,9 @@ NODE_RANGE_M = 200  # objects further than this are dropped (they leave range si
 MONSTER_RANGE_M = 150  # monsters further than this from you are dropped (no "left range" message is sent)
 def login_name(data):
     """'33 36' your character at login: id (LEB128) | character number (u32) | 1 byte | name (length byte + UTF-8).
-    -> (entity id, name, character number). The entity id changes every login; the character number stays with
-    the character (it matched the charNo other tools keep for Noragiri and Nowagiwi, 2026-10-15). Bit 7 of its
-    first byte is a flag that differs between logins (de / 5e seen), not part of the number."""
+    -> (entity id, name, character number). The entity id changes every login. The "character number" matched
+    the charNo other tools keep on 2026-10-15, but several of its bits change between logins (one character had 15
+    values by 2026-10-19), so characters are told apart by name (characters.py, the Shop)."""
     try:
         entity, p = varint(data, 2)
         n = data[p + 5]

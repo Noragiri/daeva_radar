@@ -1,7 +1,7 @@
 # PyInstaller recipe for the Windows build: a DaevaRadar folder with DaevaRadar.exe and everything it needs
-# (Python, Tk, Pillow, data/, assets/, sounds/, windivert/), so players don't install Python.
+# (Python, Tk, Pillow, pystray, pywebview, data/, assets/, sounds/, windivert/), so players don't install Python.
 #
-#     python -m pip install pyinstaller pillow
+#     python -m pip install pyinstaller pillow pystray pywebview
 #     python -m PyInstaller dev/daeva_radar.spec --distpath build/dist --workpath build/work --noconfirm
 #
 # -> build/dist/DaevaRadar/DaevaRadar.exe. contents_directory="." keeps the files beside the exe, where the app
@@ -18,7 +18,9 @@ a = Analysis(
     [str(root / "daeva_radar.py")],
     pathex=[str(root)],
     datas=datas,
-    hiddenimports=["PIL.ImageTk"],
+    # pystray / pywebview pick their platform backend at runtime; pythonnet + clr_loader run WebView2 (Settings)
+    hiddenimports=["PIL.ImageTk", "pystray._win32", "webview.platforms.winforms", "webview.platforms.edgechromium",
+                   "clr_loader", "pythonnet"],
     excludes=["unittest", "pydoc", "doctest", "lib2to3", "test"],
 )
 pyz = PYZ(a.pure)

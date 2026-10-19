@@ -58,3 +58,11 @@ interactive map, https://shugo.gg/map/<map>). 256 px WebP tiles, zoom 0-4; zoom 
 pixel coordinates above (Middle and Upper Reshanta fill its top-left 2048 px). Credit: Shugo.GG. The map art is
 AION 2 game content © NCSOFT; it's here for this personal tool's Map window, not to be redistributed on its own.
 The Map window shows them with Pillow (`pip install pillow`).
+
+## Class icons (`assets/classes/<class>.png`)
+
+Downloaded on 2026-10-18 from NCSOFT's official AION 2 site CDN
+(`https://assets.playnccdn.com/static-aion2/characters/img/class/class_icon_<class>.png`, the icons of the
+official character pages; Shugo.GG links the same files). 256 px PNGs with transparency, for gladiator, templar,
+assassin, ranger, sorcerer, elementalist (Spiritmaster), cleric, chanter and fighter (Brawler). Art © NCSOFT.
+`64/` holds 64 px copies (transparent margins trimmed, centred on a square) for Discord emoji.

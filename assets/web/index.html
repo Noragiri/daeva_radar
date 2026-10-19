@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daeva Radar</title>
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="window">
+  <header class="titlebar pywebview-drag-region" id="titlebar">
+    <img src="/favicon.png" alt="" class="logo">
+    <h1>Daeva Radar</h1>
+    <span class="who" id="who"></span>
+    <div class="winbtns" id="winbtns">
+      <button id="win-min" title="Minimise"><svg viewBox="0 0 12 12"><path d="M2 6h8"/></svg></button>
+      <button id="win-max" title="Maximise"><svg viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8"/></svg></button>
+      <button id="win-close" class="close" title="Close (Daeva Radar keeps running in the tray)"><svg viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+    </div>
+  </header>
+  <div class="edge e-n"></div><div class="edge e-s"></div><div class="edge e-w"></div><div class="edge e-e"></div>
+  <div class="edge e-nw"></div><div class="edge e-ne"></div><div class="edge e-sw"></div><div class="edge e-se"></div>
+  <div class="main">
+    <nav class="nav" id="nav"></nav>
+    <section class="content" id="content"><p class="muted">Connecting to Daeva Radar…</p></section>
+  </div>
+  <footer class="footer">
+    <span id="version" class="muted"></span>
+    <span id="status" class="muted status"></span>
+    <span class="links">
+      <a href="https://github.com/Noragiri/daeva_radar" target="_blank" rel="noopener">GitHub</a>
+    </span>
+  </footer>
+</div>
+<script src="/app.js"></script>
+<script src="/page.js"></script>
+</body>
+</html>

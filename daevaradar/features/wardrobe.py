@@ -3,8 +3,9 @@ import json
 import time
 
 from ..common import ROOT, load_settings, save_settings
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, Toast, heading
+from ..ui import MUTED, Toast
 from ..feature import Feature
+from .. import page as P
 
 
 WARDROBE_DEFAULT = dict(kind="All", show="owned")
@@ -56,7 +57,7 @@ class WardrobeFeature(Feature):
     title, icon, TABS = "Wardrobe", "❖", ("Sets",)
     off_text = "The wardrobe isn't read while it's off."
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         settings = load_settings()
         self.cfg = dict(WARDROBE_DEFAULT, **settings.get("wardrobe_view", {}))
         saved = settings.get("wardrobe", {})
@@ -64,9 +65,10 @@ class WardrobeFeature(Feature):
         self.synced = saved.get("synced")
         self.data = SkinData()
         self.seen = None
-        self.rows = []
+        self.rows = []  # the set ids of the list's rows, in order
         self.selected = None
-        super().__init__(app, parent)
+        self.search = ""
+        super().__init__(app)
 
     def save(self):
         save_settings(dict(load_settings(), wardrobe_view=self.cfg))
@@ -90,71 +92,40 @@ class WardrobeFeature(Feature):
         self.app.engine.say("Wardrobe: synced (%d pieces)" % len(self.skins))
         if new and not first and self.synced:
             names = ["%s (%s)" % (self.data.describe(s // 100)[0], self.data.label(s)) for s in new[:3]]
-            Toast(self.root, "❖ Wardrobe: %d new piece%s\n%s" % (len(new), "" if len(new) == 1 else "s",
-                                                               "\n".join(names) + ("\n…" if len(new) > 3 else "")))
-        self.refresh()
+            Toast(self.root, "%d new wardrobe piece%s\n%s" % (len(new), "" if len(new) == 1 else "s",
+                                                               "\n".join(names) + ("\n…" if len(new) > 3 else "")), label="Wardrobe")
 
     # ---- Sets tab
-    def build_sets(self, f):
-        tk = self.tk
-        heading(tk, f, "Wardrobe", None)
-        self.summary = tk.Label(f, text="", bg=BG, fg=TEXT, font=(FONT, 10, "bold"), anchor="w", justify="left")
-        self.summary.pack(fill="x")
-        self.sub = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w", justify="left")
-        self.sub.pack(fill="x", pady=(0, 6))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.search = tk.StringVar()
-        tk.Entry(row, textvariable=self.search, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                 font=(FONT, 10), width=14).pack(side="left", ipady=3, padx=(0, 6))
-        self.search.trace_add("write", lambda *a: self.refresh())
-        self.kind_var = tk.StringVar(value=self.cfg["kind"])
-        for value in ("All",) + KINDS:
-            self.radio(row, value, value, self.kind_var)
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        self.show_var = tk.StringVar(value=self.cfg["show"])
-        for value, text in (("owned", "Owned"), ("incomplete", "Incomplete"), ("complete", "Complete"),
-                            ("missing", "Not started"), ("all", "All sets"), ("pieces", "Missing pieces")):
-            self.radio(row, value, text, self.show_var)
-        self.tk.Button(row, text="Copy list", command=self.copy_list, bg=BUTTON, fg=TEXT, relief="flat", bd=0,
-                       activebackground=BUTTON_HOVER, activeforeground=TEXT, font=(FONT, 9), padx=8,
-                       cursor="hand2").pack(side="right")
-        self.listbox = tk.Listbox(f, height=14, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                  highlightthickness=0, font=(MONO, 9), activestyle="none")
-        self.listbox.pack(fill="x", pady=(6, 0))
-        self.listbox.bind("<<ListboxSelect>>", lambda e: self.select_row())
-        self.detail = tk.Label(f, text="", bg=BG, fg=MUTED, font=(MONO, 9), anchor="nw", justify="left", height=9)
-        self.detail.pack(fill="x", pady=(6, 0))
-        self.refresh()
+    SHOWS = (("owned", "Owned"), ("incomplete", "Incomplete"), ("complete", "Complete"), ("missing", "Not started"),
+             ("all", "All sets"), ("pieces", "Missing pieces"))
 
-    def radio(self, parent, value, text, var):
-        self.tk.Radiobutton(parent, text=text, value=value, variable=var, command=self.set_filters, bg=BG, fg=TEXT,
-                            selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 9),
-                            indicatoron=False, padx=6, pady=2, relief="flat", bd=0, offrelief="flat",
-                            cursor="hand2").pack(side="left", padx=(0, 2))
-
-    def set_filters(self):
-        self.cfg.update(kind=self.kind_var.get(), show=self.show_var.get())
-        self.save()
-        self.refresh()
-
-    def refresh(self):
-        if not hasattr(self, "listbox"):
-            return
+    def page_sets(self, snap):
         owned = self.owned_sets()
         ids = set(owned) | set(self.data.sets)
-        complete = sum(1 for k in ids if owned.get(k) and self.data.describe(k)[3] and
-                       len(owned[k]) >= self.data.describe(k)[3])
-        self.summary.config(text="%d pieces · %d sets started · %d complete · %s" % (
-            len(self.skins), len(owned), complete, self.closet_line()))
+        text, kind, show = self.search.strip().lower(), self.cfg["kind"], self.cfg["show"]
+        if show == "pieces":
+            summary, rows = self.piece_rows(ids, owned, text, kind)
+        else:
+            complete = sum(1 for k in ids if owned.get(k) and self.data.describe(k)[3] and
+                           len(owned[k]) >= self.data.describe(k)[3])
+            summary = "%d pieces · %d sets started · %d complete · %s" % (
+                len(self.skins), len(owned), complete, self.closet_line())
+            rows = self.set_rows(ids, owned, text, kind, show)
         weapons = self.weapon_counts()
-        self.sub.config(text=("Weapons /%d: %s  ·  " % (CLOSET_TOTALS["Weapon"], ", ".join(
+        sub = (("Weapons /%d: %s  ·  " % (CLOSET_TOTALS["Weapon"], ", ".join(
             "%s %d" % (w, weapons[w]) for w in sorted(weapons, key=lambda w: -weapons[w])) or "none") if self.skins else "") +
             (("synced %s" % self.synced) if self.synced else "Not synced yet: enter the world with the radar running."))
-        text, kind, show = self.search.get().strip().lower(), self.cfg["kind"], self.cfg["show"]
-        if show == "pieces":
-            return self.refresh_pieces(ids, owned, text, kind)
+        sel = self.rows.index(self.selected) if self.selected in self.rows and show != "pieces" else None
+        empty = "Nothing matches." if self.skins else "Waiting for the wardrobe (enter the world)."
+        return [P.heading("Wardrobe"), P.text(summary, bold=True), P.text(sub, small=True),
+                P.row(P.field("search", self.search, "Search", width=180),
+                      P.choice("kind", ["All"] + list(KINDS), self.cfg["kind"])),
+                P.row(P.choice("show", self.SHOWS, self.cfg["show"]), P.button("copy", "Copy list")),
+                P.listbox("set", rows, sel, height=16, dbl=False,
+                          empty="Nothing missing here." if show == "pieces" and self.skins else empty),
+                P.lines([(line, None) for line in self.detail()])]
+
+    def set_rows(self, ids, owned, text, kind, show):
         rows = []
         for k in ids:
             name, k_kind, pieces, total = self.data.describe(k)
@@ -168,16 +139,14 @@ class WardrobeFeature(Feature):
             rows.append((k_kind, name, k, len(have), total))
         rows.sort(key=lambda r: (r[0], r[1]))
         self.rows = [r[2] for r in rows]
-        self.listbox.delete(0, "end")
-        for i, (k_kind, name, k, have, total) in enumerate(rows):
+        out = []
+        for k_kind, name, k, have, total in rows:
             mark = "✓" if total and have >= total else ("·" if not have else " ")
-            self.listbox.insert("end", "%s %-28.28s %-6s %2d/%s" % (mark, name, k_kind, have, total if total else "?"))
-            self.listbox.itemconfig(i, fg=KIND_COLOR.get(k_kind, TEXT) if have else MUTED)
-        if not rows:
-            self.listbox.insert("end", "  Nothing matches." if self.skins else "  Waiting for the wardrobe (enter the world).")
-        self.show_detail()
+            out.append(("%s %-28.28s %-6s %2d/%s" % (mark, name, k_kind, have, total if total else "?"),
+                        KIND_COLOR.get(k_kind) if have else MUTED))
+        return out
 
-    def refresh_pieces(self, ids, owned, text, kind):
+    def piece_rows(self, ids, owned, text, kind):
         """Missing pieces view: one row per piece you don't own (of the sets with known pieces)."""
         rows = []
         for k in ids:
@@ -190,22 +159,32 @@ class WardrobeFeature(Feature):
                     rows.append((k_kind, name, label, k, bool(have)))
         rows.sort(key=lambda r: (not r[4], r[0], r[1], r[2]))  # sets you've started first
         self.rows = [r[3] for r in rows]
-        self.listbox.delete(0, "end")
-        for i, (k_kind, name, label, k, started) in enumerate(rows):
-            self.listbox.insert("end", "· %-28.28s %-12.12s %s" % (name, label, k_kind))
-            self.listbox.itemconfig(i, fg=KIND_COLOR.get(k_kind, TEXT) if started else MUTED)
-        if not rows:
-            self.listbox.insert("end", "  Nothing missing here." if self.skins else "  Waiting for the wardrobe (enter the world).")
-        self.summary.config(text="%d missing pieces%s (%d in sets you've started)" % (
-            len(rows), "" if kind == "All" else " · " + kind, sum(1 for r in rows if r[4])))
-        self.show_detail()
+        summary = "%d missing pieces%s (%d in sets you've started)" % (
+            len(rows), "" if kind == "All" else " · " + kind, sum(1 for r in rows if r[4]))
+        return summary, [("· %-28.28s %-12.12s %s" % (name, label, k_kind), KIND_COLOR.get(k_kind) if started else MUTED)
+                         for k_kind, name, label, k, started in rows]
 
-    def copy_list(self):
-        """The rows shown, to the clipboard (paste into a note or a message)."""
-        lines = [self.listbox.get(i).strip() for i in range(self.listbox.size())]
-        self.root.clipboard_clear()
-        self.root.clipboard_append("\n".join(lines))
-        self.app.engine.say("Wardrobe: copied %d lines" % len(lines))
+    def on_search(self, text):
+        self.search = text or ""
+
+    def on_kind(self, value):
+        self.cfg["kind"] = value
+        self.save()
+
+    def on_show(self, value):
+        self.cfg["show"] = value
+        self.save()
+
+    def on_set(self, index):
+        if 0 <= int(index) < len(self.rows):
+            self.selected = self.rows[int(index)]
+
+    def on_copy(self, _):
+        """The rows shown, for the clipboard (paste into a note or a message)."""
+        page = self.page_sets(self.app.snapshot())
+        rows = next(b for b in page if b["t"] == "list")["rows"]
+        self.app.engine.say("Wardrobe: copied %d lines" % len(rows))
+        return dict(copy="\n".join(r[0].strip() for r in rows))
 
     def kind_counts(self):
         kinds = {}
@@ -228,23 +207,15 @@ class WardrobeFeature(Feature):
         return " · ".join("%s %d/%d (%d%%)" % (k, kinds.get(k, 0), CLOSET_TOTALS[k], 100 * kinds.get(k, 0) // CLOSET_TOTALS[k])
                           for k in ("Armour", "Accessory"))
 
-    def select_row(self):
-        sel = self.listbox.curselection()
-        if sel and sel[0] < len(self.rows):
-            self.selected = self.rows[sel[0]]
-            self.show_detail()
-
-    def show_detail(self):
+    def detail(self):
         if self.selected is None:
-            self.detail.config(text="Select a set for its pieces.")
-            return
+            return ["Select a set for its pieces."]
         name, kind, pieces, total = self.data.describe(self.selected)
         have = self.owned_sets().get(self.selected, set())
         lines = ["%s (%s) · %d/%s" % (name, kind, len(have), total if total else "?")]
-        numbers = sorted(set(pieces) | have)
-        for n in numbers:
+        for n in sorted(set(pieces) | have):
             lines.append("  %s %s" % ("✓" if n in have else "·", self.data.label(self.selected * 100 + n)))
-        self.detail.config(text="\n".join(lines[:10]))
+        return lines[:12]
 
     # ---- loop hooks
     def background(self, snap):

@@ -5,8 +5,9 @@ import time
 from ..common import load_settings, save_settings
 from ..game import GATHER_GROUPS, MapData
 from ..sound import play
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, WATCH_COLORS, button, checkbox, draw_cone, draw_me, draw_rings, draw_text, heading, radar_point, section
+from ..ui import MUTED, PANEL, WATCH_COLORS, draw_cone, draw_me, draw_rings, draw_text, radar_point
 from ..feature import Feature
+from .. import page as P
 
 
 GATHER_DEFAULT = dict(watch=[], mode="watched", map_nodes=True, alert=True, me_on_top=True, unnamed=False)
@@ -15,12 +16,12 @@ class GatherFeature(Feature):
     matching their position to the local map data (data/maps, credit Shugo.GG) and then remembered by type,
     on every map. The map data also shows nodes the game hasn't announced yet (hollow). The map is the app's
     (sidebar picker, else detected)."""
-    title, icon, TABS = "Gathering", "⛏", ("Radar", "Overlay", "Settings")
+    title, icon, TABS = "Gathering", "⛏", ("Radar", "Settings")
     overlay_key, overlay_color = "gather_overlay", "#7cf08a"
     overlay_text = "A see-through layer with the resources you watch, to place over the game's minimap."
     tracks = "nodes"
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         self.cfg = dict(GATHER_DEFAULT, **load_settings().get("gathering", {}))
         self.learned = {int(k): v for k, v in load_settings().get("node_types", {}).items()}
         self.mapdata = app.mapdata
@@ -28,7 +29,8 @@ class GatherFeature(Feature):
         self.range = 150
         self.alerted = set()
         self.last_alert = 0
-        super().__init__(app, parent)
+        self.search, self.result_sel, self.watch_sel = "", None, None
+        super().__init__(app)
 
     def save(self):
         save_settings(dict(load_settings(), gathering={k: v for k, v in self.cfg.items() if k != "map"}))
@@ -59,8 +61,6 @@ class GatherFeature(Feature):
                 changed = True
         if changed:
             save_settings(dict(load_settings(), node_types={str(k): v for k, v in self.learned.items()}))
-            if hasattr(self, "watch_list"):
-                self.refresh_search()
 
     def all_names(self):
         return sorted(set(self.mapdata.names()) | set(self.learned.values()))
@@ -104,56 +104,41 @@ class GatherFeature(Feature):
         else:
             self.cfg["watch"].append(name)
         self.save()
-        self.refresh_watch()
 
     # ---- Radar tab
-    def build_radar(self, f):
-        tk = self.tk
-        self.size = size = 380
-        self.canvas = tk.Canvas(f, width=size, height=size, bg=PANEL, highlightthickness=0)
-        self.canvas.pack(anchor="w")
-        bar = tk.Frame(f, bg=BG)
-        bar.pack(fill="x", pady=(6, 0))
-        button(tk, bar, "−", lambda: self.zoom(1.5), width=3).pack(side="left", padx=(0, 4))
-        button(tk, bar, "+", lambda: self.zoom(1 / 1.5), width=3).pack(side="left", padx=(0, 8))
-        button(tk, bar, "Map ↗", lambda: self.app.open_map("Resources")).pack(side="right")
-        self.mode_var = tk.StringVar(value=self.cfg["mode"])
-        for value, text in (("watched", "Watched"), ("all", "All")):
-            tk.Radiobutton(bar, text=text, value=value, variable=self.mode_var, command=self.set_mode, bg=BG, fg=TEXT,
-                           selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 10),
-                           indicatoron=False, padx=10, pady=3, relief="flat", bd=0, offrelief="flat",
-                           cursor="hand2").pack(side="left", padx=(0, 4))
-        tk.Label(f, text="Nearby — click a name to watch / unwatch it  (● live  ○ on the map, not announced yet)",
-                 bg=BG, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x", pady=(8, 2))
-        listing = tk.Frame(f, bg=BG)
-        listing.pack(fill="both", expand=True)
-        self.rows, self.row_names = [], []
-        for i in range(8):
-            row = tk.Label(listing, text="", bg=BG, fg=TEXT, anchor="w", font=(MONO, 10), cursor="hand2")
-            row.pack(fill="x")
-            row.bind("<Button-1>", lambda e, i=i: self.row_names[i] and self.toggle_watch(self.row_names[i]))
-            self.rows.append(row)
-            self.row_names.append(None)
+    def page_radar(self, snap):
+        c = P.Canvas(380, 380, PANEL)
+        rows = self.draw_radar(c, snap)
+        return [c.block(),
+                P.row(P.button("zoom", "−", 1.5), P.button("zoom", "+", 1 / 1.5),
+                      P.choice("mode", (("watched", "Watched"), ("all", "All")), self.cfg["mode"]),
+                      P.button("map", "Map ↗")),
+                P.text("Nearby: click a name to watch / unwatch it  (● live  ○ on the map, not announced yet)", small=True),
+                P.lines(rows, click="watch")]
 
-    def zoom(self, factor):
-        self.range = max(25, min(2000, self.range * factor))
+    def on_zoom(self, factor):
+        self.range = max(25, min(2000, self.range * float(factor)))
 
-    def set_mode(self):
-        self.cfg["mode"] = self.mode_var.get()
+    def on_mode(self, value):
+        self.cfg["mode"] = value
         self.save()
 
-    def draw_radar(self, snap):
-        c, size = self.canvas, self.size
+    def on_map(self, _):
+        self.app.open_map("Resources")
+
+    def on_watch(self, name):
+        self.toggle_watch(name)
+
+    def draw_radar(self, c, snap):
+        """Draws the radar on c -> the list lines [(text, colour, name to watch)]."""
+        size = c.w
         mid = size / 2
-        c.delete("all")
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")
         scale = draw_rings(c, size, self.range)
         position = snap["position"]
         if not position:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
-            for row in self.rows:
-                row.config(text="")
-            return
+            return []
         live, extra = self.shown(snap)
         for name, xyz in extra:  # map-only: hollow, under the live ones
             x, y, beyond = radar_point(position, xyz, mid, scale, self.range)
@@ -179,21 +164,12 @@ class GatherFeature(Feature):
             g[1] += 1
             g[2] = min(g[2], math.dist(xyz[:2], position[:2]) / 100)
         order = sorted(groups.items(), key=lambda kv: (not self.watched(kv[0]), kv[1][2]))
-        for i, row in enumerate(self.rows):
-            if i < len(order):
-                name, (n_live, n_map, d) = order[i]
-                mark = "★" if self.watched(name) else "☆"
-                row.config(text="%s %-22.22s ●%-3d ○%-3d %4d m" % (mark, name, n_live, n_map, d),
-                           fg=self.color(name) if self.watched(name) else MUTED)
-                self.row_names[i] = name
-            else:
-                row.config(text="Nothing in range." if i == 0 else "", fg=MUTED)
-                self.row_names[i] = None
+        lines = [("%s %-22.22s ●%-3d ○%-3d %4d m" % ("★" if self.watched(name) else "☆", name, n_live, n_map, d),
+                  self.color(name) if self.watched(name) else MUTED, name)
+                 for name, (n_live, n_map, d) in order[:14]]
+        return lines or [("Nothing in range.", MUTED, None)]
 
-    # ---- Overlay tab
-    def build_overlay(self, f):
-        self.build_overlay_tab(f)
-
+    # ---- Overlay
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         live, extra = self.shown(snap)
@@ -211,50 +187,9 @@ class GatherFeature(Feature):
             draw_me(c, overlay.cfg["w"] / 2, overlay.cfg["h"] / 2, 5)
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Gathering settings", "Pick the resources to watch; each gets its own colour. Names come "
-                "from the local map data (© NCSOFT, via Shugo.GG), learned once per node type and remembered.")
-        section(tk, f, "Find a resource")
-        self.search = tk.StringVar()
-        entry = tk.Entry(f, textvariable=self.search, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                         font=(FONT, 10))
-        entry.pack(fill="x", ipady=3)
-        self.search.trace_add("write", lambda *a: self.refresh_search())
-        self.results = tk.Listbox(f, height=6, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                  highlightthickness=0, font=(FONT, 9), activestyle="none")
-        self.results.pack(fill="x", pady=(6, 0))
-        self.results.bind("<Double-Button-1>", lambda e: self.add_selected())
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        button(tk, row, "★ Watch", self.add_selected).pack(side="left")
-        tk.Label(row, text="or double-click a name", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
-        section(tk, f, "Groups — click to watch / unwatch all of a kind")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.group_buttons = {}
-        for group, _ in GATHER_GROUPS:
-            b = button(tk, row, group, lambda g=group: self.toggle_group(g))
-            b.pack(side="left", padx=(0, 4))
-            self.group_buttons[group] = b
-        section(tk, f, "Watching")
-        self.watch_list = tk.Listbox(f, height=4, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                     highlightthickness=0, font=(FONT, 9, "bold"), activestyle="none")
-        self.watch_list.pack(fill="x")
-        self.watch_list.bind("<Double-Button-1>", lambda e: self.remove_selected())
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        button(tk, row, "Remove", self.remove_selected).pack(side="left", padx=(0, 4))
-        button(tk, row, "Clear all", self.clear_watch).pack(side="left")
-        section(tk, f, "Show")
-        self.flags = {}
-        for key, text in (("map_nodes", "Nodes from the map data the game hasn't announced yet (hollow)"),
-                          ("me_on_top", "Your position on top (radar and overlay)"),
-                          ("alert", "Beep when a watched resource appears"),
-                          ("unnamed", "Include objects without a known name")):
-            self.flags[key] = tk.BooleanVar(value=self.cfg[key])
-            checkbox(tk, f, text, self.flags[key], self.set_flags).pack(fill="x")
-        self.refresh_watch()
+    def results(self):
+        text = self.search.strip().lower()
+        return [n for n in self.all_names() if text in n.lower()]
 
     def group_names(self, group):
         return [n for n in self.all_names() if self.mapdata.group_of(n) == group]
@@ -267,57 +202,70 @@ class GatherFeature(Feature):
         else:
             self.cfg["watch"] += [n for n in names if not self.watched(n)]
         self.save()
-        self.refresh_watch()
 
-    def refresh_groups(self):
-        """Group buttons: ✓ all watched, ◐ some, nothing marked for none."""
-        for group, b in getattr(self, "group_buttons", {}).items():
+    def page_settings(self, snap):
+        groups = []
+        for group, _ in GATHER_GROUPS:  # ✓ all watched, ◐ some
             names = self.group_names(group)
             n = sum(1 for name in names if self.watched(name))
             mark = "✓ " if names and n == len(names) else "◐ " if n else ""
-            b.config(text="%s%s (%d)" % (mark, group, len(names)), fg=TEXT if n else MUTED,
-                     state="normal" if names else "disabled")
+            groups.append(P.button("group", "%s%s (%d)" % (mark, group, len(names)), group, disabled=not names))
+        results, watch = self.results(), self.cfg["watch"]
+        return [P.heading("Gathering settings", "Pick the resources to watch; each gets its own colour. Names come from "
+                          "the local map data (© NCSOFT, via Shugo.GG), learned once per node type and remembered."),
+                P.section("Find a resource"),
+                P.field("search", self.search, "Resource name", width=320),
+                P.listbox("result", [(("★ " if self.watched(n) else "   ") + n, None) for n in results], self.result_sel,
+                          height=6, mono=False, empty="(nothing called that)"),
+                P.row(P.button("watch_result", "★ Watch", disabled=self.result_sel is None),
+                      P.text("or double-click a name", small=True)),
+                P.section("Groups: click to watch / unwatch all of a kind"),
+                P.row(*groups),
+                P.section("Watching"),
+                P.listbox("watched", [("● " + n, self.color(n)) for n in watch], self.watch_sel, height=4, mono=False,
+                          empty="Nothing yet. Pick from the list above, or click a name on the Radar tab."),
+                P.row(P.button("unwatch", "Remove", disabled=self.watch_sel is None),
+                      P.button("clear_watch", "Clear all", disabled=not watch, confirm="Stop watching every resource?")),
+                P.section("Show"),
+                P.toggle("flag_map_nodes", "Nodes from the map data the game hasn't announced yet (hollow)",
+                         self.cfg["map_nodes"]),
+                P.toggle("flag_me_on_top", "Your position on top (radar and overlay)", self.cfg["me_on_top"]),
+                P.toggle("flag_alert", "Beep when a watched resource appears", self.cfg["alert"]),
+                P.toggle("flag_unnamed", "Include objects without a known name", self.cfg["unnamed"])]
 
-    def refresh_search(self):
-        if not hasattr(self, "results"):
-            return
-        text = self.search.get().strip().lower()
-        self.results.delete(0, "end")
-        for n in [n for n in self.all_names() if text in n.lower()]:
-            self.results.insert("end", ("★ " if self.watched(n) else "   ") + n)
+    def on_group(self, group):
+        self.toggle_group(group)
 
-    def refresh_watch(self):
-        if not hasattr(self, "watch_list"):
-            return
-        self.watch_list.delete(0, "end")
-        for i, n in enumerate(self.cfg["watch"]):
-            self.watch_list.insert("end", "● " + n)
-            self.watch_list.itemconfig(i, fg=self.color(n))
-        if not self.cfg["watch"]:
-            self.watch_list.insert("end", "Nothing yet. Pick from the list above, or click a name on the Radar tab.")
-            self.watch_list.itemconfig(0, fg=MUTED)
-        self.refresh_search()
-        self.refresh_groups()
+    def on_search(self, text):
+        self.search, self.result_sel = text or "", None
 
-    def add_selected(self):
-        sel = self.results.curselection()
-        if sel:
-            name = self.results.get(sel[0])[3:]
-            if name and not self.watched(name):
-                self.toggle_watch(name)
+    def on_result(self, index):
+        self.result_sel = int(index) if int(index) < len(self.results()) else None
 
-    def remove_selected(self):
-        sel = self.watch_list.curselection()
-        if sel and sel[0] < len(self.cfg["watch"]):
-            self.toggle_watch(self.cfg["watch"][sel[0]])
+    def on_result_open(self, index):
+        self.on_result(index)
+        self.on_watch_result(None)
 
-    def clear_watch(self):
+    def on_watch_result(self, _):
+        results = self.results()
+        if self.result_sel is not None and self.result_sel < len(results) and not self.watched(results[self.result_sel]):
+            self.toggle_watch(results[self.result_sel])
+
+    def on_watched(self, index):
+        self.watch_sel = int(index) if int(index) < len(self.cfg["watch"]) else None
+
+    def on_watched_open(self, index):
+        self.on_watched(index)
+        self.on_unwatch(None)
+
+    def on_unwatch(self, _):
+        if self.watch_sel is not None and self.watch_sel < len(self.cfg["watch"]):
+            self.toggle_watch(self.cfg["watch"][self.watch_sel])
+        self.watch_sel = None
+
+    def on_clear_watch(self, _):
         self.cfg["watch"] = []
-        self.save()
-        self.refresh_watch()
-
-    def set_flags(self):
-        self.cfg.update({k: v.get() for k, v in self.flags.items()})
+        self.watch_sel = None
         self.save()
 
     # ---- loop hooks
@@ -333,11 +281,6 @@ class GatherFeature(Feature):
                 play("system beep")
             self.alerted = present | (self.alerted & present)
         super().background(snap)
-
-    def update(self, snap, tab):
-        if tab == "Radar":
-            self.draw_radar(snap)
-        super().update(snap, tab)
 
     def status(self, snap):
         if not self.cfg["watch"]:

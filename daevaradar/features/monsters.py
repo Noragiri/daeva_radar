@@ -6,8 +6,9 @@ import time
 from ..common import load_settings, save_settings
 from ..game import monster_info, monster_names
 from ..sound import play
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, WATCH_COLORS, button, checkbox, draw_cone, draw_me, draw_rings, draw_text, heading, label_side, radar_point, section
+from ..ui import MUTED, PANEL, WATCH_COLORS, draw_cone, draw_me, draw_rings, draw_text, label_side, radar_point
 from ..feature import Feature
+from .. import page as P
 from .pets import Pets
 
 
@@ -17,20 +18,21 @@ class MonstersFeature(Feature):
     """Monsters near you (from the game's 'monster in range' messages), named from data/monsters.json.
     A watch list picks the ones to show: on the radar, on this feature's own overlay, and with an alert.
     Target pets (Pets tab) add the monsters that drop their souls: solid in range, hollow where they spawn."""
-    title, icon, TABS = "Monsters", "☠", ("Radar", "Pets", "Overlay", "Settings")
+    title, icon, TABS = "Monsters", "☠", ("Radar", "Pets", "Settings")
     overlay_key, overlay_color = "monster_overlay", "#ff5c5c"
     overlay_text = ("A see-through layer with the monsters you watch and your target pets' soul monsters, to place "
                     "over the game's minimap.")
     off_text = "Nothing is tracked, alerted or drawn while it's off, and pet souls aren't counted."
     tracks = "monsters"
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         self.cfg = dict(MONSTER_DEFAULT, **load_settings().get("monsters", {}))
         self.range = 150
         self.alerted = set()
         self.last_alert = 0
+        self.search, self.result_sel, self.watch_sel = "", None, None
         self.pets = Pets(app)
-        super().__init__(app, parent)
+        super().__init__(app)
 
     def save(self):
         save_settings(dict(load_settings(), monsters=self.cfg))
@@ -67,47 +69,42 @@ class MonstersFeature(Feature):
         else:
             self.cfg["watch"].append(name)
         self.save()
-        self.refresh_watch()
+
+    def act(self, id, value):
+        """The Pets tab's controls are the Pets helper's."""
+        if id.startswith("pet"):
+            if id.startswith("pet_flag_"):
+                return self.pets.set_flag(id[9:], value)
+            return getattr(self.pets, "on_" + id)(value)
+        return super().act(id, value)
 
     # ---- Radar tab
-    def build_radar(self, f):
-        tk = self.tk
-        self.size = size = 380
-        self.canvas = tk.Canvas(f, width=size, height=size, bg=PANEL, highlightthickness=0)
-        self.canvas.pack(anchor="w")
-        bar = tk.Frame(f, bg=BG)
-        bar.pack(fill="x", pady=(6, 0))
-        button(tk, bar, "−", lambda: self.zoom(1.5), width=3).pack(side="left", padx=(0, 4))
-        button(tk, bar, "+", lambda: self.zoom(1 / 1.5), width=3).pack(side="left", padx=(0, 8))
-        self.mode_var = tk.StringVar(value=self.cfg["mode"])
-        for value, text in (("watched", "Watched"), ("all", "All")):
-            tk.Radiobutton(bar, text=text, value=value, variable=self.mode_var, command=self.set_mode, bg=BG, fg=TEXT,
-                           selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 10),
-                           indicatoron=False, padx=10, pady=3, relief="flat", bd=0, offrelief="flat",
-                           cursor="hand2").pack(side="left", padx=(0, 4))
-        tk.Label(f, text="Nearby — click a name to watch / unwatch it", bg=BG, fg=MUTED, font=(FONT, 9),
-                 anchor="w").pack(fill="x", pady=(8, 2))
-        listing = tk.Frame(f, bg=BG)
-        listing.pack(fill="both", expand=True)
-        self.rows, self.row_names = [], []
-        for i in range(8):
-            row = tk.Label(listing, text="", bg=BG, fg=TEXT, anchor="w", font=(MONO, 10), cursor="hand2")
-            row.pack(fill="x")
-            row.bind("<Button-1>", lambda e, i=i: self.row_names[i] and self.toggle_watch(self.row_names[i]))
-            self.rows.append(row)
-            self.row_names.append(None)
+    def page_radar(self, snap):
+        c = P.Canvas(380, 380, PANEL)
+        rows = self.draw_radar(c, snap)
+        return [c.block(),
+                P.row(P.button("zoom", "−", 1.5), P.button("zoom", "+", 1 / 1.5),
+                      P.choice("mode", (("watched", "Watched"), ("all", "All")), self.cfg["mode"])),
+                P.text("Nearby: click a name to watch / unwatch it", small=True),
+                P.lines(rows, click="watch")]
 
-    def zoom(self, factor):
-        self.range = max(25, min(2000, self.range * factor))
+    def on_zoom(self, factor):
+        self.range = max(25, min(2000, self.range * float(factor)))
 
-    def set_mode(self):
-        self.cfg["mode"] = self.mode_var.get()
+    def on_mode(self, value):
+        self.cfg["mode"] = value
         self.save()
 
-    def draw_radar(self, snap):
-        c, size = self.canvas, self.size
+    def on_watch(self, name):
+        self.toggle_watch(name)
+
+    def page_pets(self, snap):
+        return self.pets.page(snap)
+
+    def draw_radar(self, c, snap):
+        """Draws the radar on c -> the list lines [(text, colour, name to watch)]."""
+        size = c.w
         mid = size / 2
-        c.delete("all")
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")  # under the rings and pins
         scale = draw_rings(c, size, self.range)
         position = snap["position"]
@@ -152,19 +149,11 @@ class MonstersFeature(Feature):
                                                                      level or "?", rank[:1]),
                               self.color(name) if self.watched(name) else MUTED, name))
         lines += [(text, color, None) for text, color in spawn_rows]  # soul monsters' nearest spawn points
-        for i, row in enumerate(self.rows):
-            if i < len(lines):
-                text, color, name = lines[i]
-                row.config(text=text, fg=color)
-                self.row_names[i] = name
-            else:
-                row.config(text="No monsters in range." if i == 0 and position else "", fg=MUTED)
-                self.row_names[i] = None
+        if not lines and position:
+            lines.append(("No monsters in range.", MUTED, None))
+        return lines[:14]
 
-    # ---- Overlay tab
-    def build_overlay(self, f):
-        self.build_overlay_tab(f)
-
+    # ---- Overlay
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         w = overlay.cfg["w"]
@@ -189,95 +178,67 @@ class MonstersFeature(Feature):
             draw_me(c, w / 2, overlay.cfg["h"] / 2, 5)
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Monster settings", "Pick the monsters to watch. Several at once is fine; each gets "
-                "its own colour on the radar and the overlay.")
-        section(tk, f, "Find a monster")
-        self.search = tk.StringVar()
-        entry = tk.Entry(f, textvariable=self.search, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                         font=(FONT, 10))
-        entry.pack(fill="x", ipady=3)
-        self.search.trace_add("write", lambda *a: self.refresh_search())
-        lists = tk.Frame(f, bg=BG)
-        lists.pack(fill="x", pady=(6, 0))
-        self.results = tk.Listbox(lists, height=7, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                  highlightthickness=0, font=(FONT, 9), activestyle="none")
-        self.results.pack(fill="x")
-        self.results.bind("<Double-Button-1>", lambda e: self.add_selected())
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        button(tk, row, "★ Watch", self.add_selected).pack(side="left")
-        tk.Label(row, text="or double-click a name", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
-        section(tk, f, "Watching")
-        self.watch_list = tk.Listbox(f, height=5, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                     highlightthickness=0, font=(FONT, 9, "bold"), activestyle="none")
-        self.watch_list.pack(fill="x")
-        self.watch_list.bind("<Double-Button-1>", lambda e: self.remove_selected())
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(4, 0))
-        button(tk, row, "Remove", self.remove_selected).pack(side="left", padx=(0, 4))
-        button(tk, row, "Clear all", self.clear_watch).pack(side="left")
-        section(tk, f, "Show")
-        self.names_var = tk.BooleanVar(value=self.cfg["names"])
-        self.unnamed_var = tk.BooleanVar(value=self.cfg["unnamed"])
-        self.alert_var = tk.BooleanVar(value=self.cfg["alert"])
-        self.me_var = tk.BooleanVar(value=self.cfg["me_on_top"])
-        checkbox(tk, f, "Names on the overlay", self.names_var, self.set_flags).pack(fill="x")
-        checkbox(tk, f, "Include NPCs without a known name", self.unnamed_var, self.set_flags).pack(fill="x")
-        checkbox(tk, f, "Beep when a watched monster appears", self.alert_var, self.set_flags).pack(fill="x")
-        checkbox(tk, f, "Your position on top (radar and overlay)", self.me_var, self.set_flags).pack(fill="x")
-        self.pets.build_settings(f)
-        self.refresh_search()
-        self.refresh_watch()
+    def results(self):
+        text = self.search.strip().lower()
+        return [n for n in monster_names() if text in n.lower()][:200] if text else []
 
-    def refresh_search(self):
-        text = self.search.get().strip().lower()
-        names = [n for n in monster_names() if text in n.lower()] if text else []
-        self.results.delete(0, "end")
-        for n in names[:200]:
-            self.results.insert("end", ("★ " if self.watched(n) else "   ") + n)
-        if text and not names:
-            self.results.insert("end", "   (no monster called that)")
+    def page_settings(self, snap):
+        results = self.results()
+        watch = self.cfg["watch"]
+        return [P.heading("Monster settings", "Pick the monsters to watch. Several at once is fine; each gets its own "
+                          "colour on the radar and the overlay."),
+                P.section("Find a monster"),
+                P.field("search", self.search, "Monster name", width=320),
+                P.listbox("result", [(("★ " if self.watched(n) else "   ") + n, None) for n in results],
+                          self.result_sel, height=7, mono=False,
+                          empty="(no monster called that)" if self.search.strip() else "Type a name above."),
+                P.row(P.button("watch_result", "★ Watch", disabled=self.result_sel is None),
+                      P.text("or double-click a name", small=True)),
+                P.section("Watching"),
+                P.listbox("watched", [("● " + n, self.color(n)) for n in watch], self.watch_sel, height=5, mono=False,
+                          empty="Nothing yet. Search above, or click a name on the Radar tab."),
+                P.row(P.button("unwatch", "Remove", disabled=self.watch_sel is None),
+                      P.button("clear_watch", "Clear all", disabled=not watch, confirm="Stop watching every monster?")),
+                P.section("Show"),
+                P.toggle("flag_names", "Names on the overlay", self.cfg["names"]),
+                P.toggle("flag_unnamed", "Include NPCs without a known name", self.cfg["unnamed"]),
+                P.toggle("flag_alert", "Beep when a watched monster appears", self.cfg["alert"]),
+                P.toggle("flag_me_on_top", "Your position on top (radar and overlay)", self.cfg["me_on_top"]),
+                ] + self.pets.settings_blocks()
 
-    def refresh_watch(self):
-        if not hasattr(self, "watch_list"):
-            return
-        self.watch_list.delete(0, "end")
-        for i, n in enumerate(self.cfg["watch"]):
-            self.watch_list.insert("end", "● " + n)
-            self.watch_list.itemconfig(i, fg=self.color(n))
-        if not self.cfg["watch"]:
-            self.watch_list.insert("end", "Nothing yet. Search above, or click a name on the Radar tab.")
-            self.watch_list.itemconfig(0, fg=MUTED)
-        self.refresh_search()
+    def on_search(self, text):
+        self.search, self.result_sel = text or "", None
 
-    def add_selected(self):
-        sel = self.results.curselection()
-        if sel:
-            name = self.results.get(sel[0])[3:]
-            if name and not name.startswith("(") and not self.watched(name):
-                self.toggle_watch(name)
+    def on_result(self, index):
+        self.result_sel = int(index) if int(index) < len(self.results()) else None
 
-    def remove_selected(self):
-        sel = self.watch_list.curselection()
-        if sel and sel[0] < len(self.cfg["watch"]):
-            self.toggle_watch(self.cfg["watch"][sel[0]])
+    def on_result_open(self, index):
+        self.on_result(index)
+        self.on_watch_result(None)
 
-    def clear_watch(self):
+    def on_watch_result(self, _):
+        results = self.results()
+        if self.result_sel is not None and self.result_sel < len(results) and not self.watched(results[self.result_sel]):
+            self.toggle_watch(results[self.result_sel])
+
+    def on_watched(self, index):
+        self.watch_sel = int(index) if int(index) < len(self.cfg["watch"]) else None
+
+    def on_watched_open(self, index):
+        self.on_watched(index)
+        self.on_unwatch(None)
+
+    def on_unwatch(self, _):
+        if self.watch_sel is not None and self.watch_sel < len(self.cfg["watch"]):
+            self.toggle_watch(self.cfg["watch"][self.watch_sel])
+        self.watch_sel = None
+
+    def on_clear_watch(self, _):
         self.cfg["watch"] = []
-        self.save()
-        self.refresh_watch()
-
-    def set_flags(self):
-        self.cfg.update(names=self.names_var.get(), unnamed=self.unnamed_var.get(), alert=self.alert_var.get(),
-                        me_on_top=self.me_var.get())
+        self.watch_sel = None
         self.save()
 
     # ---- loop hooks
-    def build_pets(self, f):
-        self.pets.build(f)
-
     def background(self, snap):
         self.pets.background(snap)
         souls = self.pets.new_live(snap)
@@ -295,11 +256,6 @@ class MonstersFeature(Feature):
                 play("system beep")
             self.alerted = present | (self.alerted & present)
         super().background(snap)
-
-    def update(self, snap, tab):
-        if tab == "Radar":
-            self.draw_radar(snap)
-        super().update(snap, tab)
 
     def status(self, snap):
         souls = len(self.pets.live(snap))

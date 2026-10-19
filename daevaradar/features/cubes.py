@@ -6,8 +6,9 @@ import os
 from ..common import SOUNDS, load_settings, save_settings
 from ..game import TEMPLATES, MapData, map_name
 from ..sound import play, voices
-from ..ui import ACCENT, BG, BUTTON, BUTTON_HOVER, CUBE_SPAWN, FONT, HEIGHT, MONO, MUTED, PANEL, TEXT, button, checkbox, dim, draw_cone, draw_pin, draw_rings, draw_text, heading, height_class, label_side, radar_point, relative, section
+from ..ui import CUBE_SPAWN, FONT, HEIGHT, MUTED, PANEL, dim, draw_cone, draw_pin, draw_rings, draw_text, height_class, label_side, radar_point, relative
 from ..feature import Feature
+from .. import page as P
 
 
 CUBES_DEFAULT = dict(spawns=True)
@@ -17,40 +18,32 @@ class CubesFeature(Feature):
     """Hidden Cubes: radar + list, the minimap overlay, and the alert settings. Spawn points from the local
     map data (data/maps, credit Shugo.GG) show as hollow circles, so you can fly around them, on the app's map
     (sidebar picker, else detected)."""
-    title, icon, TABS = "Cubes", "◈", ("Radar", "Overlay", "Settings")
+    title, icon, TABS = "Cubes", "◈", ("Radar", "Settings")
     overlay_key, overlay_color = "overlay", "#4fd8ff"
     overlay_text = "A see-through layer with only the cube pins, to place over the game's minimap."
     tracks = "cubes"
 
-    def __init__(self, app, parent):
-        tk, args = app.tk, app.args
+    def __init__(self, app):
+        args = app.args
         self.range = args.range
         self.seen_detections = 0
         self.cfg = dict(CUBES_DEFAULT, **load_settings().get("cubes", {}))
         self.mapdata = app.mapdata
-        self.voice = tk.StringVar(value=args.voice)
-        self.volume = tk.IntVar(value=args.volume)
-        super().__init__(app, parent)
+        self.voice, self.volume = args.voice, args.volume
+        super().__init__(app)
 
     # ---- Radar tab
-    def build_radar(self, f):
-        tk = self.tk
-        self.size = size = 380
-        self.canvas = tk.Canvas(f, width=size, height=size, bg=PANEL, highlightthickness=0)
-        self.canvas.pack(anchor="w")
-        bar = tk.Frame(f, bg=BG)
-        bar.pack(fill="x", pady=(6, 0))
-        button(tk, bar, "−", lambda: self.zoom(1.5), width=3).pack(side="left", padx=(0, 4))
-        button(tk, bar, "+", lambda: self.zoom(1 / 1.5), width=3).pack(side="left", padx=(0, 4))
-        button(tk, bar, "Clear", self.clear_cubes).pack(side="left")
-        listing = tk.Frame(f, bg=BG)
-        listing.pack(fill="both", expand=True, pady=(8, 0))
-        self.rows = [tk.Label(listing, text="", bg=BG, fg=TEXT, anchor="w", font=(MONO, 11)) for _ in range(8)]
-        for row in self.rows:
-            row.pack(fill="x")
+    def page_radar(self, snap):
+        c = P.Canvas(380, 380, PANEL)
+        rows = self.draw_radar(c, snap)
+        return [c.block(), P.row(P.button("zoom", "−", 1.5), P.button("zoom", "+", 1 / 1.5), P.button("clear", "Clear")),
+                P.lines(rows)]
 
-    def zoom(self, factor):
-        self.range = max(25, min(2000, self.range * factor))
+    def on_zoom(self, factor):
+        self.range = max(25, min(2000, self.range * float(factor)))
+
+    def on_clear(self, _):
+        self.clear_cubes()
 
     # ---- spawn points from the map data
     def map_key(self):
@@ -74,10 +67,10 @@ class CubesFeature(Feature):
         with self.app.tracker.lock:
             self.app.tracker.cubes.clear()
 
-    def draw_radar(self, snap):
-        c, size = self.canvas, self.size
+    def draw_radar(self, c, snap):
+        """Draws the radar on c -> the list lines [(text, colour)]."""
+        size = c.w
         mid = size / 2
-        c.delete("all")
         draw_cone(c, mid, mid, mid - 18, snap.get("cone"), fill="#2b3346")  # under the rings and pins
         scale = draw_rings(c, size, self.range)
         x = 8  # legend
@@ -113,24 +106,20 @@ class CubesFeature(Feature):
                 draw_text(c, lx, y, label, color, anchor=anchor)
         else:
             draw_text(c, mid, mid + 30, "waiting for your position\n(teleport)", "#b8c0cc", size=10, bold=False)
-        spawn_row = (len(rows) or 1) if position else None  # under the cubes, or under "No cubes"
-        for i, row in enumerate(self.rows):
-            if i == spawn_row and self.cfg["spawns"]:
-                row.config(text=self.spawn_text(position, spawns), fg=CUBE_SPAWN)
-            elif i < len(rows):
-                dist, dz, direction, cube = rows[i]
-                kind = height_class(dz)
-                height = "%s %3d m" % (HEIGHT[kind][1], abs(dz)) if kind != "level" else "  level"
-                if cube["status"] == "nearby":
-                    color = HEIGHT[kind][0]
-                else:
-                    color = "#5f6670" if cube["status"] == "opened" else dim(HEIGHT[kind][0], 0.35)
-                row.config(text="%5d m  %-2s  %s  %-9s %4ds" % (dist, direction, height, cube["status"], cube["age"]),
-                           fg=color)
-            elif i == 0 and position:
-                row.config(text="No cubes received yet.", fg=MUTED)
+        out = []
+        for dist, dz, direction, cube in rows:
+            kind = height_class(dz)
+            height = "%s %3d m" % (HEIGHT[kind][1], abs(dz)) if kind != "level" else "  level"
+            if cube["status"] == "nearby":
+                color = HEIGHT[kind][0]
             else:
-                row.config(text="")
+                color = "#5f6670" if cube["status"] == "opened" else dim(HEIGHT[kind][0], 0.35)
+            out.append(("%5d m  %-2s  %s  %-9s %4ds" % (dist, direction, height, cube["status"], cube["age"]), color))
+        if position and not rows:
+            out.append(("No cubes received yet.", MUTED))
+        if position and self.cfg["spawns"]:
+            out.append((self.spawn_text(position, spawns), CUBE_SPAWN))
+        return out
 
     def spawn_text(self, position, spawns):
         if not self.app.map_key():
@@ -143,10 +132,7 @@ class CubesFeature(Feature):
         return "○ %d spawn point%s within %d m, nearest %d m %s" % (
             len(spawns), "" if len(spawns) == 1 else "s", self.range, dist, direction)
 
-    # ---- Overlay tab
-    def build_overlay(self, f):
-        self.build_overlay_tab(f)
-
+    # ---- Overlay
     def paint_overlay(self, overlay, c, snap):
         position = snap["position"]
         w = overlay.cfg["w"]
@@ -172,76 +158,65 @@ class CubesFeature(Feature):
             draw_text(c, lx, y, label, color, outline="#000000", anchor=anchor, size=9)
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Cube settings")
-        section(tk, f, "Alert when a cube appears")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        menu = tk.OptionMenu(row, self.voice, *voices(), "custom", command=self.pick_voice)
-        menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat",
-                    highlightthickness=0, width=13, font=(FONT, 10))
-        menu["menu"].config(bg=BUTTON, fg=TEXT, font=(FONT, 10))
-        menu.pack(side="left", padx=(0, 6))
-        button(tk, row, "▶ Test", self.test_sound).pack(side="left", padx=(0, 4))
-        button(tk, row, "File…", self.pick_file).pack(side="left")
-        self.file_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w")
-        self.file_label.pack(fill="x", pady=(4, 0))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(6, 0))
-        tk.Label(row, text="Volume", bg=BG, fg=MUTED, font=(FONT, 10)).pack(side="left")
-        scale = tk.Scale(row, from_=0, to=200, orient="horizontal", variable=self.volume, showvalue=True,
-                         resolution=5, length=250, bg=BG, fg=TEXT, troughcolor=BUTTON, highlightthickness=0,
-                         activebackground=ACCENT, font=(FONT, 9))
-        scale.pack(side="left", padx=6)
-        scale.bind("<ButtonRelease-1>", lambda e: self.set_volume())
-        tk.Label(row, text="%", bg=BG, fg=MUTED, font=(FONT, 10)).pack(side="left")
-        section(tk, f, "Show")
-        self.spawns_var = tk.BooleanVar(value=self.cfg["spawns"])
-        checkbox(tk, f, "Spawn points from the map data (hollow; © NCSOFT, via Shugo.GG)", self.spawns_var,
-                 self.set_spawns).pack(fill="x")
-        section(tk, f, "Cube types tracked")
-        tk.Label(f, bg=BG, fg=MUTED, font=(MONO, 9), anchor="w", justify="left", wraplength=380,
-                 text="  ".join(str(t) for t in sorted(TEMPLATES)) +
-                 "\nAdd more with --template ID (find ids with --log).").pack(fill="x")
-        self.show_file()
+    @staticmethod
+    def custom_files():
+        folder = SOUNDS / "custom"
+        return sorted(str(p) for p in folder.glob("*") if p.suffix.lower() in (".wav", ".mp3")) if folder.exists() else []
 
-    def show_file(self):
-        name = Path(self.app.args.sound).name if self.app.args.sound else ""
-        self.file_label.config(text="Custom file: " + name if self.voice.get() == "custom" and name else "")
+    def page_settings(self, snap):
+        voices_ = [(v, v) for v in voices()] + ([("custom", "Your own file")] if self.custom_files() else [])
+        blocks = [P.heading("Cube settings"), P.section("Alert when a cube appears"),
+                  P.row(P.choice("voice", voices_, self.voice, style="select"), P.button("test", "▶ Test"))]
+        if self.voice == "custom":
+            files = self.custom_files()
+            blocks.append(P.row(P.choice("custom", [(f, Path(f).name) for f in files], self.app.args.sound,
+                                         label="File", style="select"),
+                                P.button("open_custom", "Open folder")))
+        blocks += [P.slider("volume", self.volume, 0, 200, 5, " %", label="Volume"),
+                   P.text("Your own WAV or MP3: put it in sounds/custom/ (Open folder), then pick it here.", small=True),
+                   P.section("Show"),
+                   P.toggle("flag_spawns", "Spawn points from the map data", self.cfg["spawns"],
+                            hint="Hollow red circles; © NCSOFT, via Shugo.GG."),
+                   P.section("Cube types tracked"),
+                   P.text("  ".join(str(t) for t in sorted(TEMPLATES)) + "\nAdd more with --template ID (find ids with --log).",
+                          mono=True, small=True)]
+        return blocks
 
     def test_sound(self):
-        play(self.voice.get(), self.app.args.sound, self.volume.get())
+        play(self.voice, self.app.args.sound, self.volume)
 
-    def pick_voice(self, voice):
-        if voice == "custom" and not self.app.args.sound:
-            return self.pick_file()
-        save_settings(dict(load_settings(), voice=voice))
-        self.show_file()
+    def on_voice(self, voice):
+        if voice == "custom" and not (self.app.args.sound and os.path.exists(self.app.args.sound)):
+            files = self.custom_files()
+            if not files:
+                return
+            self.app.args.sound = files[0]
+        self.voice = voice
+        save_settings(dict(load_settings(), voice=voice, custom=self.app.args.sound))
         self.test_sound()
 
-    def pick_file(self):
-        from tkinter import filedialog
-        path = filedialog.askopenfilename(parent=self.root, title="Cube alert sound", initialdir=str(SOUNDS / "custom"),
-                                          filetypes=[("Audio", "*.wav *.mp3"), ("WAV", "*.wav"), ("MP3", "*.mp3"),
-                                                     ("All files", "*.*")])
-        if not path:
-            if self.voice.get() == "custom" and not self.app.args.sound:
-                self.voice.set(load_settings().get("voice", "calm"))
-            return
-        self.app.args.sound = os.path.normpath(path)
-        self.voice.set("custom")
-        save_settings(dict(load_settings(), voice="custom", custom=self.app.args.sound))
-        self.show_file()
+    def on_custom(self, path):
+        if path in self.custom_files():
+            self.app.args.sound = os.path.normpath(path)
+            save_settings(dict(load_settings(), voice="custom", custom=self.app.args.sound))
+            self.test_sound()
+
+    def on_open_custom(self, _):
+        folder = SOUNDS / "custom"
+        folder.mkdir(parents=True, exist_ok=True)
+        if hasattr(os, "startfile"):
+            os.startfile(str(folder))
+
+    def on_test(self, _):
         self.test_sound()
 
-    def set_spawns(self):
-        self.cfg["spawns"] = self.spawns_var.get()
+    def on_volume(self, value):
+        self.volume = self.app.args.volume = int(value)
+        save_settings(dict(load_settings(), volume=self.volume))
+        self.test_sound()
+
+    def save(self):
         save_settings(dict(load_settings(), cubes=self.cfg))
-
-    def set_volume(self):
-        save_settings(dict(load_settings(), volume=self.volume.get()))
-        self.test_sound()
 
     # ---- loop hooks
     def background(self, snap):
@@ -252,14 +227,9 @@ class CubesFeature(Feature):
                 dist, dz, compass = relative(snap["position"], new["xyz"])
                 where = " %d m %s" % (dist, compass)
             self.app.engine.say("Cube!" + where)
-            play(self.voice.get(), self.app.args.sound, self.volume.get())
+            play(self.voice, self.app.args.sound, self.volume)
             self.seen_detections = snap["detections"]
         super().background(snap)
-
-    def update(self, snap, tab):
-        if tab == "Radar":
-            self.draw_radar(snap)
-        super().update(snap, tab)
 
     def status(self, snap):
         nearby = sum(1 for c in snap["cubes"] if c["status"] == "nearby")

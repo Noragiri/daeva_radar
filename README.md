@@ -27,33 +27,37 @@ It only listens: it reads the game's network traffic on your PC and never change
    - If Windows says *"Windows protected your PC"*, click **More info → Run anyway** (the exe isn't code-signed).
    - Want a Desktop shortcut? Run `DaevaRadar.exe --shortcut` once.
    - Just looking around? `DaevaRadar.exe --demo` runs the window on simulated data, without the game or admin rights.
-3. **Start the radar before you enter the world** (or teleport / change zone once it's running), so it learns your
+3. Daeva Radar lives in the **tray** (bottom right of the taskbar): double-click its icon for **Settings**,
+   right-click it for the overlays and **Quit**. Closing Settings keeps it running.
+4. **Start the radar before you enter the world** (or teleport / change zone once it's running), so it learns your
    character, your position, your pets and your wardrobe.
-4. Play in **borderless or windowed** mode if you want the overlays on top of the game.
+5. Play in **borderless or windowed** mode if you want the overlays on top of the game.
 
 From source, or on Linux under Wine / Proton: see [Running from source](docs/GUIDE.md#running-from-source).
 
 ## A quick tour
 
-- **The sidebar** lists the features. Each has its own tabs (usually **Radar**, **Overlay**, **Settings**) and an
-  **On/Off** switch at the top right; a feature that's off does nothing at all.
+- **Settings** (double-click the tray icon) lists the features. Each has an **On/Off** switch, its tabs (radar,
+  lists, settings) and its overlays; a feature that's off does nothing at all.
+- **Overlay layout** (in Settings or the tray) puts a grid over the game: drag every overlay into place, then Esc.
+- **The Pet tracker** card shows your target pet's souls to its next level and the pets whose soul monsters are
+  around you.
 - **The radar** is north-up with you as the white dot. Colour and shape show height: **cyan ▲** above you, **magenta ▼**
   below, **gold ■** level. Hollow circles are spawn points from the map data, solid pins are what's there right now.
 - **Monsters → Pets** lists your pets. Double-click one to make it a *target*: the monsters that drop its souls then
   show on the radar and the overlay, in its colour.
 - **Map ↗** (in Pets and in Gathering) opens a big world map with every soul spawn and gathering node; click a
   resource there to highlight it everywhere.
-- **Overlays:** open one from a feature's **Overlay** tab, drag it onto the game's minimap, scale it with the mouse
-  wheel until the rings match, then lock it with **Ctrl+Shift+O** so clicks go through to the game.
-- **The Map picker** at the bottom of the sidebar says which map you're on. **Auto** usually works it out; pick the map
-  yourself if it's slow.
+- **Overlays:** switch one on in its feature's page (or the tray), drag it onto the game's minimap, scale it with
+  the mouse wheel until the rings match, then lock it with **Ctrl+Shift+O** so clicks go through to the game.
+- **Settings → General → Map you're on:** **Auto** usually works it out; pick the map yourself if it's slow.
 
 The full feature reference is in the **[user guide](docs/GUIDE.md)**.
 
 ## Updates
 
-The app checks for a new version at start and every hour. When one is out, a green **↑ Update to …** appears in the
-sidebar: click it, and it updates itself and restarts. Your settings are kept. (The check only asks GitHub for the
+The app checks for a new version at start and every hour. When one is out, a pop-up says so and **Settings →
+General** shows **Update and restart**: click it, and it updates itself and restarts. Your settings are kept. (The check only asks GitHub for the
 latest version and sends nothing about you or the game.)
 
 ## Troubleshooting
@@ -68,7 +72,7 @@ latest version and sends nothing about you or the game.)
 - **Overlays don't appear over the game:** switch the game to borderless or windowed mode.
 - **Antivirus or SmartScreen warnings:** the exe isn't code-signed and captures network traffic, which some tools
   flag. It's built from this repository's source by GitHub's release workflow.
-- **Wrong map:** pick it in the sidebar's **Map** picker instead of Auto.
+- **Wrong map:** pick it in **Settings → General** instead of Auto.
 
 ## More
 

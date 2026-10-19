@@ -3,18 +3,35 @@
 Everything the app does, feature by feature. New here? Start with the [README](../README.md). How it works under
 the hood is in [TECHNICAL.md](TECHNICAL.md).
 
-## The window
+## The tray, Settings and overlays
 
-The sidebar lists the features; each has its own tabs, overlay and settings.
+Daeva Radar runs from the **tray icon** (bottom right of the taskbar; it may be under the ^ arrow). Double-click it
+for **Settings**; right-click it for the menu: Settings, each overlay on / off, **Lock overlays**, **Edit overlay layout**, the
+World map and **Quit**. Closing Settings keeps the radar running in the tray. (Without a tray icon, Settings is the
+app: closing it quits.)
 
-- **On/Off switch** (right of each feature's tab bar): a feature that's off does nothing in the background: no
+- **Settings** has a page per feature (its On/Off switch, its tabs: radar, lists, settings, and its overlays),
+  **General** (map, start-up, updates, troubleshooting), **Overlay layout** and **About**. Turn off *Open Settings when Daeva Radar starts* to start
+  straight in the tray.
+- **Overlays:** every feature can have its minimap overlay and an info card (the **Pet tracker**: your target pet's
+  souls to its next level and how many of its soul monsters are in range, then the other pets whose soul monsters
+  are around you). Unlocked, drag them; right-click (or the pin on a card) locks them so clicks go to the game.
+  **Ctrl+Shift+O** locks / unlocks every shown one.
+- **Overlay layout** (Settings, or the tray's *Edit overlay layout*) puts a see-through grid over the game window
+  (the main screen when the game isn't running) and unlocks every shown overlay: drag them, and a minimap's corner or
+  a card's right edge to resize, snapping to the grid (off / 10-80 px in the bar at the top). Hidden ones are dashed
+  boxes you can place too. **Done** or **Esc** locks everything back as it was.
+- **Characters** (under General) lists every character the radar has seen log in, by name, with when you last
+  played it and the maps it was detected on. Set each one's faction, **Elyos** or **Asmodian** (click again to
+  unset); unset, it's guessed from those maps. **Forget** removes one until it logs in again.
+- **On/Off switch** (top right of each feature's page, or the dot beside it in the sidebar): a feature that's off does nothing in the background: no
   alerts, its overlay hidden (it comes back when switched on), and View cone doesn't read the screen. The sidebar
-  marks it "· off". Its settings can still be changed.
-- Every feature's background work keeps running whichever feature or tab is shown: alerts, pop-ups and overlays.
-- **Keep on top** (bottom of the sidebar) keeps the window, and the Map window, above the game.
-- **Map** (sidebar): which map the map data is for (see [Map picker](#map-picker)).
-- **⌖ Position debug** (sidebar) shows your position, its last packet and how often it updates.
-- The last feature and tab you used are remembered.
+  dims it. Its settings can still be changed.
+- Every feature's background work keeps running whichever page is shown, and with Settings closed: alerts, pop-ups
+  and overlays.
+- **General:** the map you're on (see [Map picker](#map-picker)), start-up, *Keep the World map and Position debug
+  on top*, updates, and **⌖ Position debug** (your position, its last packet and how often it updates).
+- The last page and tab you used are remembered.
 
 ## Features
 
@@ -114,10 +131,10 @@ minimised, or a shown overlay), and the minimap must be visible: borderless or w
 
 ## Map picker
 
-The sidebar's **Map** picks the map the map data is for, shared by Cubes (spawn points), Feathers, Gathering (names,
+**Settings → General → Map you're on** picks the map the map data is for, shared by Cubes (spawn points), Feathers, Gathering (names,
 map-only nodes) and Pets (spawns). **Auto** uses the detected map: live gathering nodes decide when there are any,
 else live cubes (at least two must sit on spawn points); pets also detect it from soul monsters. Pick a map by hand
-when detection is slow or wrong; the label under the picker warns if the detected map disagrees.
+when detection is slow or wrong; the line under it shows what was detected.
 
 ## Map window
 
@@ -170,8 +187,9 @@ Windows-only.
 
 ### Windows
 
-1. Install Python 3.10+ for Windows x64 (tkinter included), then Pillow for the Map's images:
-   `python -m pip install pillow`.
+1. Install Python 3.10+ for Windows x64 (tkinter included), then Pillow (the Map's images and the tray icon),
+   pystray (the tray) and pywebview (the Settings window): `python -m pip install pillow pystray pywebview`.
+   Without pywebview, Settings opens in your web browser instead.
 2. The WinDivert 2.2 files `WinDivert.dll` and `WinDivert64.sys` are in `windivert/`.
 3. Double-click the **Daeva Radar** shortcut (or `Daeva Radar.bat`) and accept the administrator prompt. If you move
    the folder, run `python daeva_radar.py --shortcut` once to recreate the shortcut, here and on the Desktop. For

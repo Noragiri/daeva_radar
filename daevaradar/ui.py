@@ -167,10 +167,13 @@ class Overlay:
             return
         x0, y0, start, resize = self.drag
         dx, dy = e.x_root - x0, e.y_root - y0
+        layout = getattr(self.owner.app, "layout", None)  # layout mode: snap to its grid
         if resize:
-            self.cfg["w"], self.cfg["h"] = max(80, start["w"] + dx), max(80, start["h"] + dy)
+            w, h = max(80, start["w"] + dx), max(80, start["h"] + dy)
+            self.cfg["w"], self.cfg["h"] = (layout.snap_size(w), layout.snap_size(h)) if layout else (w, h)
         else:
-            self.cfg["x"], self.cfg["y"] = start["x"] + dx, start["y"] + dy
+            x, y = start["x"] + dx, start["y"] + dy
+            self.cfg["x"], self.cfg["y"] = layout.snap(x, y) if layout else (x, y)
         self.place()
 
     def wheel(self, up):
@@ -266,98 +269,74 @@ def radar_point(position, point, mid, scale, range_m):
     return mid + math.sin(a) * shown * scale, mid - math.cos(a) * shown * scale, dist > range_m
 CUBE_SPAWN = "#ff5c5c"  # hollow cube spawn points; no other dot uses red
 WATCH_COLORS = ("#7cf08a", "#ffb347", "#c58cff", "#4fd8ff", "#ffd24a", "#ff6ad5", "#9fe3ff")
-class Toast:
-    """A small notification on top of everything (the game too) for a few seconds; click to dismiss.
-    Doesn't take focus from the game."""
+CARD, CARD_EDGE, CARD_MUTED = "#141a22", "#2a3442", "#8a95a5"  # the cards over the game (panels.py, pop-ups)
 
-    def __init__(self, root, text, color=ACCENT, seconds=8):
+
+class Card:
+    """The pop-ups' look: a dark card with a thin edge, a coloured bar on the left, a small-caps label, a bold
+    title and muted lines. Shown on top of everything without taking focus from the game; click to dismiss (or
+    on_click). Fades out."""
+    FADE_MS, FADE_STEPS = 600, 12
+
+    def __init__(self, root, color=ACCENT, on_click=None):
         tk = __import__("tkinter")
+        self.root, self.color, self.on_click = root, color, on_click
         self.win = win = tk.Toplevel(root)
         win.overrideredirect(True)
         win.attributes("-topmost", True)
-        win.configure(bg="#000000")
-        frame = tk.Frame(win, bg=PANEL, highlightbackground=color, highlightthickness=2)
-        frame.pack(padx=1, pady=1)
-        label = tk.Label(frame, text=text, bg=PANEL, fg=TEXT, font=(FONT, 12, "bold"), padx=16, pady=10, justify="left")
-        label.pack()
-        win.update_idletasks()
-        x = (root.winfo_screenwidth() - win.winfo_reqwidth()) // 2
-        win.geometry("+%d+%d" % (x, 60))
-        click_through(win, False)  # tool window, never activated: the game keeps focus
-        for widget in (win, frame, label):
-            widget.bind("<Button-1>", lambda e: self.close())
-        win.after(seconds * 1000, self.close)
-
-    def close(self):
-        try:
-            self.win.destroy()
-        except Exception:
-            pass
-class LiveToast:
-    """One notification that grows instead of stacking (many soul drops at once): add(key, text) adds a line, or
-    updates that key's line, newest on top, and restarts the timer. When nothing has been added for `seconds`, it
-    fades out; adding during the fade brings it back. Click to dismiss. Doesn't take focus from the game."""
-    FADE_MS, FADE_STEPS = 600, 12
-
-    def __init__(self, root, title, color=ACCENT, seconds=6, max_lines=6):
-        self.root, self.title, self.color, self.seconds, self.max_lines = root, title, color, seconds, max_lines
-        self.win = None
-        self.lines = {}  # key -> (text, colour), most recent last
+        win.attributes("-alpha", 0.96)
+        win.configure(bg=CARD_EDGE)
+        self.card = tk.Frame(win, bg=CARD)
+        self.card.pack(padx=1, pady=1, fill="both")
+        tk.Frame(self.card, bg=color, width=3).pack(side="left", fill="y")
+        self.inner = tk.Frame(self.card, bg=CARD)
+        self.inner.pack(side="left", fill="both", padx=(13, 18), pady=(10, 12))
         self.timer = None
+        click_through(win, False)  # tool window, never activated: the game keeps focus
 
-    @property
-    def visible(self):
-        return self.win is not None
+    def fill(self, label, title, lines, more=None):
+        """(Re)draw the card's text: lines are [(text, colour or None)]."""
+        tk = __import__("tkinter")
+        for child in self.inner.winfo_children():
+            child.destroy()
+        head = tk.Frame(self.inner, bg=CARD)
+        head.pack(fill="x")
+        tk.Label(head, text=label.upper(), bg=CARD, fg=self.color, font=(FONT, 8, "bold"), anchor="w").pack(side="left")
+        if more:
+            tk.Label(head, text=more, bg=CARD, fg=CARD_MUTED, font=(FONT, 8), anchor="e").pack(side="right", padx=(16, 0))
+        if title:
+            tk.Label(self.inner, text=title, bg=CARD, fg=TEXT, font=(FONT, 12, "bold"), anchor="w",
+                     justify="left").pack(fill="x", pady=(2, 0))
+        for text, color in lines:
+            tk.Label(self.inner, text=text, bg=CARD, fg=color or CARD_MUTED, font=(FONT, 10), anchor="w",
+                     justify="left").pack(fill="x", pady=(2, 0))
+        for widget in [self.win, self.card, self.inner, head] + list(self.inner.winfo_children()) + list(head.winfo_children()):
+            widget.bind("<Button-1>", lambda e: self.clicked())
+            widget.configure(cursor="hand2")
+        self.win.update_idletasks()
 
-    def add(self, key, text, color=None):
-        self.lines.pop(key, None)
-        self.lines[key] = (text, color or TEXT)
+    def clicked(self):
+        if self.on_click:
+            self.on_click()
+        self.close()
+
+    def show_for(self, seconds):
+        """Fully visible, then fade out after seconds (restarts the countdown); None: until it's clicked."""
         if self.win is None:
-            self.open()
-        self.render()
-        self.win.attributes("-alpha", 1.0)
+            return
+        self.win.attributes("-alpha", 0.96)
         if self.timer:
             self.win.after_cancel(self.timer)
-        self.timer = self.win.after(self.seconds * 1000, lambda: self.fade(self.FADE_STEPS))
-
-    def open(self):
-        tk = __import__("tkinter")
-        self.win = win = tk.Toplevel(self.root)
-        win.overrideredirect(True)
-        win.attributes("-topmost", True)
-        win.configure(bg="#000000")
-        self.frame = tk.Frame(win, bg=PANEL, highlightbackground=self.color, highlightthickness=2)
-        self.frame.pack(padx=1, pady=1)
-        self.head = tk.Label(self.frame, text=self.title, bg=PANEL, fg=self.color, font=(FONT, 11, "bold"), padx=16,
-                             pady=(8), anchor="w")
-        self.head.pack(fill="x")
-        self.body = tk.Frame(self.frame, bg=PANEL)
-        self.body.pack(fill="x", padx=16, pady=(0, 10))
-        click_through(win, False)  # tool window, never activated: the game keeps focus
-        for widget in (win, self.frame, self.head, self.body):
-            widget.bind("<Button-1>", lambda e: self.close())
-
-    def render(self):
-        tk = __import__("tkinter")
-        for child in self.body.winfo_children():
-            child.destroy()
-        shown = list(self.lines.items())[::-1][:self.max_lines]
-        for key, (text, color) in shown:
-            label = tk.Label(self.body, text=text, bg=PANEL, fg=color, font=(FONT, 11, "bold"), justify="left", anchor="w")
-            label.pack(fill="x")
-            label.bind("<Button-1>", lambda e: self.close())
-        more = len(self.lines) - len(shown)
-        self.head.config(text=self.title + ("   (+%d more)" % more if more > 0 else ""))
-        self.win.update_idletasks()
-        # left edge, below the game's top-left icons and well above the chat
-        self.win.geometry("+%d+%d" % (24, int(self.root.winfo_screenheight() * 0.15)))
+            self.timer = None
+        if seconds is not None:
+            self.timer = self.win.after(int(seconds * 1000), lambda: self.fade(self.FADE_STEPS))
 
     def fade(self, step):
         if self.win is None:
             return
         if step <= 0:
             return self.close()
-        self.win.attributes("-alpha", step / self.FADE_STEPS)
+        self.win.attributes("-alpha", 0.96 * step / self.FADE_STEPS)
         self.timer = self.win.after(self.FADE_MS // self.FADE_STEPS, lambda: self.fade(step - 1))
 
     def close(self):
@@ -366,7 +345,57 @@ class LiveToast:
         except Exception:
             pass
         self.win, self.timer = None, None
+
+
+class Toast:
+    """A notification card on top of everything (the game too) for a few seconds, at the top centre.
+    text: its title, then detail lines; label: the small-caps line above (e.g. "Update"). Click to dismiss, or
+    on_click (e.g. open Settings). seconds=None: it stays until clicked."""
+
+    def __init__(self, root, text, color=ACCENT, seconds=8, label="Daeva Radar", on_click=None):
+        title, *lines = text.split("\n")
+        self.card = Card(root, color, on_click)
+        self.card.fill(label, title, [(line, None) for line in lines], None if seconds else "click to close")
+        win = self.card.win
+        win.geometry("+%d+%d" % ((root.winfo_screenwidth() - win.winfo_reqwidth()) // 2, 60))
+        self.card.show_for(seconds)
+
+    def close(self):
+        self.card.close()
+
+
+class LiveToast:
+    """One notification that grows instead of stacking (many soul drops at once): add(key, text) adds a line, or
+    updates that key's line, newest on top, and restarts the timer. When nothing has been added for `seconds`, it
+    fades out; adding during the fade brings it back. Click to dismiss. Doesn't take focus from the game."""
+
+    def __init__(self, root, title, color=ACCENT, seconds=6, max_lines=6):
+        self.root, self.title, self.color, self.seconds, self.max_lines = root, title, color, seconds, max_lines
+        self.card = None
+        self.lines = {}  # key -> (text, colour), most recent last
+
+    @property
+    def visible(self):
+        return self.card is not None and self.card.win is not None
+
+    def add(self, key, text, color=None):
+        self.lines.pop(key, None)
+        self.lines[key] = (text, color or TEXT)
+        if not self.visible:
+            self.card = Card(self.root, self.color, on_click=self.lines.clear)
+        shown = list(self.lines.items())[::-1][:self.max_lines]
+        more = len(self.lines) - len(shown)
+        self.card.fill(self.title, None, [line for _, line in shown], "+%d more" % more if more > 0 else None)
+        # left edge, below the game's top-left icons and well above the chat
+        self.card.win.geometry("+%d+%d" % (24, int(self.root.winfo_screenheight() * 0.15)))
+        self.card.show_for(self.seconds)
+
+    def close(self):
+        if self.card:
+            self.card.close()
         self.lines.clear()
+
+
 def draw_cone(canvas, cx, cy, length, cone, fill=None, outline=None, below=False):
     """The vision cone as a wedge from (cx, cy): filled (the app's radars) or outlined (overlays, so the
     game's minimap stays visible underneath)."""

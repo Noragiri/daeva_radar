@@ -67,9 +67,13 @@ def main():
                         help="open the position debug window (also from the sidebar)")
     parser.add_argument("--no-update-check", action="store_true",
                         help="don't check GitHub for a new version (at launch and every full hour)")
+    parser.add_argument("--settings-window", metavar="URL", help=argparse.SUPPRESS)  # the Settings window's process
     parser.add_argument("--demo", action="store_true",
                         help="no capture or admin rights: simulated player and cubes, to try the window")
     args = parser.parse_args()
+    if args.settings_window:
+        from .settings_window import run
+        return run(args.settings_window)
     TEMPLATES.update(args.template)
     game.POSITION_MODE = args.position
     settings = load_settings()

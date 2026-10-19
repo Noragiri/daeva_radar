@@ -6,8 +6,9 @@ import time
 
 from ..common import SOUNDS, load_settings, save_settings
 from ..sound import play, voices
-from ..ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, TEXT, Toast, button, checkbox, heading, section
+from ..ui import ACCENT, MUTED, Toast
 from ..feature import Feature
+from .. import page as P
 
 
 BUILTIN_ALARMS = [
@@ -60,12 +61,13 @@ class AlertsFeature(Feature):
     title, icon, TABS = "Alerts", "⏰", ("Upcoming", "Add alarm", "Settings")
     off_text = "No alarms ring while it's off."
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         self.cfg = dict(ALERTS_DEFAULT, **load_settings().get("alerts", {}))
         self.fired = set()
-        self.row_widgets = []
-        self.rows_key = None
-        super().__init__(app, parent)
+        self.new = dict(name="", kind="daily", time=(_dt.datetime.now() + _dt.timedelta(minutes=10)).strftime("%H:%M"),
+                        hours="3", minute="0", lead="2")  # the Add alarm form
+        self.add_message = ("", MUTED)
+        super().__init__(app)
 
     def save(self):
         save_settings(dict(load_settings(), alerts=self.cfg))
@@ -89,50 +91,36 @@ class AlertsFeature(Feature):
         return sorted(out, key=lambda x: x[0])
 
     # ---- Upcoming tab
-    def build_upcoming(self, f):
-        tk = self.tk
-        heading(tk, f, "Upcoming", "Click a name to switch that alarm on or off. Your own alarms have a × to delete "
-                "them. Times are server time (EU servers: Berlin time).")
-        self.clock = tk.Label(f, text="", bg=BG, fg=MUTED, font=(MONO, 10), anchor="w")
-        self.clock.pack(fill="x", pady=(0, 6))
-        self.rows_frame = tk.Frame(f, bg=BG)
-        self.rows_frame.pack(fill="both", expand=True)
-
-    def rebuild_rows(self, items):
-        tk = self.tk
-        for w in self.row_widgets:
-            w.destroy()
-        self.row_widgets = []
-        for when, alarm in items:
-            row = tk.Frame(self.rows_frame, bg=BG)
-            row.pack(fill="x", pady=1)
-            name = tk.Label(row, text="", bg=BG, fg=TEXT, font=(MONO, 10), anchor="w", cursor="hand2")
-            name.pack(side="left", fill="x", expand=True)
-            name.bind("<Button-1>", lambda e, a=alarm: self.toggle_alarm(a))
-            if not alarm.get("builtin"):
-                x = tk.Label(row, text=" × ", bg=BG, fg="#ff6ad5", font=(FONT, 11, "bold"), cursor="hand2")
-                x.pack(side="right")
-                x.bind("<Button-1>", lambda e, a=alarm: self.delete_alarm(a))
-            self.row_widgets.append(row)
-            row.name_label = name
-
-    def draw_upcoming(self):
-        items = self.upcoming()
-        key = tuple(a["id"] for _, a in items)
-        if key != self.rows_key:
-            self.rows_key = key
-            self.rebuild_rows(items)
+    def page_upcoming(self, snap):
         now = self.now()
-        self.clock.config(text="Server time %s%s" % (now.strftime("%H:%M:%S"),
-                                                     "" if not self.cfg["offset"] else "  (PC %+dh)" % self.cfg["offset"]))
-        for (when, alarm), row in zip(items, self.row_widgets):
+        blocks = [P.heading("Upcoming", "Click a name to switch that alarm on or off. Your own alarms have a × to "
+                            "delete them. Times are server time (EU servers: Berlin time)."),
+                  P.text("Server time %s%s" % (now.strftime("%H:%M:%S"),
+                                               "" if not self.cfg["offset"] else "  (PC %+dh)" % self.cfg["offset"]),
+                         mono=True, small=True)]
+        for when, alarm in self.upcoming():
             left = int((when - now).total_seconds())
             on = self.enabled_alarm(alarm)
-            countdown = "%d:%02d:%02d" % (left // 3600, left // 60 % 60, left % 60) if left >= 3600 else "%d:%02d" % (left // 60, left % 60)
-            row.name_label.config(
-                text="%s %-22.22s %s  in %8s   %s" % ("●" if on else "○", alarm["name"], when.strftime("%H:%M"),
-                                                     countdown, describe(alarm["rule"])),
-                fg=(ACCENT if left <= alarm["lead"] * 60 else TEXT) if on else "#5a606a")
+            countdown = ("%d:%02d:%02d" % (left // 3600, left // 60 % 60, left % 60) if left >= 3600
+                         else "%d:%02d" % (left // 60, left % 60))
+            line = P.lines([("%s %-22.22s %s  in %8s   %s" % ("●" if on else "○", alarm["name"], when.strftime("%H:%M"),
+                                                               countdown, describe(alarm["rule"])),
+                             (ACCENT if left <= alarm["lead"] * 60 else None) if on else "#5a606a", alarm["id"])],
+                           click="toggle_alarm")
+            blocks.append(P.row(line, None if alarm.get("builtin") else
+                                P.button("delete_alarm", "×", alarm["id"], confirm="Delete %s?" % alarm["name"])))
+        return blocks
+
+    def alarm(self, alarm_id):
+        return next((a for a in self.alarms() if a["id"] == alarm_id), None)
+
+    def on_toggle_alarm(self, alarm_id):
+        if self.alarm(alarm_id):
+            self.toggle_alarm(self.alarm(alarm_id))
+
+    def on_delete_alarm(self, alarm_id):
+        if self.alarm(alarm_id):
+            self.delete_alarm(self.alarm(alarm_id))
 
     def toggle_alarm(self, alarm):
         if alarm["id"] in self.cfg["disabled"]:
@@ -146,65 +134,58 @@ class AlertsFeature(Feature):
         self.save()
 
     # ---- Add alarm tab
-    def build_add_alarm(self, f):
-        tk = self.tk
-        heading(tk, f, "Add your own alarm")
-        section(tk, f, "Name")
-        self.new_name = tk.StringVar(value="")
-        tk.Entry(f, textvariable=self.new_name, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                 font=(FONT, 10)).pack(fill="x", ipady=3)
-        section(tk, f, "When")
-        self.new_kind = tk.StringVar(value="daily")
-        self.new_time = tk.StringVar(value=(_dt.datetime.now() + _dt.timedelta(minutes=10)).strftime("%H:%M"))
-        self.new_hours = tk.StringVar(value="3")
-        self.new_minute = tk.StringVar(value="0")
-        for kind, text in (("daily", "Every day at"), ("every", "Every … hours, starting at"),
-                           ("hourly", "Every hour at minute"), ("once", "Once, next time it's")):
-            tk.Radiobutton(f, text=text, value=kind, variable=self.new_kind, bg=BG, fg=TEXT, selectcolor=BUTTON,
-                           activebackground=BG, activeforeground=TEXT, font=(FONT, 10), anchor="w").pack(fill="x")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(6, 0))
-        for label, var, width in (("time HH:MM", self.new_time, 6), ("every hours", self.new_hours, 3),
-                                  ("minute", self.new_minute, 3)):
-            tk.Label(row, text=label, bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=(0, 4))
-            tk.Entry(row, textvariable=var, width=width, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                     font=(MONO, 10), justify="center").pack(side="left", padx=(0, 12), ipady=2)
-        section(tk, f, "Warn me")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.new_lead = tk.StringVar(value="2")
-        tk.Entry(row, textvariable=self.new_lead, width=4, bg=BUTTON, fg=TEXT, insertbackground=TEXT, relief="flat",
-                 font=(MONO, 10), justify="center").pack(side="left", ipady=2)
-        tk.Label(row, text="minutes before (0 = when it starts)", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=6)
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(12, 0))
-        button(tk, row, "+ Add alarm", self.add_alarm).pack(side="left")
-        self.add_message = tk.Label(row, text="", bg=BG, fg=MUTED, font=(FONT, 9))
-        self.add_message.pack(side="left", padx=8)
+    KINDS = (("daily", "Every day at"), ("every", "Every … hours, starting at"), ("hourly", "Every hour at minute"),
+             ("once", "Once, next time it's"))
+
+    def page_add_alarm(self, snap):
+        n, kind = self.new, self.new["kind"]
+        when = []
+        if kind in ("daily", "every", "once"):
+            when.append(P.field("new_time", n["time"], "HH:MM", label="Time", width=90))
+        if kind == "every":
+            when.append(P.field("new_hours", n["hours"], "3", label="every hours", width=60))
+        if kind == "hourly":
+            when.append(P.field("new_minute", n["minute"], "0", label="minute", width=60))
+        text, color = self.add_message
+        return [P.heading("Add your own alarm"),
+                P.section("Name"), P.field("new_name", n["name"], "e.g. Guild raid", width=320),
+                P.section("When"), P.choice("new_kind", self.KINDS, kind), P.row(*when),
+                P.section("Warn me"),
+                P.row(P.field("new_lead", n["lead"], "2", width=60), P.text("minutes before (0 = when it starts)", small=True)),
+                P.row(P.button("add", "+ Add alarm", primary=True), P.text(text, color=color, small=True) if text else None)]
+
+    def act(self, id, value):
+        if id.startswith("new_"):  # the form's fields
+            self.new[id[4:]] = value if isinstance(value, str) else str(value)
+            return None
+        return super().act(id, value)
+
+    def on_add(self, _):
+        self.add_alarm()
 
     def add_alarm(self):
-        name = self.new_name.get().strip()
-        kind = self.new_kind.get()
+        name = self.new["name"].strip()
+        kind = self.new["kind"]
         try:
             if not name:
                 raise ValueError("give it a name")
-            lead = int(self.new_lead.get())
+            lead = int(self.new["lead"])
             if not 0 <= lead <= 180:
                 raise ValueError("warn 0-180 minutes before")
             if kind in ("daily", "every", "once"):
-                hh, mm = map(int, self.new_time.get().strip().split(":"))
+                hh, mm = map(int, self.new["time"].strip().split(":"))
                 if not (0 <= hh < 24 and 0 <= mm < 60):
                     raise ValueError
                 hhmm = "%02d:%02d" % (hh, mm)
             if kind == "daily":
                 rule = dict(type="daily", time=hhmm)
             elif kind == "every":
-                hours = int(self.new_hours.get())
+                hours = int(self.new["hours"])
                 if not 1 <= hours <= 24:
                     raise ValueError("every 1-24 hours")
                 rule = dict(type="every", hours=hours, start=hhmm)
             elif kind == "hourly":
-                minute = int(self.new_minute.get())
+                minute = int(self.new["minute"])
                 if not 0 <= minute < 60:
                     raise ValueError("minute 0-59")
                 rule = dict(type="hourly", minute=minute)
@@ -215,86 +196,76 @@ class AlertsFeature(Feature):
                     t += _dt.timedelta(days=1)
                 rule = dict(type="once", at=t.strftime("%Y-%m-%d %H:%M"))
         except ValueError as e:
-            self.add_message.config(text="Check the fields: " + (str(e) or "time as HH:MM"), fg="#ff6ad5")
+            self.add_message = ("Check the fields: " + (str(e) or "time as HH:MM"), "#ff6ad5")
             return
         alarm = dict(id="custom-%d" % int(time.time() * 1000), name=name, rule=rule, lead=lead)
         self.cfg["custom_alarms"].append(alarm)
         self.save()
         when = next_occurrence(rule, self.now())
-        self.add_message.config(text="Added: %s, next at %s" % (name, when.strftime("%H:%M") if when else "?"), fg="#7cf08a")
-        self.new_name.set("")
+        self.add_message = ("Added: %s, next at %s" % (name, when.strftime("%H:%M") if when else "?"), "#7cf08a")
+        self.new["name"] = ""
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Alert settings")
-        section(tk, f, "Sound")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.voice = tk.StringVar(value=self.cfg["voice"])
-        menu = tk.OptionMenu(row, self.voice, *voices(), "custom", command=self.pick_voice)
-        menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat",
-                    highlightthickness=0, width=13, font=(FONT, 10))
-        menu["menu"].config(bg=BUTTON, fg=TEXT, font=(FONT, 10))
-        menu.pack(side="left", padx=(0, 6))
-        button(tk, row, "▶ Test", self.test_alert).pack(side="left", padx=(0, 4))
-        button(tk, row, "File…", self.pick_file).pack(side="left")
-        self.file_label = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w")
-        self.file_label.pack(fill="x", pady=(4, 0))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(6, 0))
-        tk.Label(row, text="Volume", bg=BG, fg=MUTED, font=(FONT, 10)).pack(side="left")
-        self.volume = tk.IntVar(value=self.cfg["volume"])
-        scale = tk.Scale(row, from_=0, to=200, orient="horizontal", variable=self.volume, showvalue=True,
-                         resolution=5, length=250, bg=BG, fg=TEXT, troughcolor=BUTTON, highlightthickness=0,
-                         activebackground=ACCENT, font=(FONT, 9))
-        scale.pack(side="left", padx=6)
-        scale.bind("<ButtonRelease-1>", lambda e: self.set_flags())
-        section(tk, f, "Show")
-        self.popup = tk.BooleanVar(value=self.cfg["popup"])
-        self.at_start = tk.BooleanVar(value=self.cfg["at_start"])
-        checkbox(tk, f, "Popup on top of the game", self.popup, self.set_flags).pack(fill="x")
-        checkbox(tk, f, "Also alert when it starts", self.at_start, self.set_flags).pack(fill="x")
-        section(tk, f, "Server clock")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.offset = tk.IntVar(value=self.cfg["offset"])
-        tk.Spinbox(row, from_=-23, to=23, textvariable=self.offset, width=4, command=self.set_flags, bg=BUTTON, fg=TEXT,
-                   buttonbackground=BUTTON, relief="flat", font=(MONO, 10), justify="center").pack(side="left")
-        tk.Label(row, text="hours from this PC's clock (0 if you play on servers in your time zone; EU servers "
-                 "run on Berlin time)", bg=BG, fg=MUTED, font=(FONT, 9), wraplength=330, justify="left").pack(side="left", padx=6)
-        self.show_file()
+    @staticmethod
+    def custom_files():
+        folder = SOUNDS / "custom"
+        return sorted(str(p) for p in folder.glob("*") if p.suffix.lower() in (".wav", ".mp3")) if folder.exists() else []
 
-    def show_file(self):
-        name = Path(self.cfg["custom"]).name if self.cfg["custom"] else ""
-        self.file_label.config(text="Custom file: " + name if self.voice.get() == "custom" and name else "")
+    def page_settings(self, snap):
+        voices_ = [(v, v) for v in voices()] + ([("custom", "Your own file")] if self.custom_files() else [])
+        blocks = [P.heading("Alert settings"), P.section("Sound"),
+                  P.row(P.choice("voice", voices_, self.cfg["voice"], style="select"), P.button("test", "▶ Test"))]
+        if self.cfg["voice"] == "custom":
+            blocks.append(P.row(P.choice("custom", [(f, Path(f).name) for f in self.custom_files()], self.cfg["custom"],
+                                         label="File", style="select"),
+                                P.button("open_custom", "Open folder")))
+        return blocks + [
+            P.slider("volume", self.cfg["volume"], 0, 200, 5, " %", label="Volume"),
+            P.text("Your own WAV or MP3: put it in sounds/custom/ (Open folder), then pick it here.", small=True),
+            P.section("Show"),
+            P.toggle("flag_popup", "Popup on top of the game", self.cfg["popup"]),
+            P.toggle("flag_at_start", "Also alert when it starts", self.cfg["at_start"]),
+            P.section("Server clock"),
+            P.row(P.number("offset", self.cfg["offset"], -23, 23),
+                  P.text("hours from this PC's clock (0 if you play on servers in your time zone; EU servers run on "
+                         "Berlin time)", small=True))]
 
-    def pick_voice(self, voice):
-        if voice == "custom" and not self.cfg["custom"]:
-            return self.pick_file()
-        self.set_flags()
+    def on_voice(self, voice):
+        if voice == "custom" and not (self.cfg["custom"] and os.path.exists(self.cfg["custom"])):
+            files = self.custom_files()
+            if not files:
+                return
+            self.cfg["custom"] = files[0]
+        self.cfg["voice"] = voice
+        self.save()
         self.test_alert()
 
-    def pick_file(self):
-        from tkinter import filedialog
-        path = filedialog.askopenfilename(parent=self.root, title="Alarm sound", initialdir=str(SOUNDS / "custom"),
-                                          filetypes=[("Audio", "*.wav *.mp3"), ("All files", "*.*")])
-        if path:
-            self.cfg["custom"] = os.path.normpath(path)
-            self.voice.set("custom")
-        elif self.voice.get() == "custom" and not self.cfg["custom"]:
-            self.voice.set("system beep")
-        self.set_flags()
+    def on_custom(self, path):
+        if path in self.custom_files():
+            self.cfg.update(custom=os.path.normpath(path), voice="custom")
+            self.save()
+            self.test_alert()
 
-    def set_flags(self):
-        try:
-            offset = int(self.offset.get())
-        except (ValueError, self.tk.TclError):
-            offset = 0
-        self.cfg.update(voice=self.voice.get(), volume=self.volume.get(), popup=self.popup.get(),
-                        at_start=self.at_start.get(), offset=max(-23, min(23, offset)))
+    def on_open_custom(self, _):
+        folder = SOUNDS / "custom"
+        folder.mkdir(parents=True, exist_ok=True)
+        if hasattr(os, "startfile"):
+            os.startfile(str(folder))
+
+    def on_test(self, _):
+        self.test_alert()
+
+    def on_volume(self, value):
+        self.cfg["volume"] = int(value)
         self.save()
-        self.show_file()
+        self.test_alert()
+
+    def on_offset(self, value):
+        try:
+            self.cfg["offset"] = max(-23, min(23, int(value)))
+        except (TypeError, ValueError):
+            return
+        self.save()
 
     def test_alert(self):
         self.ring("Test alarm", "This is how alarms look and sound.")
@@ -304,7 +275,7 @@ class AlertsFeature(Feature):
         self.app.engine.say("Alarm: %s - %s" % (title, detail))
         play(self.cfg["voice"], self.cfg["custom"], self.cfg["volume"])
         if self.cfg["popup"]:
-            Toast(self.root, "⏰ %s\n%s" % (title, detail))
+            Toast(self.root, "%s\n%s" % (title, detail), label="Alarm")
 
     def background(self, snap):
         now = self.now()
@@ -324,11 +295,6 @@ class AlertsFeature(Feature):
                 self.ring(alarm["name"], "starting now")
         if len(self.fired) > 500:
             self.fired = set(list(self.fired)[-200:])
-
-    def update(self, snap, tab):
-        if tab == "Upcoming":
-            self.draw_upcoming()
-        super().update(snap, tab)
 
     def status(self, snap):
         items = [(w, a) for w, a in self.upcoming() if self.enabled_alarm(a)]

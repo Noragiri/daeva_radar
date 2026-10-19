@@ -1,13 +1,21 @@
-"""The main window: a sidebar of features, the status bar, and the loop that drives everything."""
+"""The app: the tray icon, the Settings window (webui.py + settings_window.py), the overlays and info panels, and the
+loop that drives everything. Tk runs the windows that sit over the game (overlays, cards, pop-ups, the World map,
+Position debug); its root window is never shown."""
+import queue
+import subprocess
+import sys
 import threading
 import time
+import webbrowser
+from pathlib import Path
 
 from . import update
-from .common import ASSETS, WINDOWS, load_settings, save_settings
+from .common import FROZEN, NO_WINDOW, WINDOWS, launch_command, load_settings, save_settings
+from .characters import Characters
 from .vision import ViewCone
 from .debug import PositionWindow
 from .game import MapData, map_name
-from .ui import ACCENT, BG, BUTTON, BUTTON_HOVER, FONT, MUTED, OVERLAY_CONE, PANEL, SIDEBAR, TEXT, Toast, button, draw_cone, hotkey_thread, set_icon
+from .ui import OVERLAY_CONE, Toast, draw_cone, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
@@ -16,11 +24,14 @@ from .features.alerts import AlertsFeature
 from .features.viewcone import ViewFeature
 from .features.wardrobe import WardrobeFeature
 from .features.shop import ShopFeature
+from .panels import PANELS
+from .tray import start_tray
+from .webui import ACTIONS, WebUI, overlays
 
 
 class App:
-    """Main window: a sidebar of features and the map picker. Every feature's background() runs each tick
-    whatever is shown; only the shown feature/tab is redrawn."""
+    """Runs from the tray: Settings is a web page in its own window (a page per feature); each feature has its
+    minimap overlay and info card over the game. Every feature's background() runs each tick."""
     FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, ShopFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
@@ -31,83 +42,42 @@ class App:
         self.mapdata = MapData()  # shared by the features that use the map data
         self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
         self.world_map = None  # the Map window (worldmap.py), shared by Monsters (pets) and Gathering
+        self.debug = None  # the Position debug window
+        self.calls = queue.Queue()  # work handed to the Tk thread (the web server's and the tray's threads)
+        self.focus_seq = 0  # bumped to ask the open Settings window to come to the front
+        self.settings_proc, self.settings_started, self.tray = None, 0, None
+        self.panels = {}
+        self.layout, self.layout_seen = None, None  # overlay layout mode (layout.py) while it's on
+        self.web_view = None  # (feature, tab, when) last asked for by the Settings page
+        self.closing = False
         self.root = root = tk.Tk()
+        root.withdraw()  # only the windows over the game show; Settings is the web page
         root.title("Daeva Radar")
         # errors in window callbacks go to the log (the app runs without a console: they'd be lost otherwise)
         root.report_callback_exception = lambda kind, error, tb: engine.say(
-            "ERROR in the window: " + "".join(__import__("traceback").format_exception(kind, error, tb)))
+            "ERROR: " + "".join(__import__("traceback").format_exception(kind, error, tb)))
         self.icon = set_icon(root)
-        root.configure(bg=BG)
         settings = load_settings()
         self.topmost = tk.BooleanVar(value=settings.get("topmost", True) and not args.no_topmost)
-        root.attributes("-topmost", self.topmost.get())
         self.hotkey = threading.Event()
         if WINDOWS:
             threading.Thread(target=hotkey_thread, args=(self.hotkey,), daemon=True).start()
-
-        side = tk.Frame(root, bg=SIDEBAR, width=150)
-        side.pack(side="left", fill="y")
-        side.pack_propagate(False)
-        brand = tk.Frame(side, bg=SIDEBAR)
-        brand.pack(fill="x", padx=12, pady=(14, 18))
-        try:
-            self.logo = tk.PhotoImage(file=str(ASSETS / "icon-32.png"))
-            tk.Label(brand, image=self.logo, bg=SIDEBAR).pack(side="left")
-        except tk.TclError:
-            pass
-        tk.Label(brand, text="Cube\nFinder", bg=SIDEBAR, fg=TEXT, font=(FONT, 11, "bold"), justify="left").pack(
-            side="left", padx=8)
-        tk.Checkbutton(side, text="Keep on top", variable=self.topmost, command=self.set_topmost, bg=SIDEBAR,
-                       fg=MUTED, selectcolor=BUTTON, activebackground=SIDEBAR, activeforeground=TEXT,
-                       font=(FONT, 9), anchor="w", padx=10).pack(side="bottom", fill="x", pady=(0, 10))
-        self.debug = None
-        self.debug_link = tk.Label(side, text="⌖ Position debug", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w",
-                                   padx=14, cursor="hand2")
-        self.debug_link.pack(side="bottom", fill="x", pady=(0, 4))
-        self.debug_link.bind("<Button-1>", lambda e: self.toggle_debug())
-        self.check_button = button(tk, side, "Check for updates", self.check_updates)
-        self.check_button.config(font=(FONT, 9), pady=2, fg=MUTED)
-        self.check_button.pack(side="bottom", fill="x", padx=14, pady=(0, 8))
-        self.update_link = tk.Label(side, text="", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w", justify="left",
-                                    padx=14, cursor="hand2", wraplength=136)
-        self.update_link.pack(side="bottom", fill="x", pady=(0, 4))
-        self.update_link.bind("<Button-1>", lambda e: self.on_update_click())
+        self.map_choices = [("auto", "Auto")] + [(k, map_name(k)) for k in self.mapdata.keys()]
+        self.map_cfg = settings.get("map", settings.get("gathering", {}).get("map", "auto"))  # was Gathering's
         self.version = update.current_version()
         self.release, self.update_state, self.update_shown, self.toasted = None, "idle", None, set()
-        self.checked_at = None  # "HH:MM" of the last finished check
-        self.badges = tk.Label(side, text="", bg=SIDEBAR, fg=ACCENT, font=(FONT, 9), anchor="w", padx=14,
-                               justify="left")
-        self.badges.pack(side="bottom", fill="x", pady=(0, 6))
-        self.badge_text = {}
-        self.build_map_picker(side, settings)
-        main = tk.Frame(root, bg=BG)
-        main.pack(side="left", fill="both", expand=True)
-        content = tk.Frame(main, bg=BG)
-        content.pack(fill="both", expand=True, padx=14, pady=(12, 6))
-        self.status = tk.Label(main, text="", bg="#0f1115", fg=MUTED, font=(FONT, 9), anchor="w", padx=10, pady=4)
-        self.status.pack(fill="x", side="bottom")
+        self.checked_at = self.update_error = None  # "HH:MM" of the last finished check; why an update failed
 
-        self.features, self.nav, self.current = {}, {}, None
+        self.characters = Characters(self)
+        self.features = {}
         for cls in self.FEATURES:
-            item = tk.Label(side, text="", bg=SIDEBAR, fg=MUTED, anchor="w", font=(FONT, 11), padx=10, pady=8,
-                            cursor="hand2")
-            item.pack(fill="x")
-            item.bind("<Button-1>", lambda e, t=cls.title: self.show(t))
-            item.bind("<Enter>", lambda e, w=item: w.config(bg=BUTTON) if w is not self.nav.get(self.current) else None)
-            item.bind("<Leave>", lambda e, w=item: w.config(bg=SIDEBAR) if w is not self.nav.get(self.current) else None)
-            self.nav[cls.title] = item
-            self.features[cls.title] = cls(self, content)
-            self.feature_state_changed(self.features[cls.title])
-        # one fixed size for every feature and tab (the largest), so switching doesn't resize the window
-        root.update_idletasks()
-        banner = max(f.banner.winfo_reqheight() + 8 for f in self.features.values())  # shown while a feature is off
-        sizes = [(frame.winfo_reqwidth(), frame.winfo_reqheight() + 45 + banner)  # + tab bar + off banner
-                 for feature in self.features.values() for frame in feature.tabs.values()]
-        content.config(width=max(w for w, h in sizes), height=max(h for w, h in sizes))
-        content.pack_propagate(False)
-        saved = settings.get("page")
-        self.show(saved if saved in self.features else self.FEATURES[0].title)
-        root.protocol("WM_DELETE_WINDOW", self.close)
+            self.features[cls.title] = cls(self)
+        self.panels = {cls.key: cls(self) for cls in PANELS}
+        self.web = WebUI(self)
+        self.engine.say("Settings page on " + self.web.url.split("?")[0])
+        self.tray = start_tray(self)
+        if self.tray is None or settings.get("settings_at_start", True):
+            root.after(400, self.open_settings)  # without a tray, Settings is the only way in (and out: Quit)
         self.cone_serial = -1
         if args.debug or settings.get("debug_shown"):
             self.toggle_debug()
@@ -115,31 +85,12 @@ class App:
             root.after(300, self.open_map)
         self.tick()
         self.cone_tick()
-        self.show_update()
         if settings.get("check_updates", True) and not getattr(args, "no_update_check", False):
             threading.Thread(target=update.cleanup, daemon=True).start()
             self.check_updates()
             self.schedule_update_check()
 
-    # ---- map: picked by hand in the sidebar, else detected from live gathering nodes or cubes
-    def build_map_picker(self, side, settings):
-        tk = self.tk
-        box = tk.Frame(side, bg=SIDEBAR)
-        box.pack(side="bottom", fill="x", padx=10, pady=(0, 10))
-        tk.Label(box, text="Map", bg=SIDEBAR, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x")
-        self.map_choices = [("auto", "Auto")] + [(k, map_name(k)) for k in self.mapdata.keys()]
-        self.map_cfg = settings.get("map", settings.get("gathering", {}).get("map", "auto"))  # was Gathering's
-        self.map_var = tk.StringVar(value=dict(self.map_choices).get(self.map_cfg, "Auto"))
-        menu = tk.OptionMenu(box, self.map_var, *[label for _, label in self.map_choices], command=self.set_map)
-        menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat", bd=0,
-                    highlightthickness=0, font=(FONT, 9), anchor="w", cursor="hand2")
-        menu["menu"].config(bg=PANEL, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, font=(FONT, 9))
-        menu.pack(fill="x")
-        self.map_label = tk.Label(box, text="", bg=SIDEBAR, fg=MUTED, font=(FONT, 8), anchor="w", justify="left",
-                                  wraplength=130)
-        self.map_label.pack(fill="x")
-        self.show_map()
-
+    # ---- map: picked in Settings, else detected from live gathering nodes or cubes
     def picked(self):
         """The map picked by hand, or None for Auto (also when its data is gone)."""
         return self.map_cfg if self.map_cfg in self.mapdata.keys() else None
@@ -147,10 +98,9 @@ class App:
     def map_key(self):
         return self.picked() or self.detected
 
-    def set_map(self, label):
-        self.map_cfg = next(key for key, text in self.map_choices if text == label)
+    def set_map(self, key):
+        self.map_cfg = key if key in dict(self.map_choices) else "auto"
         save_settings(dict(load_settings(), map=self.map_cfg))
-        self.show_map()
 
     def detect_map(self, snap):
         """Gathering nodes decide when there are any; cubes only when there aren't."""
@@ -162,14 +112,8 @@ class App:
         if key and key != self.detected:
             self.detected = key
             self.engine.say("Map is %s" % key)
-            self.show_map()
 
-    def show_map(self):
-        text = ("detected: %s" % map_name(self.detected)) if self.detected else "not detected yet"
-        differs = self.picked() and self.detected and self.detected != self.picked()
-        self.map_label.config(text=text + (" (differs!)" if differs else ""), fg="#ffb347" if differs else MUTED)
-
-    # ---- updates: checked at launch and every full hour; installed on a click
+    # ---- updates: checked at launch and every full hour; installed from Settings
     def schedule_update_check(self):
         """Next check at the next x:00 (plus a few seconds), then every hour."""
         wait = 3600 - time.time() % 3600 + 5
@@ -190,49 +134,7 @@ class App:
             self.checked_at = time.strftime("%H:%M")
         threading.Thread(target=work, daemon=True).start()
 
-    def show_update(self):
-        """Sidebar link for the update state (the worker threads only set update_state; this runs on Tk)."""
-        state = self.update_state
-        if state == self.update_shown:
-            return
-        self.update_shown = state
-        mine = "v" + self.version if self.version else ("git copy" if update.is_git() else "version unknown")
-        new = self.release["version"] if self.release else ""
-        text, color = {
-            "idle": (mine, MUTED),
-            "checking": ("Checking for updates…", MUTED),
-            "current": ("✓ Up to date (%s)\n%s" % (self.checked_at, mine), MUTED),
-            "failed": ("⚠ Update check failed (click to retry)", MUTED),
-            "available": (("↑ %s is out (git pull)" if update.is_git() else "↑ Update to %s") % new, "#7cf08a"),
-            "installing": ("Updating to %s…" % new, ACCENT),
-            "install_failed": ("⚠ Update failed (click to retry)", "#ffb347"),
-            "installed": ("✓ Updated, restarting…", "#7cf08a"),
-        }[state]
-        self.update_link.config(text=text, fg=color, font=(FONT, 9, "bold" if state == "available" else "normal"))
-        busy = state in ("checking", "installing", "installed")
-        self.check_button.config(state="disabled" if busy else "normal", text="Checking…" if state == "checking"
-                                 else "Check for updates")
-        if state == "available" and new not in self.toasted:
-            self.toasted.add(new)
-            Toast(self.root, "Daeva Radar %s is out.\nClick ↑ Update in the sidebar." % new, color="#7cf08a")
-        if state == "install_failed":
-            from tkinter import messagebox
-            messagebox.showerror("Daeva Radar", "Update failed: %s" % self.update_error, parent=self.root)
-        if state == "installed":
-            self.root.after(800, self.restart)
-
-    def on_update_click(self):
-        from tkinter import messagebox
-        if self.update_state in ("checking", "installing", "installed"):
-            return
-        if self.update_state not in ("available", "install_failed"):
-            return self.check_updates()
-        if update.is_git():
-            messagebox.showinfo("Daeva Radar", "This copy is a git checkout. Update it with git pull.", parent=self.root)
-            return
-        if not messagebox.askyesno("Daeva Radar", "Update to %s now?\n\nThe app restarts when it's done. Your settings "
-                                   "are kept." % self.release["version"], parent=self.root):
-            return
+    def install_update(self):
         self.update_state = "installing"
 
         def work():
@@ -246,18 +148,33 @@ class App:
                 self.update_state = "install_failed"
         threading.Thread(target=work, daemon=True).start()
 
+    def show_update(self):
+        """Pop-ups for the update state (the worker threads only set update_state; this runs on Tk)."""
+        state = self.update_state
+        if state == self.update_shown:
+            return
+        self.update_shown = state
+        new = self.release["version"] if self.release else ""
+        if state == "available" and new not in self.toasted:
+            self.toasted.add(new)
+            Toast(self.root, "Daeva Radar %s is out\nClick to open Settings and update." % new, color="#7cf08a",
+                  label="Update", seconds=12, on_click=self.open_settings_general)
+        if state == "install_failed":
+            Toast(self.root, "The update failed\n%s" % self.update_error, color="#ffb347", seconds=12, label="Update")
+        if state == "installed":
+            self.root.after(800, self.restart)
+
     def restart(self):
         try:
             update.restart()
         except Exception as e:
-            from tkinter import messagebox
-            messagebox.showerror("Daeva Radar", "Updated, but couldn't restart (%s). Start it again by hand." % e,
-                                 parent=self.root)
+            Toast(self.root, "Updated, but couldn't restart\n%s. Start it again by hand." % e, color="#ffb347",
+                  label="Update")
         self.close()
 
+    # ---- windows over the game
     def open_map(self, mode=None):
         """The Map window (world map images; needs Pillow): mode "Pets" or "Resources" for its side panel."""
-        from tkinter import messagebox
         if self.world_map:
             if mode:
                 self.world_map.set_mode(mode)
@@ -271,44 +188,12 @@ class App:
         except ImportError:
             import traceback
             self.engine.say("Map: Pillow missing: " + traceback.format_exc())
-            messagebox.showerror("Daeva Radar", "The Map needs Pillow for the map images.\n\n"
-                                 "Install it once with:  python -m pip install pillow", parent=self.root)
+            Toast(self.root, "The Map needs Pillow\nInstall it once with:  python -m pip install pillow",
+                  color="#ffb347", seconds=12, label="World map")
         except Exception as e:  # never silently: the build has no console
             import traceback
             self.engine.say("Map failed: " + traceback.format_exc())
-            messagebox.showerror("Daeva Radar", "Couldn't open the Map: %s" % e, parent=self.root)
-
-    def show(self, title):
-        if self.current:
-            self.features[self.current].frame.pack_forget()
-            self.nav[self.current].config(bg=SIDEBAR)
-        self.current = title
-        feature = self.features[title]
-        feature.frame.pack(fill="both", expand=True)
-        self.nav[title].config(bg=BUTTON)
-        for f in self.features.values():
-            self.feature_state_changed(f)
-        save_settings(dict(load_settings(), page=title))
-        feature.update(self.snapshot(), feature.tab)
-
-    def snapshot(self):
-        return self.tracker.snapshot()
-
-    def feature_state_changed(self, feature):
-        """Sidebar entry: '(off)' and dimmed when the feature is switched off."""
-        item = getattr(self, "nav", {}).get(feature.title)
-        if item is not None:
-            item.config(text="  %s   %s%s" % (feature.icon, feature.title, "" if feature.enabled else "  · off"),
-                        fg=(TEXT if feature.title == self.current else MUTED) if feature.enabled else "#5a606a")
-
-    def set_badge(self, feature, text):
-        """Short always-visible state in the sidebar (e.g. a feature's overlay is on)."""
-        if text:
-            self.badge_text[feature.title] = "%s %s:\n    %s" % (feature.icon, feature.title, text)
-        else:
-            self.badge_text.pop(feature.title, None)
-        if hasattr(self, "badges"):
-            self.badges.config(text="\n".join(self.badge_text.values()))
+            Toast(self.root, "Couldn't open the Map\n%s" % e, color="#ffb347", seconds=12, label="World map")
 
     def toggle_debug(self):
         """Show or hide the position debug window (remembered for the next start)."""
@@ -318,62 +203,159 @@ class App:
         else:
             self.debug = PositionWindow(self)
             self.debug.update(self.snapshot())
-        self.debug_link.config(fg=ACCENT if self.debug else MUTED)
         save_settings(dict(load_settings(), debug_shown=bool(self.debug)))
 
     def set_topmost(self):
-        self.root.attributes("-topmost", self.topmost.get())
+        """Keep the World map and Position debug above the game."""
         save_settings(dict(load_settings(), topmost=self.topmost.get()))
 
+    def snapshot(self):
+        return self.tracker.snapshot()
+
+    # ---- the Tk thread: other threads hand their work here
+    def call(self, fn, timeout=5):
+        """Run fn on the Tk thread and return its result (from the web server's threads)."""
+        if threading.current_thread() is threading.main_thread():
+            return fn()
+        box, done = {}, threading.Event()
+        self.calls.put((fn, box, done))
+        if not done.wait(timeout):
+            raise TimeoutError("the app is busy")
+        if "error" in box:
+            raise box["error"]
+        return box.get("result")
+
+    def post(self, fn):
+        """Run fn on the Tk thread soon (from the tray's thread); no result."""
+        self.calls.put((fn, None, None))
+
+    def run_calls(self):
+        while True:
+            try:
+                fn, box, done = self.calls.get_nowait()
+            except queue.Empty:
+                return
+            try:
+                result = fn()
+                if box is not None:
+                    box["result"] = result
+            except Exception as e:
+                if box is not None:
+                    box["error"] = e
+                else:
+                    self.engine.say("ERROR: %r" % e)
+            if done:
+                done.set()
+
+    def web_action(self, name, **args):
+        return ACTIONS[name](self, **args)
+
+    # ---- the Settings window (its own process)
+    def open_settings(self):
+        if self.settings_proc and self.settings_proc.poll() is None:
+            self.focus_seq += 1  # the page sees it and brings its window forward
+            return
+        exe = Path(sys.executable)
+        if not FROZEN and exe.with_name("pythonw.exe").exists():
+            exe = exe.with_name("pythonw.exe")
+        command = [str(exe)] + launch_command()[1:] + ["--settings-window", self.web.url]
+        try:
+            self.settings_proc = subprocess.Popen(command, creationflags=NO_WINDOW)
+            self.settings_started = time.time()
+        except OSError as e:
+            self.engine.say("Settings window failed (%s): opening it in the browser" % e)
+            webbrowser.open(self.web.url)
+
+    def open_settings_general(self):
+        """Settings at General (the update notice's click): the page goes there on the next focus request."""
+        self.web_goto = "General"
+        self.open_settings()
+        self.focus_seq += 1
+
+    def check_settings_window(self):
+        """No pywebview / WebView2: the Settings window quits at once, so open the page in the browser instead.
+        Without a tray icon, closing Settings quits the app (there'd be no way back in)."""
+        from .settings_window import NO_WEBVIEW
+        proc = self.settings_proc
+        if proc and proc.poll() is not None:
+            self.settings_proc = None
+            if proc.returncode == NO_WEBVIEW and time.time() - self.settings_started < 30:
+                self.engine.say("Settings window unavailable (pywebview / WebView2): opening it in the browser")
+                webbrowser.open(self.web.url)
+            elif not self.tray:
+                self.close()
+
+    # ---- every overlay: the features' minimap overlays and the info panels
+    def overlay_list(self):
+        return overlays(self)
+
+    def overlay_shown(self, oid):
+        kind, _, name = oid.partition(":")
+        if kind == "radar":
+            return bool(self.features[name].overlay)
+        return bool(self.panels[name].win)
+
+    def shown_overlays(self):
+        """-> [(cfg, set_locked)] of every overlay and panel on screen."""
+        out = [(f.overlay.cfg, f.overlay.set_locked) for f in self.features.values() if f.overlay and f.enabled]
+        return out + [(p.cfg, p.set_locked) for p in self.panels.values() if p.win]
+
+    def overlays_locked(self):
+        shown = self.shown_overlays()
+        return bool(shown) and all(cfg["locked"] for cfg, _ in shown)
+
+    def edit_layout(self):
+        """Overlay layout mode: a grid over the game window to place every overlay on the real screen."""
+        if self.layout:
+            return self.layout.close()
+        from .layout import LayoutMode
+        self.layout = LayoutMode(self)
+
+    def lock_overlays(self, lock):
+        for cfg, set_locked in self.shown_overlays():
+            set_locked(lock)
+
+    # ---- the loop
     def cone_tick(self):
-        """Every 50 ms: if the cone reading changed, redraw only the cone (radar tab and overlays), so it
-        follows the camera without waiting for the full 250 ms refresh."""
+        """Every 50 ms: if the cone reading changed, redraw only the overlays' cone, so it follows the camera
+        without waiting for the full 100 ms refresh; and run the other threads' work."""
+        if self.closing:
+            return
         if self.view.serial != self.cone_serial:
             self.cone_serial = self.view.serial
             cone = self.view.cone if self.view.ready() else None
-            current = self.features[self.current]
             for feature in self.features.values():
-                if not feature.enabled:
-                    continue
-                if feature is current and feature.tab == "Radar" and hasattr(feature, "canvas"):
-                    c, mid = feature.canvas, feature.size / 2
-                    c.delete("cone")
-                    draw_cone(c, mid, mid, mid - 18, cone, fill="#2b3346", below=True)
-                if feature.overlay:
+                if feature.enabled and feature.overlay:
                     o = feature.overlay
                     o.canvas.delete("cone")
                     if self.tracker.position is not None and o.cfg["cone"]:
                         draw_cone(o.canvas, o.cfg["w"] / 2, o.cfg["h"] / 2, min(o.cfg["w"], o.cfg["h"]) / 2 - 6, cone,
                                   outline=OVERLAY_CONE, below=True)
+        self.run_calls()
         self.root.after(50, self.cone_tick)
 
     def cone_needed(self):
         """Is anything showing the vision cone right now? Only then is the screen read for it."""
         if any(f.overlay and f.overlay.cfg["cone"] for f in self.features.values() if f.enabled):
-            return True  # overlays show it whatever the main window does
-        if self.root.state() == "iconic":
-            return False  # minimised: nothing in the window is visible
-        current = self.features[self.current]
-        return current.title == "View cone" or (current.tab == "Radar" and current.enabled)
+            return True
+        if self.web_view and time.time() - self.web_view[2] < 3:  # a radar or View cone open in Settings
+            title, tab, _ = self.web_view
+            return title == "View cone" or tab == "Radar"
+        return False
 
     def on_hotkey(self):
-        """Ctrl+Shift+O: lock every shown overlay if any is unlocked, else unlock them all; with none shown,
-        show the current feature's overlay."""
-        shown = [f for f in self.features.values() if f.overlay and f.enabled]
-        if not shown:
-            current = self.features[self.current]
-            if current.overlay_key and current.enabled:
-                current.toggle_overlay()
-            return
-        lock = any(not f.overlay.cfg["locked"] for f in shown)
-        for f in shown:
-            f.overlay.set_locked(lock)
+        """Ctrl+Shift+O: lock every shown overlay and card if any is unlocked, else unlock them all."""
+        self.lock_overlays(not self.overlays_locked())
 
     def tick(self):
+        if self.closing:
+            return
         snap = self.snapshot()
         self.view.update(self.cone_needed())
         snap["cone"] = self.view.cone if self.view.ready() else None
+        self.last_snap = snap
         self.detect_map(snap)
+        self.characters.note(snap)
         self.show_update()
         if self.hotkey.is_set():
             self.hotkey.clear()
@@ -381,28 +363,44 @@ class App:
         for feature in self.features.values():
             if feature.enabled:
                 feature.background(snap)
-        current = self.features[self.current]
-        current.update(snap, current.tab)
+        for panel in self.panels.values():
+            panel.update(snap)
+        if self.layout:  # an overlay shown or hidden meanwhile: redraw the placeholders; keep them above the grid
+            shown = tuple(o["shown"] for o in self.overlay_list())
+            if shown != self.layout_seen:
+                self.layout_seen = shown
+                self.layout.draw()
+        self.check_settings_window()
         if self.world_map:
             self.world_map.update()
         if self.debug:
             self.debug.update(snap)
-        if snap["own_name"]:
-            who = "playing as %s (ID %s)" % (snap["own_name"], snap["own_char_no"])
-        else:
-            who = ("character #%d" % snap["own"]) if snap["own"] else "character not identified yet: relog or change zone"
-        parts = [self.engine.status, who] + [s for s in (f.status(snap) for f in self.features.values() if f.enabled) if s]
-        self.status.config(text=" · ".join(parts + ["%d msgs" % snap["messages"], "%d pkts" % self.engine.packets]))
-        self.root.after(250, self.tick)
+        self.root.after(100, self.tick)
+
+    def status_text(self):
+        """The Settings page's footer: capture state and what each feature sees."""
+        snap = getattr(self, "last_snap", None) or self.snapshot()
+        parts = [self.engine.status] + [s for s in (f.status(snap) for f in self.features.values() if f.enabled) if s]
+        return " · ".join(parts)
 
     def close(self):
+        if self.closing:
+            return
+        self.closing = True
         self.view.running = False
+        if self.layout:
+            self.layout.close()
         for feature in self.features.values():
             feature.close()
         if self.world_map:
             self.world_map.close(quitting=True)
         if self.debug:
             self.debug.close()
+        if self.tray:
+            self.tray.stop()
+        if self.settings_proc and self.settings_proc.poll() is None:
+            self.settings_proc.terminate()
+        self.web.close()
         self.engine.stop = True
         if self.engine.capture:
             self.engine.capture.shutdown()

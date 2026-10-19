@@ -6,11 +6,15 @@ import time
 
 from ..common import ROOT, load_settings, save_settings
 from ..sound import play
-from ..ui import BG, BUTTON, BUTTON_HOVER, FONT, MONO, MUTED, PANEL, TEXT, Toast, checkbox, heading, section
+from ..ui import MUTED, Toast
 from ..feature import Feature
+from .. import page as P
+from .pets import MAX_LEVEL
+from ..characters import HOME_MAP, SHARED_MAP
+from ..game import map_name
 
 
-SHOP_DEFAULT = dict(min_discount=30, missing_only=True, targets=True, kinds=["pet", "skin", "theostone"],
+SHOP_DEFAULT = dict(min_discount=30, missing_only=True, targets=True, unfarmable=True, sticky=True, kinds=["pet", "skin", "theostone"],
                     remind=False, sound=True)
 TAB_ORDER = ("Special", "Pets", "Skins")
 KIND_LABEL = {"pet": "Pet", "skin": "Skin", "theostone": "Theostone", "other": "Item"}
@@ -29,12 +33,13 @@ class ShopFeature(Feature):
     title, icon, TABS = "Shop", "⚖", ("Offers", "Settings")
     off_text = "Offers aren't read and nothing pops up while it's off."
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         settings = load_settings()
         self.cfg = dict(SHOP_DEFAULT, **settings.get("shop", {}))
         saved = settings.get("shop_offers", {})
-        self.shops = saved.get("characters", {})  # character key -> dict(name, tabs={tab: dict(items, time)})
-        self.char = None  # the character playing now (key)
+        # character name -> dict(name, tabs={tab: dict(items, time)}); "?" until a login is seen
+        self.shops = self.by_name(saved.get("characters", {}))
+        self.char = None  # the character playing now (its name)
         self.viewed = None  # the character whose shop the Offers tab shows (None: the one playing)
         try:
             raw = json.loads((ROOT / "data" / "shop_items.json").read_text(encoding="utf-8"))["items"]
@@ -45,7 +50,19 @@ class ShopFeature(Feature):
         self.announced = set(tuple(x) for x in saved.get("announced", []))  # (character, hour, tab, item)
         self.reminded = None
         self.rows = []
-        super().__init__(app, parent)
+        super().__init__(app)
+
+    @staticmethod
+    def by_name(shops):
+        """Shops were kept per login "character number", which isn't stable: merge them per name, newest tab wins."""
+        out = {}
+        for key, entry in shops.items():
+            name = entry.get("name") or key
+            merged = out.setdefault(name, dict(name=entry.get("name"), tabs={}))
+            for tab, data in entry.get("tabs", {}).items():
+                if data["time"] > merged["tabs"].get(tab, {}).get("time", 0):
+                    merged["tabs"][tab] = data
+        return out
 
     # ---- items
     def info(self, item):
@@ -61,10 +78,38 @@ class ShopFeature(Feature):
         name = info["name"].replace("Pet: ", "")
         return pets, next((i for i, p in pets.data.pets.items() if p["name"] == name), None)
 
-    def unfarmable(self, item):
-        """A pet whose soul monsters spawn in none of pets.FARM_MAPS (dungeons, other regions only)."""
+    def faction(self, char):
+        """The character's faction (Settings → Characters: set, else guessed from its maps), or None."""
+        return self.app.characters.faction_of(char) if char and char != "?" else None
+
+    def farm(self, item, char):
+        """Can this character farm the pet's souls? -> None (not a pet we know), "no" (in none of the farm maps:
+        dungeons, other regions), "other" (only in the other faction's land) or "yes"."""
         pets, pid = self.pet_of(item)
-        return pid is not None and not pets.data.farmable(pid)
+        if pid is None:
+            return None
+        maps = pets.data.farm_maps(pid)
+        if not maps:
+            return "no"
+        faction = self.faction(char)
+        if faction and not maps & {HOME_MAP[faction], SHARED_MAP}:
+            return "other"
+        return "yes"
+
+    def farm_note(self, item, char):
+        """"⊘ not farmable" / "⇄ only in Altgard" for the offer list and the pop-up, else ""."""
+        farm = self.farm(item, char)
+        if farm == "no":
+            return "⊘ not farmable"
+        if farm == "other":
+            other = next(m for f, m in HOME_MAP.items() if f != self.faction(char))
+            return "⇄ only in %s" % map_name(other)
+        return ""
+
+    def unfarmable_open(self, item, char):
+        """A pet this character can't farm, not at Lv3 yet: the shop is how it levels."""
+        pets, pid = self.pet_of(item)
+        return self.farm(item, char) in ("no", "other") and pets.levels.get(pid, 0) < MAX_LEVEL
 
     def status_of(self, item):
         """-> "owned" | "missing" | "target" | None (can't tell: theostones, accessories without names)."""
@@ -91,10 +136,11 @@ class ShopFeature(Feature):
             return None
         return None
 
-    def wanted(self, offer):
-        """Does this offer pass the notification rules?"""
+    def wanted(self, offer, char=None):
+        """Does this offer (in char's shop: the one playing by default) pass the notification rules?"""
         info, status = self.info(offer["item"]), self.status_of(offer["item"])
-        if status == "target" and self.cfg["targets"]:
+        char = char or self.char
+        if status == "target" and self.cfg["targets"] or self.cfg["unfarmable"] and self.unfarmable_open(offer["item"], char):
             return True
         if info["kind"] not in self.cfg["kinds"] or offer["discount"] < self.cfg["min_discount"]:
             return False
@@ -118,11 +164,10 @@ class ShopFeature(Feature):
         return self.shops.get(key, {}).get("name") or "this character"
 
     def who(self, snap):
-        """The character playing: its permanent number from the login message, else "?" until a login is seen."""
-        if snap["own_char_no"]:
-            key = str(snap["own_char_no"])
-            entry = self.shops.setdefault(key, dict(name=None, tabs={}))
-            entry["name"] = snap["own_name"] or entry["name"]
+        """The character playing: its name from the login message, else "?" until a login is seen."""
+        if snap["own_name"]:
+            key = snap["own_name"]
+            entry = self.shops.setdefault(key, dict(name=key, tabs={}))
             if self.char != key and "?" in self.shops and key != "?":  # what was read before the login was seen
                 unknown = self.shops.pop("?")
                 for tab, data in unknown["tabs"].items():
@@ -136,7 +181,6 @@ class ShopFeature(Feature):
         char = self.who(snap)
         if char != self.char:
             self.char = char
-            self.refresh_characters()
         if snap["shop_count"] == self.seen:
             return
         first = self.seen is None
@@ -149,7 +193,7 @@ class ShopFeature(Feature):
             tabs[tab] = dict(items=data["items"], time=data["time"])
             for offer in data["items"]:
                 key = (char, self.hour(data["time"]), tab, offer["item"])
-                if key not in self.announced and self.wanted(offer):
+                if key not in self.announced and self.wanted(offer, char):
                     self.announced.add(key)
                     fresh.append((tab, offer))
         now = self.hour(time.time())
@@ -157,16 +201,15 @@ class ShopFeature(Feature):
         save_settings(dict(load_settings(), shop_offers=dict(characters=self.shops, announced=sorted(self.announced))))
         if fresh and not first:
             self.notify(fresh)
-        self.refresh_characters()
-        self.refresh()
 
     def notify(self, fresh):
         lines = ["-%d%% %s %s%s" % (o["discount"], self.info(o["item"])["name"], "{:,}".format(o["price"]),
-                                    " (not farmable)" if self.unfarmable(o["item"]) else "")
+                                    " (%s)" % self.farm_note(o["item"], self.char)[2:] if self.farm_note(o["item"], self.char) else "")
                  for tab, o in sorted(fresh, key=lambda f: -f[1]["discount"])]
         self.app.engine.say("Shop deals: " + "; ".join(lines))
-        Toast(self.root, "⚖ %s's shop: %d deal%s\n%s" % (self.name_of(self.char), len(lines), "" if len(lines) == 1 else "s",
-                                                  "\n".join(lines[:5]) + ("\n…" if len(lines) > 5 else "")), color=DEAL)
+        Toast(self.root, "%s's shop: %d deal%s\n%s" % (self.name_of(self.char), len(lines), "" if len(lines) == 1 else "s",
+                                                  "\n".join(lines[:5]) + ("\n…" if len(lines) > 5 else "")), color=DEAL, label="Shop deals",
+              seconds=None if self.cfg["sticky"] else 12)  # until clicked: deals are easy to miss mid-fight
         if self.cfg["sound"]:
             play("system beep")
 
@@ -175,136 +218,100 @@ class ShopFeature(Feature):
         now = time.localtime()
         if self.cfg["remind"] and now.tm_min == 0 and self.reminded != self.hour(time.time()):
             self.reminded = self.hour(time.time())
-            Toast(self.root, "⚖ The shop has new offers\nOpen it to check the deals", color=DEAL, seconds=6)
+            Toast(self.root, "The shop has new offers\nOpen it in game to check the deals", color=DEAL,
+                  seconds=None if self.cfg["sticky"] else 6,
+                  label="Shop")
 
     # ---- Offers tab
-    def build_offers(self, f):
-        tk = self.tk
-        heading(tk, f, "Shop offers", None)
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.head = tk.Label(row, text="", bg=BG, fg=TEXT, font=(FONT, 10, "bold"), anchor="w", justify="left")
-        self.head.pack(side="left", fill="x")
-        self.char_var = tk.StringVar(value="")
-        self.char_menu = tk.OptionMenu(row, self.char_var, "")
-        self.char_menu.config(bg=BUTTON, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT, relief="flat",
-                              bd=0, highlightthickness=0, font=(FONT, 9), cursor="hand2")
-        self.char_menu["menu"].config(bg=PANEL, fg=TEXT, activebackground=BUTTON_HOVER, activeforeground=TEXT)
-        self.char_menu.pack(side="right")
-        self.sub = tk.Label(f, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w", justify="left")
-        self.sub.pack(fill="x", pady=(0, 6))
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x", pady=(0, 4))
-        self.tab_var = tk.StringVar(value=self.cfg.get("tab", "All"))
-        for value in ("All",) + TAB_ORDER:  # one shop tab at a time fits without scrolling
-            tk.Radiobutton(row, text=value, value=value, variable=self.tab_var, command=self.set_tab, bg=BG, fg=TEXT,
-                           selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT, font=(FONT, 9),
-                           indicatoron=False, padx=8, pady=2, relief="flat", bd=0, offrelief="flat",
-                           cursor="hand2").pack(side="left", padx=(0, 2))
-        self.listbox = tk.Listbox(f, height=24, bg=PANEL, fg=TEXT, selectbackground=BUTTON_HOVER, relief="flat",
-                                  highlightthickness=0, font=(MONO, 9), activestyle="none")
-        self.listbox.pack(fill="x")
-        tk.Label(f, text="✓ owned · ✗ missing · ★ target pet · ⊘ pet not farmable in Verteron, Altgard or Lower "
-                 "Reshanta · green: passes your notification rules (Settings)", wraplength=640, justify="left",
-                 bg=BG, fg=MUTED, font=(FONT, 9), anchor="w").pack(fill="x", pady=(6, 0))
-        self.refresh()
-
-    def refresh_characters(self):
-        """The character picker: whose shop to show (the one playing first)."""
-        if not hasattr(self, "char_menu"):
-            return
-        menu = self.char_menu["menu"]
-        menu.delete(0, "end")
-        for key in sorted(self.shops, key=lambda k: (k != self.char, self.name_of(k))):
-            label = self.name_of(key) + (" (playing)" if key == self.char else "")
-            menu.add_command(label=label, command=lambda k=key: self.view(k))
-        shown = self.viewed or self.char
-        self.char_var.set(self.name_of(shown) + (" (playing)" if shown == self.char else "") if shown else "")
-
-    def view(self, key):
-        self.viewed = None if key == self.char else key
-        self.refresh_characters()
-        self.refresh()
-
-    def refresh(self):
-        if not hasattr(self, "listbox"):
-            return
+    def page_offers(self, snap):
         now = time.time()
         left = 3600 - now % 3600
-        self.head.config(text="%s's shop · new offers in %d:%02d" % (
-            self.name_of(self.viewed or self.char), left // 60, left % 60))
+        shown_char = self.viewed or self.char
+        chars = [(key, self.name_of(key) + (" (playing)" if key == self.char else ""))
+                 for key in sorted(self.shops, key=lambda k: (k != self.char, self.name_of(k)))]
         seen = [self.offers[t]["time"] for t in TAB_ORDER if t in self.offers]
-        self.sub.config(text=("Last opened %s%s" % (time.strftime("%H:%M", time.localtime(max(seen))),
-                                                    " · out of date: open the shop for the new offers"
-                                                    if any(self.stale(t) for t in TAB_ORDER if t in self.offers) else ""))
-                        if seen else "Open the shop in game (all three tabs) to read the offers.")
-        self.listbox.delete(0, "end")
-        shown = self.tab_var.get()
+        sub = ("Last opened %s%s" % (time.strftime("%H:%M", time.localtime(max(seen))),
+                                     " · out of date: open the shop for the new offers"
+                                     if any(self.stale(t) for t in TAB_ORDER if t in self.offers) else "")
+               if seen else "Open the shop in game (all three tabs) to read the offers.")
+        rows, shown = [], self.cfg.get("tab", "All")
+        faction = self.faction(shown_char)
         for tab in TAB_ORDER:
             if tab not in self.offers or shown not in ("All", tab):
                 continue
-            self.listbox.insert("end", "— %s%s" % (tab, "  (out of date)" if self.stale(tab) else ""))
-            self.listbox.itemconfig("end", fg=MUTED)
+            rows.append(("— %s%s" % (tab, "  (out of date)" if self.stale(tab) else ""), MUTED))
             for o in sorted(self.offers[tab]["items"], key=lambda o: -o["discount"]):
                 info, status = self.info(o["item"]), self.status_of(o["item"])
                 mark = {"owned": "✓", "missing": "✗", "target": "★"}.get(status, " ")
-                self.listbox.insert("end", " %s -%2d%%  %-40.40s %10s  %s%s" % (
+                rows.append((" %s -%2d%%  %-40.40s %10s  %s%s" % (
                     mark, o["discount"], info["name"], "{:,}".format(o["price"]), info["grade"],
-                    "  ⊘ not farmable" if self.unfarmable(o["item"]) else ""))
-                self.listbox.itemconfig("end", fg=DEAL if self.wanted(o) and not self.stale(tab) else
-                                        (MUTED if status == "owned" else TEXT))
+                    ("  " + self.farm_note(o["item"], shown_char)) if self.farm_note(o["item"], shown_char) else ""),
+                    DEAL if self.wanted(o, shown_char) and not self.stale(tab) else (MUTED if status == "owned" else None)))
+        return [P.heading("Shop offers"),
+                P.row(P.text("%s's shop · new offers in %d:%02d" % (self.name_of(shown_char), left // 60, left % 60),
+                             bold=True),
+                      P.choice("character", chars, shown_char, style="select") if chars else None),
+                P.text(sub + ("  ·  %s" % faction if faction else
+                             "  ·  Set this character's faction in Characters to mark pets only farmable on the other side."),
+                       small=True),
+                P.choice("tab", ["All"] + list(TAB_ORDER), shown),
+                P.listbox("offer", rows, None, height=24, dbl=False, empty="No offers read yet."),
+                P.text("✓ owned · ✗ missing · ★ target pet · ⊘ pet not farmable in Verteron, Altgard or Lower Reshanta"
+                       " · ⇄ pet only farmable in the other faction's land · green: passes your notification rules "
+                       "(Settings)", small=True)]
 
-    def set_tab(self):
-        self.cfg["tab"] = self.tab_var.get()
+    def on_character(self, key):
+        if key in self.shops:
+            self.viewed = None if key == self.char else key
+
+    def on_tab(self, value):
+        self.cfg["tab"] = value
+        self.save()
+
+    def on_offer(self, index):
+        pass  # nothing to pick: the list is for reading
+
+    def save(self):
         save_settings(dict(load_settings(), shop=self.cfg))
-        self.refresh()
 
     # ---- Settings tab
-    def build_settings(self, f):
-        tk = self.tk
-        heading(tk, f, "Shop settings", "Item names: AION 2 data © NCSOFT (official AION 2 web API), via Shugo.GG. Pets are checked against your "
-                "pet collection, skins against your wardrobe.")
-        section(tk, f, "Pop up for offers with at least")
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        self.min_var = tk.IntVar(value=self.cfg["min_discount"])
-        for value in (10, 20, 30, 50):
-            tk.Radiobutton(row, text="-%d%%" % value, value=value, variable=self.min_var, command=self.set_flags, bg=BG,
-                           fg=TEXT, selectcolor=BUTTON, activebackground=BG, activeforeground=TEXT,
-                           font=(FONT, 10)).pack(side="left", padx=(0, 8))
-        section(tk, f, "Which items")
-        self.kind_vars = {}
-        row = tk.Frame(f, bg=BG)
-        row.pack(fill="x")
-        for kind in ("pet", "skin", "theostone"):
-            self.kind_vars[kind] = tk.BooleanVar(value=kind in self.cfg["kinds"])
-            checkbox(tk, row, KIND_LABEL[kind] + "s", self.kind_vars[kind], self.set_flags).pack(side="left", padx=(0, 8))
-        self.flags = {}
-        for key, text in (("missing_only", "Only items I don't own (pets, skins)"),
-                          ("targets", "Always for my target pets (any discount)"),
-                          ("sound", "Beep with the pop-up"),
-                          ("remind", "Remind me at x:00 that the shop has new offers")):
-            self.flags[key] = tk.BooleanVar(value=self.cfg[key])
-            checkbox(tk, f, text, self.flags[key], self.set_flags).pack(fill="x")
-        tk.Label(f, text="The game sends the offers when you open the shop; each item pops up once per shop hour.",
-                 bg=BG, fg=MUTED, font=(FONT, 9), anchor="w", justify="left", wraplength=390).pack(fill="x", pady=(8, 0))
+    FLAGS = (("missing_only", "Only items I don't own (pets, skins)"),
+             ("targets", "Always for my target pets (any discount)"),
+             ("unfarmable", "Always for pets I can't farm until they're Lv3 (any discount; with the character's "
+                            "faction set, also those only in the other side's land)"),
+             ("sound", "Beep with the pop-up"),
+             ("remind", "Remind me at x:00 that the shop has new offers"),
+             ("sticky", "Keep shop pop-ups until I click them (else they fade after a few seconds)"))
 
-    def set_flags(self):
-        self.cfg.update({k: v.get() for k, v in self.flags.items()}, min_discount=self.min_var.get(),
-                        kinds=[k for k, v in self.kind_vars.items() if v.get()])
-        save_settings(dict(load_settings(), shop=self.cfg))
-        self.refresh()
+    def page_settings(self, snap):
+        return ([P.heading("Shop settings", "Item names: AION 2 data © NCSOFT (official AION 2 web API), via Shugo.GG. "
+                           "Pets are checked against your pet collection, skins against your wardrobe."),
+                 P.section("Pop up for offers with at least"),
+                 P.choice("min_discount", [(v, "-%d%%" % v) for v in (10, 20, 30, 50)], self.cfg["min_discount"]),
+                 P.section("Which items")] +
+                [P.toggle("kind_" + kind, KIND_LABEL[kind] + "s", kind in self.cfg["kinds"])
+                 for kind in ("pet", "skin", "theostone")] +
+                [P.section("Rules")] +
+                [P.toggle("flag_" + key, text, self.cfg[key]) for key, text in self.FLAGS] +
+                [P.text("The game sends the offers when you open the shop; each item pops up once per shop hour.",
+                        small=True)])
+
+    def on_min_discount(self, value):
+        self.cfg["min_discount"] = int(value)
+        self.save()
+
+    def act(self, id, value):
+        if id.startswith("kind_"):
+            kinds = [k for k in self.cfg["kinds"] if k != id[5:]]
+            self.cfg["kinds"] = kinds + [id[5:]] if value else kinds
+            return self.save()
+        return super().act(id, value)
 
     # ---- loop hooks
     def background(self, snap):
         self.sync(snap)
         self.remind()
         super().background(snap)
-
-    def update(self, snap, tab):
-        if tab == "Offers" and int(time.time()) % 5 == 0:
-            self.refresh()  # the countdown
-        super().update(snap, tab)
 
     def status(self, snap):
         tabs = self.shops.get(self.char or "?", {}).get("tabs", {})

@@ -17,6 +17,13 @@ daevaradar/          the program
   sound.py             alert sounds
   vision.py            reading the vision cone from the minimap
   debug.py             the Position debug window
+  tray.py              the tray icon (pystray) and its menu
+  webui.py             the Settings page's local server (127.0.0.1, token) and JSON API
+  settings_window.py   the Settings window: its own process (--settings-window URL) showing that page (pywebview)
+  panels.py            info cards over the game (the Pet tracker)
+  page.py              the blocks feature pages are made of (for assets/web/page.js), and a canvas that records radars
+  layout.py            overlay layout mode: a see-through grid over the game window to place them
+  characters.py        the characters seen logging in (by name) and the faction set for each
   worldmap.py          the Map window (world map images: pets' soul spawns, hidden cubes, gathering nodes)
   ui.py                shared drawing, overlay window, widgets, popups
   feature.py           the Feature base (tabs, On/Off switch, overlay controls)
@@ -25,7 +32,7 @@ daevaradar/          the program
   main.py              startup, demo, console mode, shortcut
   features/            cubes.py, feathers.py, monsters.py (+ pets.py: its Pets tab), gathering.py, wardrobe.py,
                        shop.py, alerts.py, viewcone.py
-assets/              icons
+assets/              icons (classes/: the class icons, see data/SOURCE.md); web/: the Settings page
 sounds/              bundled cube callouts (+ ATTRIBUTION.txt)
 sounds/custom/       your own WAV/MP3 alerts
 windivert/           WinDivert.dll + WinDivert64.sys + LICENSE (LGPLv3 / GPLv2)
@@ -99,6 +106,23 @@ Checked live on 2026-10-14: Drana and Krall monsters at 11-29 m with the right n
 
 To find a cube id for a new zone, run with `--log`, open a cube, and look for `object event: ... message 3536 040300`
 in the log. To work out a new message, `--record FILE` saves every decoded message as JSON lines.
+
+## Tray, Settings and threads
+
+The app runs from a tray icon (pystray, on its own thread). Tk keeps the main thread for the windows over the
+game: the overlays, info cards, pop-ups, the World map and Position debug (its root window is never shown). Settings is a web page (`assets/web/`) served by
+a local server (`webui.py`): bound to 127.0.0.1 on a random port, every API call needs the random token from the
+page's URL and the server's own Host header. Its window is a separate process (`--settings-window URL`, pywebview /
+Edge WebView2), because pywebview and Tk both need a main thread; if it can't start (no pywebview or WebView2), the
+page opens in the default browser. The server's and the tray's threads hand their work to the Tk thread
+(`App.call` / `App.post`, run every 50 ms).
+
+Each feature describes its Settings tabs as data: `page_<tab>(snap)` returns blocks from `page.py` (headings,
+switches, choices, buttons, sliders, fields, lists, text lines, image and canvas), fetched twice a second while the tab
+is open (`/api/page`) and drawn by `assets/web/page.js`, which patches the page in place so typing and list scrolling
+survive. A control's change comes back as `on_<id>(value)` on the feature (`flag_<key>` switches set `cfg[key]` by
+themselves). Radars draw with the same helpers as the overlays onto `page.Canvas`, which records the shapes as a
+display list for an HTML canvas.
 
 ## How the view cone is read
 
