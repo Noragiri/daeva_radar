@@ -16,7 +16,7 @@ daevaradar/          the program
   capture.py           WinDivert / Linux capture, finding the game's connections, the engine
   sound.py             alert sounds
   vision.py            reading the vision cone from the minimap
-  debug.py             the Position debug window
+  debug.py             the Position debug page (Settings)
   tray.py              the tray icon (pystray) and its menu
   webui.py             the Settings page's local server (127.0.0.1, token) and JSON API
   settings_window.py   the Settings window: its own process (--settings-window URL) showing that page (pywebview)
@@ -92,8 +92,9 @@ stays on this PC.
 - Your sheet (checked live 2026-10-19 on two characters against the game's screens), sent at login just before
   the message with your name:
   - `11 56`: the inventory; currencies are items (Kinah 930100031, bound Kinah 930100001, Abyss Points 930100003,
-    Nightmare Points 930100017, Oath Coin 930100019, Silver Medal of Merit 930100013, Centuryroot Token 930100011, Daeva Season Pass Coin 930100024, Enhancement Stone 930100023, Customization Voucher 930100021, the Halloween event's Pumpkin Coin
-    960300012).
+    Nightmare Points 930100017, Oath Coin 930100019, Silver Medal of Merit 930100013, Gold / Platinum Medal of Merit 930100014 / 930100015,
+    Centuryroot Token 930100011, Daeva Season Pass Coin 930100024, Enhance Stone 930100023, Quna 930200001; not tracked:
+    the Customization Voucher 930100021 and event currencies 9603…).
     A record is `[3 bytes] 00 [u16] 00 | item id u32 | count u64 | 01 …`; `1b 56` updates counts.
   - `0b 61`: every content counter as `[type][u32 id][value]` (type 00 none = 0 left, 01 u64, 03 two u64, 04 / 08 one
     byte, 0c two LEB128); values are what's left. Named: 4 Nightmare runs, 80000001 Ascension Trial, 3 Abyss time
@@ -119,7 +120,7 @@ in the log. To work out a new message, `--record FILE` saves every decoded messa
 ## Tray, Settings and threads
 
 The app runs from a tray icon (pystray, on its own thread). Tk keeps the main thread for the windows over the
-game: the overlays, info cards, pop-ups and Position debug (its root window is never shown). The World map is a
+game: the overlays, info cards, pop-ups and the minimap locator (its root window is never shown). The World map is a
 web page like Settings, in a second window process (`?solo=map`). Settings is a web page (`assets/web/`) served by
 a local server (`webui.py`): bound to 127.0.0.1 on a random port, every API call needs the random token from the
 page's URL and the server's own Host header. Its window is a separate process (`--settings-window URL`, pywebview /

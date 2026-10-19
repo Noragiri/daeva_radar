@@ -42,6 +42,8 @@ const P = {
   "View cone": '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   Layout: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M10 10v10"/>',
   About: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  Debug: '<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/>',
+  FAQ: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4M12 17v.5"/>',
   Characters: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>',
   Checklist: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M8 14l1.5 1.5L12 13M14 8h3M14 14h3"/>',
 };
@@ -70,15 +72,15 @@ document.addEventListener("change", (e) => {
 
 // ---- navigation
 function pages() {
-  return [["General"], ["Characters"], ["Checklist"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["About"]];
+  return [["General"], ["Characters"], ["Checklist"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["Debug"], ["FAQ"], ["About"]];
 }
 function renderNav() {
   const nav = document.getElementById("nav");
   const item = (name, f) => `<button data-page="${esc(name)}" class="${name === page ? "active" : ""} ${f && !f.enabled ? "off" : ""}">
-    ${icon(name)}<span>${esc(name === "Layout" ? "Overlay layout" : name)}</span>${f ? `<i class="dot" data-switch="${esc(f.title)}" title="${f.enabled ? "On: click to turn off" : "Off: click to turn on"}"></i>` : ""}</button>`;
-  nav.innerHTML = item("General") + item("Characters") + item("Checklist") + '<div class="group">Features</div>' +
+    ${icon(name)}<span>${esc(name === "Layout" ? "Overlay layout" : name === "Debug" ? "Position debug" : name)}</span>${f ? `<i class="dot" data-switch="${esc(f.title)}" title="${f.enabled ? "On: click to turn off" : "Off: click to turn on"}"></i>` : ""}</button>`;
+  nav.innerHTML = item("Characters") + item("Checklist") + '<div class="group">Features</div>' +
     state.features.map((f) => item(f.title, f)).join("") + '<div class="group">Overlays</div>' + item("Layout") +
-    '<div class="group">Daeva Radar</div>' + item("About");
+    '<div class="group">Daeva Radar</div>' + item("General") + item("Debug") + item("FAQ") + item("About");
 }
 document.getElementById("nav").addEventListener("click", (e) => {
   const dot = e.target.closest("[data-switch]");
@@ -110,16 +112,17 @@ function general() {
   <div class="section">Windows</div>
   <div class="row"><div class="label">Open Settings when Daeva Radar starts<span class="hint">Otherwise it starts in the tray: double-click the tray icon for Settings.</span></div>
     ${toggle(g.settings_at_start, (v) => act("set_settings_at_start", { on: v }))}</div>
-  <div class="row"><div class="label">Keep the World map and Position debug on top</div>${toggle(g.topmost, (v) => act("set_topmost", { on: v }))}</div>
+  <div class="row"><div class="label">Keep the World map on top</div>${toggle(g.topmost, (v) => act("set_topmost", { on: v }))}</div>
   <div class="row"><div class="label">World map<span class="hint">Pet soul spawns, hidden cubes and gathering nodes.</span></div>${btn("Open map", () => act("open_map"))}</div>
   <div class="section">Updates</div>
   <div class="row"><div class="label">This is ${mine}.<span class="hint">${upd}${s.git && u.state === "available" ? " Update it with git pull." : ""}</span></div>
     ${u.state === "available" && !s.git ? btn("Update and restart", () => confirm(`Update to ${u.release} now? The app restarts; your settings are kept.`) && act("install_update"), "primary") : ""}
     ${btn("Check now", () => act("check_updates"), "", ["checking", "installing", "installed"].includes(u.state))}</div>
   <div class="section">Troubleshooting</div>
-  <div class="row"><div class="label">Position debug<span class="hint">Your position, its last packet and how often it updates.</span></div>${btn(g.debug ? "Close" : "Open", () => act("toggle_debug"))}</div>
+  <div class="row"><div class="label">Position debug<span class="hint">Your position, its last packet and how often it updates.</span></div>${btn("Open", () => { page = "Debug"; store.set("page", page); render(true); })}</div>
   <div class="divider"></div>
-  ${btn("Quit Daeva Radar", () => confirm("Quit Daeva Radar? Capture, overlays and alerts stop.") && act("quit_app"), "danger")}`;
+  <div class="btns">${btn("Restart Daeva Radar", () => confirm("Restart Daeva Radar? It closes and starts again (this window too); your settings are kept.") && act("restart_app"))}
+  ${btn("Quit Daeva Radar", () => confirm("Quit Daeva Radar? Capture, overlays and alerts stop.") && act("quit_app"), "danger")}</div>`;
 }
 let regs = 0;
 function reg(fn) { const id = "r" + (regs++); handlers[id] = fn; return id; }
@@ -203,54 +206,147 @@ function untilReset(weekly) {
   const s = Math.max(0, (next - now) / 1000), d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
   return { text: d ? `${d}d ${h}h` : `${h}h${String(m).padStart(2, "0")}m`, when: next.toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit" }) };
 }
+// the counters aren't items, so they get drawn icons (the currencies use the game's own, assets/web/icons)
+const CL_ICONS = {
+  Nightmare: ['#b48cff', '<path d="M15 4a8 8 0 1 0 5 13.5A7 7 0 0 1 15 4z"/><path d="M17 8l.6 1.4L19 10l-1.4.6L17 12l-.6-1.4L15 10l1.4-.6z"/>'],
+  "Shugo keys": ['#ffd24a', '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M17 12v3M20 12v2"/>'],
+  "Invasion keys": ['#ff8a5c', '<circle cx="8" cy="12" r="4"/><path d="M12 12h9M17 12v3M20 12v2"/><path d="M6 6l-2-2M10 6l2-2"/>'],
+  "Unknown Fissure": ['#5ad1ff', '<path d="M12 3l3 6-2 2 4 4-3 6M9 6l-2 5 3 2-2 6"/>'],
+  "Ascension Trial": ['#7cf08a', '<path d="M12 3l3 5h-2v5h-2V8H9zM5 21h14M7 17h10"/>'],
+  "Abyss time": ['#4fa3ff', '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>'],
+  "Odyle energy": ['#9fd8ff', '<path d="M12 3l6 9-6 9-6-9z"/><path d="M12 8l3 4-3 4-3-4z"/>'],
+};
+const clIcon = (name) => {
+  const [color, path] = CL_ICONS[name] || ["#8a95a5", '<circle cx="12" cy="12" r="7"/>'];
+  return `<span class="cl-icon" style="--c:${color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+};
+const ENERGY_CAP = 840, ENERGY_WARN = 700;  // Odyle energy's limit, and where it's close
 function checklist() {
+  // one grid: a column per character, a row per item; what's shared on the server shown once, from the newest reading
   const chars = state.characters.filter((c) => c.checklist && c.checklist.read);
-  if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs. Its keys, entries and currencies are read from the game at login.</p>`;
-  let pick = store.get("checklist", null);
-  if (!chars.some((c) => c.name === pick)) pick = (chars.find((c) => c.playing) || chars[0]).name;
-  const c = chars.find((x) => x.name === pick), k = c.checklist;
+  if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs. Its keys, entries and currencies are read from the game at login and saved.</p>`;
+  chars.sort((x, y) => (y.playing - x.playing) || x.name.localeCompare(y.name));
   const fmt = (n) => Number(n).toLocaleString("en-US");
-  const hms = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 3600)}h${String(Math.floor(s / 60) % 60).padStart(2, "0")}m${String(s % 60).padStart(2, "0")}s`; };
-  const stale = (weekly) => !c.playing && k.read_at && k.read_at * 1000 < lastReset(weekly).getTime();
-  const tag = (scope) => `<span class="cl-tag ${scope}">${scope === "server" ? "SERVER" : "CHAR"}</span>`;
-  const amount = (r) => r.unit === "ms" ? `${hms(r.left)} / ${r.max / 3600000}h`
-    : `${r.left}${r.bonus ? ` (+${fmt(r.bonus)})` : ""}${r.max ? ` / ${r.max}` : ""}`;
-  const bar = (r) => r.max ? `<i class="cl-bar" style="--p:${Math.min(100, 100 * r.left / r.max)}%"></i>` : "";
-  const tabs = chars.map((x) => `<button class="cl-char ${x.name === pick ? "on" : ""}" data-char="${esc(x.name)}">
-      ${x.checklist.icon ? `<img src="/classes/${x.checklist.icon}.png" alt="">` : '<span class="cl-noicon"></span>'}
-      <span><b>${esc(x.name)}</b>${x.playing ? ' <em>in game</em>' : ""}<small>${esc([x.checklist.cls, x.checklist.level && "Level " + x.checklist.level].filter(Boolean).join(" · ") || "class not read yet")}</small>
-      ${x.checklist.energy ? `<span class="cl-energy" title="Odyle energy">◆ ${fmt(x.checklist.energy[0])}${x.checklist.energy[1] ? ` (+${fmt(x.checklist.energy[1])})` : ""}</span>` : ""}</span></button>`).join("");
-  const stock = k.stock.map((r) => `<div class="cl-stock"><div class="cl-row-head"><b>${esc(r.name)}</b>${tag(r.scope)}<span class="cl-amount">${amount(r)}</span></div>${bar(r)}</div>`).join("");
-  const rows = (list, weekly) => list.map((r0) => {
-    // read before this list's last reset: the game has refilled it since (weekly entries and time come back in full)
-    const refilled = stale(weekly) && r0.max;
-    const r = refilled ? { ...r0, left: r0.max } : r0;
-    const done = r.left <= 0 && !r.bonus;  // bonus entries (the "+26") still count as left
-    return `<div class="cl-row ${done ? "done" : ""}"><span class="cl-check">${done ? "✓" : ""}</span>
-      <div class="cl-what"><b>${esc(r.name)}</b>${tag(r.scope)}<small>${esc(r.note || "")}${refilled ? " · refilled at the reset" : ""}</small></div>
-      <div class="cl-right"><span class="cl-amount">${amount(r)}</span>${bar(r)}${done ? '<span class="cl-done">Done</span>' : ""}</div></div>`;
-  }).join("") || '<p class="muted">Nothing decoded for this list yet.</p>';
-  const panel = (title, list, weekly, sym) => {
-    const reset = untilReset(weekly), doneN = stale(weekly) ? 0 : list.filter((r) => r.left <= 0 && !r.bonus).length;
-    return `<section class="cl-panel"><header><span class="cl-sym">${sym}</span><div><h3>${title} · ${esc(c.name)}</h3>
-      <small>${doneN} of ${list.length} done · resets ${reset.when}${stale(weekly) && list.length ? " · shown refilled: last read before the reset" : ""}</small></div>
-      <span class="cl-timer">⏱ ${reset.text}</span></header>${rows(list, weekly)}</section>`;
+  const hms = (ms) => { const t = Math.round(ms / 1000); return `${Math.floor(t / 3600)}h${String(Math.floor(t / 60) % 60).padStart(2, "0")}m`; };
+  const staleFor = (c, weekly) => !c.playing && c.checklist.read_at && c.checklist.read_at * 1000 < lastReset(weekly).getTime();
+  const daily = untilReset(false), weekly = untilReset(true);
+  // a counter's cell: what's left (refilled to full when read before the list's last reset)
+  const cell = (c, r, isWeekly) => {
+    if (!r) return '<td class="cl-na">—</td>';
+    const refilled = isWeekly && r.max && staleFor(c, true);
+    const left = refilled ? r.max : r.left;
+    const done = left <= 0 && !r.bonus;
+    const text = r.unit === "ms" ? `${hms(left)} / ${r.max / 3600000}h`
+      : `${left}${r.bonus ? ` <small>(+${fmt(r.bonus)})</small>` : ""}${r.max ? ` / ${r.max}` : ""}`;
+    const part = r.max ? Math.min(100, 100 * left / r.max) : null;
+    return `<td class="${done ? "cl-ok" : ""}${refilled ? " cl-refilled" : ""}" title="${refilled ? "Refilled at the reset (last read before it)" : ""}">
+      ${done ? '<span class="cl-tick">✓</span>' : ""}${text}${part !== null ? `<i class="cl-bar" style="--p:${part}%"></i>` : ""}</td>`;
   };
-  return `<h2>${icon("Checklist")}Characters checklist</h2>
-  <div class="cl-chars">${tabs}</div>
-  <section class="cl-panel"><header><div><h3>Stock and keys</h3><small>${c.playing ? "Live while you play" : "Saved from the last time " + esc(c.name) + " was played: " + esc(k.read)} · keys and Nightmare refill over time, so they may be higher now</small></div></header>
-    <div class="cl-stocks">${stock || '<p class="muted">Not read yet.</p>'}</div></section>
-  <div class="cl-two">${panel("Daily", k.daily, false, "☀")}${panel("Weekly", k.weekly, true, "▦")}</div>
-  <section class="cl-panel"><header><div><h3>Currencies</h3></div></header>
-    <div class="ck-money">${k.currencies.map(([n, v]) => `<span><small>${esc(n)}</small><b>${fmt(v)}</b></span>`).join("")}</div></section>
-  <p class="muted cl-foot">Counts are what's left, read from the game when the character logs in and live while you play it. More of the game's lists (Abyss Corridors, Supply Requests, Daeva Pass…) will be added as they're decoded.</p>`;
+  const find = (c, group, name) => (c.checklist[group] || []).find((r) => r.name === name);
+  // rows: [label, icon html, group, name, weekly?] for the per-character counters
+  const charRows = [];
+  const serverRows = [];
+  for (const group of ["stock", "daily", "weekly"])
+    for (const c of chars)
+      for (const r of c.checklist[group] || []) {
+        const list = r.scope === "server" ? serverRows : charRows;
+        if (!list.some((x) => x.name === r.name)) list.push({ name: r.name, group, weekly: group === "weekly", daily: group === "daily" });
+      }
+  const tag = (row) => row.weekly ? '<span class="cl-when">weekly</span>' : row.daily ? '<span class="cl-when">daily</span>' : "";
+  const head = `<tr><th></th>${chars.map((c) => `<th class="cl-col ${c.playing ? "on" : ""}">
+      ${c.checklist.icon ? `<img src="/classes/${c.checklist.icon}.png" alt="">` : ""}
+      <b>${esc(c.name)}</b>${c.playing ? '<em>in game</em>' : ""}
+      <small>${esc([c.checklist.cls, c.checklist.level && "Lv " + c.checklist.level].filter(Boolean).join(" · "))}</small></th>`).join("")}</tr>`;
+  const energy = `<tr><th>${clIcon("Odyle energy")}Odyle energy</th>${chars.map((c) => {
+    const e = c.checklist.energy;
+    if (!e) return "<td>—</td>";
+    // it stops filling at ENERGY_CAP: orange when close (over 700), red when full (spend it before it's wasted)
+    const level = e[0] >= ENERGY_CAP ? "cl-full" : e[0] > ENERGY_WARN ? "cl-near" : "";
+    return `<td><span class="${level}">${fmt(e[0])}</span>${e[1] ? ` <small>(+${fmt(e[1])})</small>` : ""} / ${ENERGY_CAP}</td>`;
+  }).join("")}</tr>`;
+  const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.weekly)).join("")}</tr>`).join("");
+  const coins = [];
+  for (const c of chars) for (const [n, , id] of c.checklist.currencies) if (!coins.some((x) => x[0] === n)) coins.push([n, id]);
+  const coinRows = coins.map(([n, id]) => `<tr><th><img class="cl-coin-icon" src="/icons/${id}.png" alt="" width="24" height="24">${esc(n)}</th>${chars.map((c) => {
+    const v = c.checklist.currencies.find((x) => x[0] === n);
+    return `<td>${v ? fmt(v[1]) : "—"}</td>`;
+  }).join("")}</tr>`).join("");
+  const readRow = `<tr class="cl-read"><th>Last read</th>${chars.map((c) => `<td>${c.playing ? "live" : esc(c.checklist.read)}</td>`).join("")}</tr>`;
+  // server-wide: once, from the character read most recently
+  const newest = [...chars].sort((x, y) => (y.playing - x.playing) || ((y.checklist.read_at || 0) - (x.checklist.read_at || 0)))[0];
+  const serverTable = serverRows.length ? `<table class="cl-grid cl-server"><tbody>${serverRows.map((row) => {
+    const owner = chars.find((c) => find(c, row.group, row.name) && c === newest) || chars.find((c) => find(c, row.group, row.name));
+    return `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${cell(owner, find(owner, row.group, row.name), row.weekly)}
+      <td class="cl-src">from ${esc(owner.name)}, ${owner.playing ? "live" : esc(owner.checklist.read)}</td></tr>`;
+  }).join("")}</tbody></table>` : "";
+  return `<h2>${icon("Checklist")}Checklist</h2>
+  <p class="lead">Saved from each character's last login (live for the one you're playing): what's left. Weekly items read
+  before the last reset show refilled. Keys and Nightmare refill over time, so they may be higher than saved.</p>
+  <div class="cl-resets"><span>☀ Daily reset in <b>${daily.text}</b> <small>(${daily.when})</small></span>
+    <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span></div>
+  <div class="section">Server <small class="muted">· shared by your characters on the server</small></div>
+  ${serverTable || '<p class="muted">Not read yet.</p>'}
+  <div class="section">Characters</div>
+  <div class="cl-scroll"><table class="cl-grid"><thead>${head}</thead><tbody>
+    ${energy}${counterRows}
+    <tr class="cl-sep"><th colspan="${chars.length + 1}">Currencies</th></tr>
+    ${coinRows}${readRow}</tbody></table></div>
+  <p class="muted cl-foot">More of the game's lists (Abyss Corridors, Supply Requests, Daeva Pass…) are added as they're decoded.</p>`;
 }
-document.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-char]");
-  if (!b) return;
-  store.set("checklist", b.dataset.char);
-  render(true);
-});
+
+// ---- FAQ: the problems people actually run into, with what to do
+const FAQ = [
+  ["Getting started", [
+    ["It asks for administrator rights. Why?",
+     "Reading the game's network traffic needs the WinDivert driver, and Windows only allows that to programs running as administrator. Daeva Radar only reads: it never changes, sends or uploads anything."],
+    ["Windows says \"Windows protected your PC\" or my antivirus warns about it.",
+     "The exe isn't code-signed and it captures network traffic, which some tools flag. Click <b>More info → Run anyway</b>. It's built from the public source on GitHub by GitHub's own release workflow."],
+    ["Is it safe for my account?",
+     "<span class=\"warn\">Use at your own risk.</span> NCSOFT's rules prohibit third-party tools that read the game's traffic, even read-only ones like this one, so using it could get your account sanctioned."],
+  ]],
+  ["The Settings window", [
+    ["Settings opens in my web browser instead of its own window.",
+     "Its own window needs <b>Microsoft Edge WebView2 Runtime</b> and <b>.NET Framework 4.7.2</b> or newer. A pop-up says which one is missing; click it to get it from Microsoft, then restart Daeva Radar. If you unzipped the download with Windows Explorer, the files may also be blocked: delete the folder, right-click the zip → <b>Properties → Unblock</b>, and extract it again. The exact reason is saved in <code>%APPDATA%\\DaevaRadar\\window_error.log</code>."],
+    ["I closed Settings. How do I get it back?",
+     "Daeva Radar keeps running in the tray (bottom right of the taskbar, maybe under the ^ arrow). Double-click its icon, or right-click → <b>Settings</b>."],
+    ["How do I quit or restart it?",
+     "Tray icon → <b>Quit Daeva Radar</b>, or the <b>Restart</b> / <b>Quit</b> buttons at the bottom of General."],
+  ]],
+  ["Seeing things", [
+    ["It says \"Character not identified yet\" and nothing shows up.",
+     "Start Daeva Radar <b>before</b> you enter the world, or teleport, change zone or relog once while it runs: it learns your character from the login."],
+    ["My position doesn't move when I walk.",
+     "The game only sends your position when you teleport, dash or have an <b>aura</b> active (about once a second). Plain walking isn't sent, so keep an aura on for steady updates."],
+    ["The overlays don't show over the game.",
+     "Play in <b>borderless or windowed</b> mode (fullscreen covers them). Overlays only show while AION 2 is the active window, so click into the game. Check the feature is on (the dot in the sidebar) and its overlay is shown (the feature's Overlays tab, or the tray)."],
+    ["An overlay is in the wrong place or I lost it.",
+     "Use <b>Overlay layout</b> (sidebar or tray) to drag everything into place over the game, or <b>Bring it here</b> in the feature's Overlays tab. Unlocked overlays can be dragged; <b>Ctrl+Shift+O</b> locks / unlocks them all."],
+    ["The Pet tracker card disappeared.",
+     "It fades out 60 seconds after your last soul drop and comes back with the next one. Turn that off in Monsters → Settings → Pets."],
+    ["The map is wrong (cube spawns, feathers or gathering nodes don't line up).",
+     "Pick the map yourself in General → <b>Map you're on</b> instead of Auto."],
+  ]],
+  ["Game data", [
+    ["Pets, wardrobe or the checklist are empty.",
+     "They're read when a character enters the world: relog once with Daeva Radar running. Each character is saved separately, so log in with each one once."],
+    ["The checklist shows old numbers for a character.",
+     "Each column is saved from that character's last login (live for the one you're playing). Weekly items read before the last reset show refilled; keys and Nightmare refill over time, so they may be higher than saved. Logging in with it updates the column."],
+    ["The shop list is out of date.",
+     "The game only sends the offers when you open the shop, and they change every hour at x:00: open the shop in game again after x:00."],
+  ]],
+  ["Updates and settings", [
+    ["How do I update?",
+     "Daeva Radar checks at start and every hour. When there's a new version, a pop-up says so: click it, then <b>Update and restart</b> in General. Your settings are kept."],
+    ["Where are my settings?",
+     "In <code>%APPDATA%\\DaevaRadar\\settings.json</code> (overlay positions, watch lists, characters, the checklist). Updates and reinstalls keep it."],
+  ]],
+];
+function faq() {
+  return `<h2>${icon("FAQ")}FAQ</h2>
+  <p class="lead">Common problems and what to do. Still stuck? Ask on <a href="https://github.com/Noragiri/daeva_radar/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+  ${FAQ.map(([group, items]) => `<div class="section">${esc(group)}</div>
+    ${items.map(([q, a]) => `<details class="faq"><summary>${esc(q)}</summary><p>${a}</p></details>`).join("")}`).join("")}`;
+}
 
 function about() {
   return `<h2>${icon("About")}About</h2>
@@ -288,7 +384,13 @@ function render(fresh) {
   const f = state.features.find((x) => x.title === page);
   const el = document.getElementById("content");
   const scroll = el.scrollTop;
-  if (f) {
+  if (page === "Debug") {  // a page drawn by the app like a feature tab (daevaradar/debug.py)
+    if (fresh || el.dataset.view !== "Debug") {
+      el.dataset.view = "Debug";
+      el.innerHTML = '<div id="mhost" class="fpage"></div>';
+      FeaturePage.show(document.getElementById("mhost"), "Debug", "Position");
+    }
+  } else if (f) {
     const tab = featureTab(f), view = page + "/" + tab;
     if (fresh || el.dataset.view !== view) {
       el.dataset.view = view;
@@ -300,7 +402,9 @@ function render(fresh) {
   } else {
     el.dataset.view = "";
     FeaturePage.stop();
-    el.innerHTML = page === "General" ? general() : page === "Characters" ? characters() : page === "Checklist" ? checklist() : page === "Layout" ? layout() : about();
+    const open = new Set([...el.querySelectorAll("details[open] > summary")].map((x) => x.textContent));  // kept across redraws
+    el.innerHTML = page === "General" ? general() : page === "Characters" ? characters() : page === "Checklist" ? checklist() : page === "Layout" ? layout() : page === "FAQ" ? faq() : about();
+    el.querySelectorAll("details > summary").forEach((x) => { if (open.has(x.textContent)) x.parentElement.open = true; });
     el.scrollTop = scroll;
   }
   renderFooter();
@@ -315,10 +419,8 @@ let lastJson = "";
 async function refresh() {
   try {
     const next = await getState();
-    if (focusSeen !== null && next.focus !== focusSeen) {
-      if (window.pywebview) window.pywebview.api.focus();
-      if (next.goto && next.goto !== page) { page = next.goto; store.set("page", page); lastJson = ""; state = next; render(true); }
-    }
+    if (focusSeen !== null && next.focus !== focusSeen && window.pywebview) window.pywebview.api.focus();
+    if (next.goto && next.goto !== page) { page = next.goto; store.set("page", page); lastJson = ""; state = next; render(true); }
     focusSeen = next.focus;
     const json = JSON.stringify({ ...next, status: null });
     state = next;

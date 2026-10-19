@@ -349,11 +349,12 @@ def wardrobe(data):
 # '11 56' at login lists the inventory, currencies too; '1b 56' updates counts. A record is
 # [3 bytes] 00 [u16] 00 | item id u32 | count u64 | 01 ...  The currencies' item ids:
 CURRENCIES = {930100031: "Kinah", 930100001: "Kinah (bound)", 930100003: "Abyss Points", 930100017: "Nightmare Points",
-              930100019: "Oath Coin", 930100013: "Silver Medal of Merit", 930100011: "Centuryroot Token",
-              930100024: "Daeva Season Pass Coin", 930100023: "Enhancement Stone",
-              930100021: "Customization Voucher",
-              960300012: "Pumpkin Coin"}  # 9603…: event currencies (Halloween 2026)
-CURRENCY_RANGES = ((930100000, 930100100), (960300000, 960300100))  # unnamed ones are kept too
+              930100019: "Oath Coin", 930100013: "Silver Medal of Merit", 930100014: "Gold Medal of Merit",
+              930100015: "Platinum Medal of Merit", 930100011: "Centuryroot Token", 930100024: "Daeva Season Pass Coin",
+              930100023: "Enhance Stone", 930200001: "Quna"}
+# only these are tracked (not the Customization Voucher 930100021, nor event currencies 9603…); ids from the game,
+# checked against the game and Inven's AION 2 DB (Quna 930200001, the gold / platinum medals)
+CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100))
 
 
 def currencies(data):
@@ -367,7 +368,7 @@ def currencies(data):
             start = p - 2
             if start >= 7 and start + 12 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
                 item = int.from_bytes(b[start:start + 4], "little")
-                if lo <= item < hi:
+                if lo <= item < hi and item in CURRENCIES:
                     count = int.from_bytes(b[start + 4:start + 12], "little")
                     if count < 10 ** 12:
                         out[item] = count
@@ -379,13 +380,13 @@ def currencies(data):
 # value's size by type: 00 none (= 0 left), 01 u64, 03 two u64, 04 / 08 one byte, 0c two LEB128 numbers. Values
 # are what's LEFT (entries, attempts, time in ms). Named ones: 4 = Nightmare runs (went 2 -> 1 on a run,
 # 2026-10-19), 80000001 = Ascension Trial, 3 = Abyss time (ms; 7 h = 25,200,000).
-# Checked 2026-10-19 on three characters against the game and aion2t: 1 Shugo keys (12), 8 Invasion keys (5 / 7),
+# Checked 2026-10-19 on three characters against the game and aion2t: 1 Shugo keys (12 / 21), 8 Invasion keys (5 / 7),
 # 4 Nightmare ([8, 2] = "8 (+2) / 14"), 6 Unknown Fissure with its bonus in 101 ("0 (+26) / 14"), 80000001
 # Ascension Trial, 3 Abyss time (ms: 25,138,000 = "6h58m58s / 7h"), 60000001 Odyle energy ([325, 970] = "325 (+970)").
 # A two-number value is [left, bonus]. Server = shared by the account's characters on the server.
 COUNTERS = {
     4: dict(name="Nightmare", max=14, group="stock", scope="char"),
-    1: dict(name="Shugo keys", max=None, group="stock", scope="server"),
+    1: dict(name="Shugo keys", max=21, group="stock", scope="server"),
     8: dict(name="Invasion keys", max=7, group="stock", scope="server"),
     6: dict(name="Unknown Fissure", max=14, group="weekly", scope="server", bonus=101, note="14 entries a week"),
     80000001: dict(name="Ascension Trial", max=3, group="weekly", scope="char", note="3 entries a week"),
@@ -413,17 +414,23 @@ def _counter(b, p):
     raise ValueError("counter type %x" % kind)
 
 
-def counters(data):
-    """'0b 61' -> {id: value} (every counter), or None if it doesn't parse cleanly."""
+def counters(data, problems=None):
+    """'0b 61' -> {id: value} of the counters it could read, or None if it isn't a counter list at all. An entry type
+    it doesn't know stops the reading there (its size is unknown) but keeps what came before; the problem goes to
+    problems (a list), for the log."""
     b = bytes(data)
-    try:
-        n, p, out = b[2], 3, {}
-        while p < len(b):
-            ident, value, p = _counter(b, p)
-            out[ident] = value
-        return out if len(out) == n else None
-    except (ValueError, IndexError):
+    if len(b) < 8:
         return None
+    n, p, out = b[2], 3, {}
+    while p < len(b):
+        try:
+            ident, value, p = _counter(b, p)
+        except (ValueError, IndexError) as e:
+            if problems is not None:
+                problems.append("counter list: %s at byte %d of %d (read %d of %d)" % (e, p, len(b), len(out), n))
+            break
+        out[ident] = value
+    return out if out else None
 
 
 def counter_update(data):
@@ -475,8 +482,8 @@ def login_name(data):
     except (ValueError, IndexError, UnicodeDecodeError):
         return None
 # the login message, after the name: 28 05 | class u32 | 01 | level u32 (checked 2026-10-19: Noragiri 22 / 45,
-# NoragiriTwo 30 / 23, WaitingSkip 30 / 45 against the game). Class ids seen so far:
-CLASSES = {22: "Spiritmaster", 30: "Cleric"}
+# NoragiriTwo 30 / 23, WaitingSkip 30 / 45, Nowagiwi 34 / 45 against the game). Class ids seen so far:
+CLASSES = {22: "Spiritmaster", 30: "Cleric", 34: "Chanter"}
 CLASS_ICONS = {"Spiritmaster": "elementalist", "Cleric": "cleric", "Chanter": "chanter", "Gladiator": "gladiator",
                "Templar": "templar", "Assassin": "assassin", "Ranger": "ranger", "Sorcerer": "sorcerer"}
 
@@ -589,13 +596,26 @@ class Tracker:
         with self.lock:
             self._feed(batch, when)
 
+    def new_sheet(self, when):
+        """A login is under way: its counters and inventory come before the message with the name, which names it."""
+        self.sheet = dict(owner=None, counters={}, currencies={}, time=when, start=when)
+
     def note_sheet(self, kind, data, when):
-        """Counters and currencies -> self.sheet (see __init__)."""
+        """Counters and currencies -> self.sheet (see __init__). Either of the login messages ('0b 61' the counters,
+        '11 56' the whole inventory) starts a new sheet, so a character is caught even when one of them can't be read;
+        both come within a second, so the second one joins the sheet the first started."""
+        login = kind in (b"\x0ba", b"\x11V")
+        if login and (self.sheet is None or self.sheet["owner"] is not None and when - self.sheet.get("start", 0) > 10):
+            self.new_sheet(when)
         if kind == b"\x0ba":
-            found = counters(data)
+            problems = []
+            found = counters(data, problems)
+            for problem in problems:
+                if self.log:
+                    self.log("Sheet: " + problem)
             if found is None:
                 return False
-            self.sheet = dict(owner=None, counters=found, currencies={}, time=when)  # named by the login after it
+            self.sheet["counters"] = found
         elif kind == b"\x0ca":
             change = counter_update(data)
             if change is None:
@@ -605,7 +625,7 @@ class Tracker:
             self.sheet["counters"][change[0]] = change[1]
         else:
             found = currencies(data)
-            if not found:
+            if not found and not login:
                 return False
             if self.sheet is None:
                 self.sheet = dict(owner=self.own_name, counters={}, currencies={}, time=when)
@@ -625,6 +645,10 @@ class Tracker:
 
     def _feed(self, batch, when):
         self.messages += len(batch)
+        sheet = self.sheet  # started but no login named it (the inventory sent mid-game): it's who's playing
+        if sheet and sheet["owner"] is None and self.own_name and when - sheet.get("start", when) > 20:
+            sheet["owner"] = self.own_name
+            self.sheet_count += 1
         for data in batch:  # who am I?
             kind = data[:2]
             if kind == b"36":  # login: you (and your character's name, for display)

@@ -119,8 +119,8 @@ def cleanup():
                 pass
 
 
-def restart():
+def restart(extra=()):
     """Start a fresh copy with the same arguments (already elevated, so no new prompt); the caller closes."""
     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    subprocess.Popen(launch_command() + sys.argv[1:], cwd=str(ROOT), creationflags=flags,
-                     close_fds=True)
+    args = [a for a in sys.argv[1:] if a not in extra] + list(extra)
+    subprocess.Popen(launch_command() + args, cwd=str(ROOT), creationflags=flags, close_fds=True)

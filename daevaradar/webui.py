@@ -52,7 +52,8 @@ class WebUI:
                 self.send_response(code)
                 self.send_header("Content-Type", kind)
                 self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "no-store")
+                # images (icons, map tiles) don't change while the app runs: cached, so redraws don't refetch them
+                self.send_header("Cache-Control", "max-age=86400" if kind.startswith("image/") else "no-store")
                 self.send_header("X-Content-Type-Options", "nosniff")
                 self.end_headers()
                 self.wfile.write(body)
@@ -112,7 +113,7 @@ class WebUI:
     # ---- the page's data (runs on the Tk thread)
     def page(self, title, tab):
         """A feature tab's blocks (page.py), from the latest snapshot (with the vision cone)."""
-        feature = self.app.features[title]
+        feature = self.app.debug if title == "Debug" else self.app.features[title]
         if tab not in feature.TABS:
             raise ValueError("no tab %s" % tab)
         self.app.web_view = (title, tab, time.time())
@@ -129,6 +130,7 @@ class WebUI:
             features.append(dict(title=f.title, icon=f.icon, enabled=f.enabled, tabs=list(f.TABS),
                                  status=f.status(snap) if f.enabled else None,
                                  overlays=[o["id"] for o in overlays(app) if o["feature"] == f.title]))
+        goto, app.web_goto = getattr(app, "web_goto", None), None  # a page to show, once (update pop-up, --debug)
         return dict(
             version=app.version, git=update.is_git(),
             update=dict(state=app.update_state, release=release.get("version"), checked=app.checked_at),
@@ -136,10 +138,10 @@ class WebUI:
                         messages=snap["messages"], packets=app.engine.packets, text=app.status_text()),
             map=dict(choice=app.map_cfg, choices=app.map_choices, detected=app.detected),
             general=dict(topmost=app.topmost.get(), settings_at_start=settings.get("settings_at_start", True),
-                         debug=bool(app.debug), tray=bool(app.tray)),
+                         tray=bool(app.tray)),
             features=features, overlays=overlays(app), screens=screens(app),
             layout=bool(app.layout), characters=app.characters.listing(),
-            focus=app.focus_seq, map_focus=app.map_focus, goto=getattr(app, "web_goto", None))
+            focus=app.focus_seq, map_focus=app.map_focus, goto=goto)
 
 
 # ---- overlays: the minimap overlays (one per feature) and the info panels, for the layout grid
@@ -245,7 +247,7 @@ def overlay_recenter(app, id):
 
 def feature_act(app, feature, id, value=None):
     """A control on a feature's page (Feature.act -> on_<id>)."""
-    return app.features[feature].act(id, value)
+    return (app.debug if feature == "Debug" else app.features[feature]).act(id, value)
 
 
 def map_cfg(app, values):
@@ -304,8 +306,8 @@ def open_map(app, mode=None):
     app.open_map(mode)
 
 
-def toggle_debug(app):
-    app.toggle_debug()
+def restart_app(app):
+    app.restart_now()
 
 
 def quit_app(app):
@@ -314,5 +316,5 @@ def quit_app(app):
 
 ACTIONS = {f.__name__: f for f in (feature_act, set_feature, overlay_show, overlay_lock, overlay_move, overlay_scale,
                                    overlay_cone, overlay_recenter, edit_layout, lock_all, set_map, set_topmost,
-                                   set_settings_at_start, check_updates, install_update, open_map, toggle_debug,
-                                   quit_app, set_faction, forget_character, map_cfg, map_target, map_watch)}
+                                   set_settings_at_start, check_updates, install_update, open_map,
+                                   quit_app, restart_app, set_faction, forget_character, map_cfg, map_target, map_watch)}

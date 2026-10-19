@@ -1,6 +1,6 @@
 """The app: the tray icon, the Settings window (webui.py + settings_window.py), the overlays and info panels, and the
 loop that drives everything. Tk runs the windows that sit over the game (overlays, cards, pop-ups, the World map,
-Position debug); its root window is never shown."""
+the minimap locator); its root window is never shown."""
 import os
 import queue
 import subprocess
@@ -15,7 +15,7 @@ from .common import FROZEN, NO_WINDOW, WINDOWS, launch_command, load_settings, s
 from .characters import Characters
 from .worldmap import WorldMap
 from .vision import ViewCone
-from .debug import PositionWindow
+from .debug import PositionDebug
 from .game import MapData, map_name
 from .ui import OVERLAY_CONE, Toast, draw_cone, foreground_exe, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
@@ -44,7 +44,7 @@ class App:
         self.mapdata = MapData()  # shared by the features that use the map data
         self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
         self.map_proc = None  # the World map's window (its own process, like Settings)
-        self.debug = None  # the Position debug window
+        self.debug = PositionDebug(self)  # the Position debug page (Settings)
         self.calls = queue.Queue()  # work handed to the Tk thread (the web server's and the tray's threads)
         self.focus_seq = self.map_focus = 0  # bumped to ask the open Settings / map window to come to the front
         self.settings_proc, self.settings_started, self.tray = None, 0, None
@@ -80,11 +80,12 @@ class App:
         self.web = WebUI(self)
         self.engine.say("Settings page on " + self.web.url.split("?")[0])
         self.tray = start_tray(self)
-        if self.tray is None or settings.get("settings_at_start", True):
+        if self.tray is None or settings.get("settings_at_start", True) or getattr(args, "open_settings", False):
             root.after(400, self.open_settings)  # without a tray, Settings is the only way in (and out: Quit)
         self.cone_serial = -1
-        if args.debug or settings.get("debug_shown"):
-            self.toggle_debug()
+        if args.debug:  # Settings, at Position debug
+            self.web_goto = "Debug"
+            root.after(400, self.open_settings)
         if settings.get("world_map", settings.get("pet_map", {})).get("open"):  # it was open when the app closed
             root.after(300, self.open_map)
         self.tick()
@@ -168,6 +169,16 @@ class App:
         if state == "installed":
             self.root.after(800, self.restart)
 
+    def restart_now(self):
+        """Settings → General → Restart: a fresh copy (with Settings open again), then this one closes."""
+        self.engine.say("Restarting")
+        try:
+            update.restart(extra=("--open-settings",))
+        except Exception as e:
+            Toast(self.root, "Couldn't restart\n%s" % e, color="#ffb347", label="Daeva Radar")
+            return
+        self.root.after(300, self.close)
+
     def restart(self):
         try:
             update.restart()
@@ -203,18 +214,8 @@ class App:
             self.engine.say("Window failed (%s): opening it in the browser" % e)
             webbrowser.open(url)
             return None
-    def toggle_debug(self):
-        """Show or hide the position debug window (remembered for the next start)."""
-        if self.debug:
-            self.debug.close()
-            self.debug = None
-        else:
-            self.debug = PositionWindow(self)
-            self.debug.update(self.snapshot())
-        save_settings(dict(load_settings(), debug_shown=bool(self.debug)))
-
     def set_topmost(self):
-        """Keep the World map and Position debug above the game."""
+        """Keep the World map above the game."""
         save_settings(dict(load_settings(), topmost=self.topmost.get()))
 
     def snapshot(self):
@@ -412,8 +413,7 @@ class App:
                 self.layout_seen = shown
                 self.layout.draw()
         self.check_settings_window()
-        if self.debug:
-            self.debug.update(snap)
+        self.debug.update(snap)
         self.root.after(100, self.tick)
 
     def status_text(self):
@@ -433,8 +433,6 @@ class App:
             feature.close()
         if self.map_proc and self.map_proc.poll() is None:  # open at the next start, as now
             self.map_proc.terminate()
-        if self.debug:
-            self.debug.close()
         if self.tray:
             self.tray.stop()
         if self.settings_proc and self.settings_proc.poll() is None:

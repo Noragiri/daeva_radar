@@ -281,3 +281,62 @@ select:hover, .btn:hover { border-color: #33404f; background: var(--hover); }
 .cl-row.done .cl-amount { color: #3ec46d; }
 .cl-done { margin-top: 4px; font-size: 11px; color: #3ec46d; border: 1px solid #2a5a3c; border-radius: 4px; padding: 0 8px; }
 .cl-foot { font-size: 11px; }
+
+/* checklist icons */
+.cl-icon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: grid; place-items: center; color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, var(--raised)); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+}
+.cl-icon svg { width: 18px; height: 18px; }
+.cl-row-head .cl-icon { width: 26px; height: 26px; margin-right: 2px; }
+.cl-money { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px 14px; }
+.cl-coin { display: flex; align-items: center; gap: 8px; }
+.cl-coin img { width: 34px; height: 34px; border-radius: 6px; background: var(--raised); }
+.cl-coin span { display: flex; flex-direction: column; }
+.cl-coin small { color: var(--muted); font-size: 11px; }
+.cl-coin b { font-weight: 600; }
+
+/* ---- the checklist as a grid */
+.cl-resets { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 4px 0 6px; font-size: 13px; color: var(--muted); }
+.cl-resets b { color: var(--accent); }
+.cl-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.cl-grid { border-collapse: collapse; width: 100%; font-size: 13px; background: var(--panel); }
+.cl-server { width: auto; min-width: 520px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cl-grid th, .cl-grid td { padding: 7px 12px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.cl-grid tbody th { text-align: left; font-weight: 600; position: sticky; left: 0; background: var(--panel); z-index: 1; }
+.cl-grid tbody th > * { vertical-align: middle; }
+.cl-grid .cl-icon { display: inline-grid; width: 24px; height: 24px; margin-right: 8px; border-radius: 6px; }
+.cl-grid .cl-icon svg { width: 15px; height: 15px; }
+.cl-coin-icon { width: 24px; height: 24px; margin-right: 8px; border-radius: 5px; }
+.cl-when { margin-left: 6px; font-size: 10px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.cl-col { text-align: center !important; vertical-align: bottom; min-width: 130px; border-left: 1px solid var(--line); }
+.cl-col img { width: 28px; height: 28px; display: block; margin: 0 auto 2px; }
+.cl-col b { display: block; }
+.cl-col small { color: var(--muted); font-weight: 400; font-size: 11px; }
+.cl-col em { font-style: normal; font-size: 10px; color: var(--accent); margin-left: 4px; }
+.cl-col.on { box-shadow: inset 0 3px var(--accent); }
+.cl-grid td { border-left: 1px solid var(--line); position: relative; }
+.cl-grid td small { color: var(--muted); }
+.cl-grid td .cl-bar { margin-top: 4px; }
+.cl-grid td.cl-ok { color: #3ec46d; }
+.cl-tick { margin-right: 6px; }
+.cl-refilled { font-style: italic; color: var(--muted); }
+.cl-na { color: var(--faint); }
+.cl-sep th { text-align: left !important; color: var(--muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; background: var(--raised) !important; }
+.cl-read td, .cl-read th { color: var(--muted); font-size: 11px; font-weight: 400; }
+.cl-src { color: var(--muted); font-size: 11px; text-align: left !important; }
+.cl-grid tbody tr:hover td, .cl-grid tbody tr:hover th { background: var(--hover); }
+.cl-near { color: #ffb347; font-weight: 600; }
+.cl-full { color: #ff5c5c; font-weight: 700; }
+
+/* ---- FAQ */
+.faq { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); margin-bottom: 6px; max-width: 860px; }
+.faq summary { cursor: pointer; padding: 10px 14px; font-weight: 600; list-style: none; display: flex; gap: 10px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::before { content: "›"; color: var(--accent); font-weight: 700; transition: transform .15s; }
+.faq[open] summary::before { transform: rotate(90deg); }
+.faq summary:hover { background: var(--hover); border-radius: var(--radius); }
+.faq p { margin: 0; padding: 0 14px 12px 32px; color: var(--muted); line-height: 1.55; }
+.faq p b { color: var(--text); }
+.faq code { background: var(--raised); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--text); }
+.faq a, .lead a { color: var(--accent); }

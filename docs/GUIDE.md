@@ -36,8 +36,9 @@ app: closing it quits.)
   dims it. Its settings can still be changed.
 - Every feature's background work keeps running whichever page is shown, and with Settings closed: alerts, pop-ups
   and overlays.
-- **General:** the map you're on (see [Map picker](#map-picker)), start-up, *Keep the World map and Position debug
-  on top*, updates, and **⌖ Position debug** (your position, its last packet and how often it updates).
+- **General:** the map you're on (see [Map picker](#map-picker)), start-up, *Keep the World map on top*, updates,
+  and **Restart** / **Quit**. **Position debug** (sidebar) shows your position, its last packet and how often it
+  updates; **FAQ** has the common problems and fixes.
 - The last page and tab you used are remembered.
 
 ## Features
@@ -157,8 +158,8 @@ Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side
   highlight it. Highlighted resources are the ones watched in Gathering, so its radar and overlay follow; they're
   drawn bigger in their watch colour even with their layer off.
 
-It reopens at start if it was open when the app closed, and stays above the game with **Keep the World map and
-Position debug on top** (Settings → General).
+It reopens at start if it was open when the app closed, and stays above the game with **Keep the World map on top**
+(Settings → General).
 
 ## Reading the radar
 
@@ -235,7 +236,7 @@ Settings are kept in `%APPDATA%\DaevaRadar` on Windows and `~/.config/DaevaRadar
 --demo             no game, capture or admin rights: simulated player, cubes, monsters and pets
 --log FILE         write a log; it includes the type id of anything you open within 10 m
 --record FILE      save every decoded game message (JSON lines) to work out new message layouts
---debug            open the Position debug window
+--debug            open Settings at Position debug
 --shortcut         Windows: create a 'Daeva Radar' shortcut here and on the Desktop
 ```
 

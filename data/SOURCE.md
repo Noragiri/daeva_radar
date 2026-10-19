@@ -59,6 +59,12 @@ pixel coordinates above (Middle and Upper Reshanta fill its top-left 2048 px). C
 AION 2 game content © NCSOFT; it's here for this personal tool's Map window, not to be redistributed on its own.
 The Map window shows them with Pillow (`pip install pillow`).
 
+## Currency icons (`assets/web/icons/<item id>.png`)
+
+Downloaded on 2026-10-19 from Inven's AION 2 DB (https://aion2.inven.co.kr/db/, its item list API and
+`static.inven.co.kr/image_2011/site_image/aion2/itemicon/<icon>.png`): the game's icons for the currencies the
+Checklist shows (80 px PNGs). Art © NCSOFT.
+
 ## Class icons (`assets/classes/<class>.png`)
 
 Downloaded on 2026-10-18 from NCSOFT's official AION 2 site CDN

@@ -121,9 +121,9 @@ class Characters:
                 bonus = counters[str(c["bonus"])]
             out[c["group"]].append(dict(name=c["name"], left=left, bonus=bonus, max=c["max"], scope=c["scope"],
                                         unit=c.get("unit"), note=c.get("note")))
-        amounts = [(name, money[str(i)]) for i, name in CURRENCIES.items() if str(i) in money]
-        kinah = [v for n, v in amounts if n.startswith("Kinah")]
-        out["currencies"] = ([("Kinah (total)", sum(kinah))] if len(kinah) == 2 else []) + amounts
+        amounts = [(name, money[str(i)], i) for i, name in CURRENCIES.items() if str(i) in money]
+        kinah = [v for n, v, _ in amounts if n.startswith("Kinah")]
+        out["currencies"] = ([("Kinah (total)", sum(kinah), 930100030)] if len(kinah) == 2 else []) + amounts
         return out
 
     @staticmethod

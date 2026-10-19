@@ -64,10 +64,11 @@ def main():
                         help="how your position is read: any = every movement message about you (default); "
                              "old = only the old version's exact layouts")
     parser.add_argument("--debug", action="store_true",
-                        help="open the position debug window (also from the sidebar)")
+                        help="open Settings at Position debug (also in the sidebar)")
     parser.add_argument("--no-update-check", action="store_true",
                         help="don't check GitHub for a new version (at launch and every full hour)")
     parser.add_argument("--settings-window", metavar="URL", help=argparse.SUPPRESS)  # the Settings window's process
+    parser.add_argument("--open-settings", action="store_true", help=argparse.SUPPRESS)  # restarted from Settings
     parser.add_argument("--demo", action="store_true",
                         help="no capture or admin rights: simulated player and cubes, to try the window")
     args = parser.parse_args()
