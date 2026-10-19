@@ -364,38 +364,6 @@ class Toast:
         self.card.close()
 
 
-class LiveToast:
-    """One notification that grows instead of stacking (many soul drops at once): add(key, text) adds a line, or
-    updates that key's line, newest on top, and restarts the timer. When nothing has been added for `seconds`, it
-    fades out; adding during the fade brings it back. Click to dismiss. Doesn't take focus from the game."""
-
-    def __init__(self, root, title, color=ACCENT, seconds=6, max_lines=6):
-        self.root, self.title, self.color, self.seconds, self.max_lines = root, title, color, seconds, max_lines
-        self.card = None
-        self.lines = {}  # key -> (text, colour), most recent last
-
-    @property
-    def visible(self):
-        return self.card is not None and self.card.win is not None
-
-    def add(self, key, text, color=None):
-        self.lines.pop(key, None)
-        self.lines[key] = (text, color or TEXT)
-        if not self.visible:
-            self.card = Card(self.root, self.color, on_click=self.lines.clear)
-        shown = list(self.lines.items())[::-1][:self.max_lines]
-        more = len(self.lines) - len(shown)
-        self.card.fill(self.title, None, [line for _, line in shown], "+%d more" % more if more > 0 else None)
-        # left edge, below the game's top-left icons and well above the chat
-        self.card.win.geometry("+%d+%d" % (24, int(self.root.winfo_screenheight() * 0.15)))
-        self.card.show_for(self.seconds)
-
-    def close(self):
-        if self.card:
-            self.card.close()
-        self.lines.clear()
-
-
 def draw_cone(canvas, cx, cy, length, cone, fill=None, outline=None, below=False):
     """The vision cone as a wedge from (cx, cy): filled (the app's radars) or outlined (overlays, so the
     game's minimap stays visible underneath)."""

@@ -3,6 +3,7 @@
 live part: where you are, your pets' progress, target pets and highlighted (= watched in Gathering) resources."""
 from .common import ROOT, load_settings, save_settings
 from .game import GATHER_GROUPS, SOUL_STAGES, MapData, map_name
+from .features.pets import GENUS_COLORS
 
 TILES = ROOT / "data" / "map_tiles"
 MAX_LEVEL, SOUL_CAP = len(SOUL_STAGES), sum(SOUL_STAGES)
@@ -47,7 +48,8 @@ class WorldMap:
             return self.cache[key]
         md, pets = self.app.mapdata, self.pets
         out = dict(map=key, name=map_name(key), keys=[[k, map_name(k)] for k in self.keys], pets=[], monsters={},
-                   resources=[], cubes=[list(p) for p in md.cubes.get(key, ())], groups=GROUP_ORDER)
+                   resources=[], cubes=[list(p) for p in md.cubes.get(key, ())], groups=GROUP_ORDER,
+                   genus_colors=GENUS_COLORS)
         if pets:
             spawns = pets.data.spawns.get(key, {})
             for t, m in spawns.items():

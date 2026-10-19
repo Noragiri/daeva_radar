@@ -66,8 +66,8 @@ app: closing it quits.)
   soul drop: collected, Lv3 and soul totals, a list with each pet's stages (5 / 25 / 75 souls) and souls to Lv3,
   filters, and which monsters drop the selected pet's souls, where and how often. Double-click a pet to make it a
   target. **Map ↗** opens the [Map window](#map-window) on its Pets side.
-- **Soul drops:** one pop-up on the left of the screen lists the pets that got souls, with what's left to Lv3; a
-  burst of kills updates it instead of opening more, and it fades out when the drops stop.
+- **Soul drops** show on the **Pet tracker** card (on by default): your target pet's souls to its next level, live,
+  and the other unfinished pets whose soul monsters are around you.
 - **Overlay:** its own minimap overlay (red frame), with target pets' soul monsters and their spawn points too.
 - **Settings:** search all 7,545 monster names, build a watch list (several at once, each with its own colour),
   names on the overlay, include unnamed NPCs, beep when a watched monster (or a target pet's soul monster) appears,

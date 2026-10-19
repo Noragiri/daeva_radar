@@ -6,12 +6,13 @@ import time
 
 from ..common import ROOT, load_settings, save_settings
 from ..game import SOUL_STAGES, MapData, map_name
-from ..sound import play
-from ..ui import FONT, MUTED, TEXT, LiveToast, Toast, WATCH_COLORS, dim, draw_text, label_side, radar_point, relative
+from ..ui import FONT, MUTED, TEXT, Toast, WATCH_COLORS, dim, draw_text, label_side, radar_point, relative
 from .. import page as P
 
 
-PET_DEFAULT = dict(targets=[], notify="all", sound=True, spawns=True, live=True, filter="open")
+# each genus's colour, the same everywhere: the Pet tracker card and the World map
+GENUS_COLORS = {"Cogni": "#4fa3ff", "Fera": "#ff5c5c", "Natura": "#7cf08a", "Varian": "#ffd24a", "Special": "#c58cff"}
+PET_DEFAULT = dict(targets=[], spawns=True, live=True, filter="open")
 MAX_LEVEL = len(SOUL_STAGES)
 SOUL_CAP = sum(SOUL_STAGES)
 PET_COLORS = WATCH_COLORS[::-1]  # target pets, in the order picked (reversed: watched monsters start at the front)
@@ -102,9 +103,7 @@ class Pets:
         self.detected = None
         self.selected = None  # the pet picked in the Pets tab's list
         self.search = ""
-        self.last_beep = 0
         self.alerted = set()
-        self.toast, self.burst = None, {}  # the soul-drop notification and the gains it shows
         self.version = 0  # counts collection / target changes, for the Map window
 
     # ---- state
@@ -153,9 +152,10 @@ class Pets:
             self.synced = time.strftime("%Y-%m-%d %H:%M")
             self.save_collection()
             self.app.engine.say("Pets: collection synced (%d pets)" % len(self.levels))
-            if gained and not first and self.cfg["notify"] != "off":
+            if gained and not first:
                 Toast(self.root, "Pet collection synced\n%d pets progressed since last time" % len(gained),
                       color="#7cf08a", label="Pets")
+            self.drop_maxed(self.cfg["targets"])
             self.changed()
         if self.events_seen is None or snap["soul_count"] < self.events_seen:
             self.events_seen = snap["soul_count"]  # first tick, or the tracker was replaced
@@ -180,9 +180,20 @@ class Pets:
         self.events_seen = snap["soul_count"]
         if changed:
             self.save_collection()
+            self.drop_maxed([pid for pid, _, before in changed if before < MAX_LEVEL])
             self.changed()
             for pid, gained, before in changed:
                 self.notify(pid, gained, before)
+
+    def drop_maxed(self, pids):
+        """Target pets that reached Lv3 aren't tracked any more: their soul monsters leave the radar, the overlay
+        and the Pet tracker card."""
+        done = [pid for pid in pids if pid in self.cfg["targets"] and self.levels.get(pid, 0) >= MAX_LEVEL]
+        for pid in done:
+            self.cfg["targets"].remove(pid)
+            self.app.engine.say("Pets: %s reached Lv%d, no longer a target" % (self.name(pid), MAX_LEVEL))
+        if done:
+            self.save()
 
     def notify(self, pid, gained, before):
         name = self.name(pid)
@@ -193,21 +204,7 @@ class Pets:
         else:
             line = "Lv%d · %d/%d to Lv%d · %d/%d to Lv%d (%d left)" % (
                 level, souls, need, level + 1, total, SOUL_CAP, MAX_LEVEL, SOUL_CAP - total)
-        self.app.engine.say("Pets: %s %s (%s)" % (name, what, line))
-        target = pid in self.cfg["targets"]
-        if self.cfg["notify"] == "all" or (self.cfg["notify"] == "targets" and target):
-            # one notification for a burst of drops: a line per pet, its gains added up while it's shown
-            if self.toast is None or not self.toast.visible:
-                self.toast, self.burst = LiveToast(self.root, "Pet souls", color="#7cf08a", seconds=6), {}
-            self.burst[pid] = self.burst.get(pid, 0) + gained
-            if level > before or (before == 0 and level > 0):
-                what = "unlocked" if before == 0 else "Lv%d!" % level
-            else:
-                what = "+%d" % self.burst[pid]
-            self.toast.add(pid, "%s  %s   %s" % (name, what, line), color=self.target_color(pid) if target else TEXT)
-            if self.cfg["sound"] and time.time() - self.last_beep > 1:
-                self.last_beep = time.time()
-                play("system beep")
+        self.app.engine.say("Pets: %s %s (%s)" % (name, what, line))  # the Pet tracker card shows it live
 
     def summary(self, farmable_only=False):
         ids = [i for i in self.data.collection if self.data.farmable(i)] if farmable_only else self.data.collection
@@ -382,15 +379,9 @@ class Pets:
 
     # ---- in the Monsters Settings tab
     def settings_blocks(self):
-        return [P.section("Pets: pop up on a soul drop"),
-                P.choice("pet_notify", (("all", "Every pet"), ("targets", "Target pets"), ("off", "Off")), self.cfg["notify"]),
-                P.toggle("pet_flag_sound", "Beep with the pop-up", self.cfg["sound"]),
+        return [P.section("Pets"),
                 P.toggle("pet_flag_spawns", "Spawn points of target pets' soul monsters (hollow)", self.cfg["spawns"]),
                 P.toggle("pet_flag_live", "Target pets' soul monsters in range (solid)", self.cfg["live"])]
-
-    def on_pet_notify(self, value):
-        self.cfg["notify"] = value
-        self.save()
 
     def set_flag(self, key, on):
         self.cfg[key] = bool(on)

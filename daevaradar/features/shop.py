@@ -9,7 +9,7 @@ from ..sound import play
 from ..ui import MUTED, Toast
 from ..feature import Feature
 from .. import page as P
-from .pets import MAX_LEVEL
+from .pets import MAX_LEVEL, SOUL_CAP
 from ..characters import HOME_MAP, SHARED_MAP
 from ..game import map_name
 
@@ -97,14 +97,18 @@ class ShopFeature(Feature):
         return "yes"
 
     def farm_note(self, item, char):
-        """"⊘ not farmable" / "⇄ only in Altgard" for the offer list and the pop-up, else ""."""
+        """"⊘ not farmable · 28/105" / "⇄ only in Altgard · 28/105" (souls toward Lv3) for the offer list and the
+        pop-up, else ""."""
         farm = self.farm(item, char)
+        if farm not in ("no", "other"):
+            return ""
+        pets, pid = self.pet_of(item)
+        done = pets.pet(pid)[3]
         if farm == "no":
-            return "⊘ not farmable"
-        if farm == "other":
-            other = next(m for f, m in HOME_MAP.items() if f != self.faction(char))
-            return "⇄ only in %s" % map_name(other)
-        return ""
+            note = "⊘ not farmable"
+        else:
+            note = "⇄ only in %s" % map_name(next(m for f, m in HOME_MAP.items() if f != self.faction(char)))
+        return "%s · %s" % (note, "Lv%d ✓" % MAX_LEVEL if done >= SOUL_CAP else "%d/%d" % (done, SOUL_CAP))
 
     def unfarmable_open(self, item, char):
         """A pet this character can't farm, not at Lv3 yet: the shop is how it levels."""
@@ -140,6 +144,9 @@ class ShopFeature(Feature):
         """Does this offer (in char's shop: the one playing by default) pass the notification rules?"""
         info, status = self.info(offer["item"]), self.status_of(offer["item"])
         char = char or self.char
+        pets, pid = self.pet_of(offer["item"])
+        if pid is not None and pets.levels.get(pid, 0) >= MAX_LEVEL:
+            return False  # maxed: nothing left to buy it for
         if status == "target" and self.cfg["targets"] or self.cfg["unfarmable"] and self.unfarmable_open(offer["item"], char):
             return True
         if info["kind"] not in self.cfg["kinds"] or offer["discount"] < self.cfg["min_discount"]:

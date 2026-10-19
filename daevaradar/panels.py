@@ -1,10 +1,13 @@
 """Info panels: small always-on-top cards over the game, one per feature (the minimap overlays are ui.Overlay).
 Each is saved under settings["panels"][key]: x, y, w, shown, locked and its own extras. Unlocked: drag to move,
-drag the right edge to change the width, right-click to lock. Locked: clicks go through to the game (Windows).
+drag the right edge to change the width, right-click to lock. Locked: it stays put, and only its buttons react (a
+card never takes focus from the game, so clicking one doesn't pull you out of it).
 Ctrl+Shift+O, the tray and Settings → Overlay layout lock and unlock them with the minimap overlays."""
+import math
+
 from .common import WINDOWS, load_settings, save_settings
 from .ui import FONT, click_through
-from .features.pets import MAX_LEVEL
+from .features.pets import GENUS_COLORS, MAX_LEVEL
 
 CARD, EDGE, TEXT, MUTED, FAINT = "#141a22", "#2a3442", "#e6ebf2", "#8a95a5", "#2a313c"
 ACCENT = "#5ab0ff"
@@ -53,7 +56,7 @@ class Panel:
         self.cfg["locked"] = bool(locked)
         self.save()
         if self.win:
-            click_through(self.win, self.cfg["locked"])
+            click_through(self.win, False)  # its buttons work locked too; it never takes focus
             self.win.configure(cursor="" if locked else "fleur")
             self.drawn = None
 
@@ -90,12 +93,13 @@ class Panel:
         self.set_locked(self.cfg["locked"])
 
     def press(self, e):
-        if self.cfg["locked"]:
-            return
         for x0, y0, x1, y1, action in self.hot:
             if x0 <= e.x <= x1 and y0 <= e.y <= y1:
                 self.drag = None
                 return action()
+        if self.cfg["locked"]:
+            self.drag = None
+            return
         edge = e.x >= self.cfg["w"] - self.GRIP
         self.drag = ("w" if edge else "move", e.x_root, e.y_root, self.cfg["x"], self.cfg["y"], self.cfg["w"])
 
@@ -150,11 +154,16 @@ class Panel:
         return self.height
 
     def pin(self, c, x, y):
-        """The lock pin, top right: filled when locked; click it (unlocked) to lock."""
+        """The lock pin, top right: filled when locked; click it to lock / unlock."""
         color = ACCENT if self.cfg["locked"] else MUTED
         c.create_oval(x - 4, y - 7, x + 4, y + 1, outline=color, fill=color if self.cfg["locked"] else "", width=1.5)
         c.create_line(x, y + 1, x, y + 7, fill=color, width=1.5)
-        self.hot.append((x - 9, y - 10, x + 9, y + 10, lambda: self.set_locked(True)))
+        self.hot.append((x - 9, y - 10, x + 9, y + 10, lambda: self.set_locked(not self.cfg["locked"])))
+
+    def star(self, c, x, y, on, action, color):
+        """A track button: ★ when tracked, ☆ to track."""
+        c.create_text(x, y, text="★" if on else "☆", fill=color if on else MUTED, anchor="e", font=(FONT, 11))
+        self.hot.append((x - 18, y - 10, x + 4, y + 10, action))
 
     @staticmethod
     def bar(c, x0, x1, y, part, color, height=4):
@@ -163,15 +172,17 @@ class Panel:
             c.create_rectangle(x0, y, x0 + (x1 - x0) * min(1.0, part), y + height, fill=color, outline="")
 
 
-GENUS_COLORS = {"Cogni": "#5ab0ff", "Fera": "#ff9f43", "Natura": "#7cd37c", "Varian": "#c08cff", "Special": "#ffd24a"}
+VIEW_M = 50  # "in view" / "nearby": soul monsters within this distance of you
+
+
 
 
 class PetPanel(Panel):
     """Pet tracker: the headline pet (your first target that isn't Lv3, else the nearby one closest to its next
-    level) with how many of its soul monsters are in range, its souls to the next level; then the other
-    unfinished pets whose soul monsters are in range now, by genus (click the line to fold it)."""
+    level) with how many of its soul monsters are within VIEW_M of you, its souls to the next level; then the other
+    unfinished pets whose soul monsters are within VIEW_M now, by genus (click the line to fold it)."""
     key, title, feature = "pet_tracker", "Pet tracker", "Monsters"
-    defaults = dict(expanded=True, rows=8)
+    defaults = dict(expanded=True, rows=8, shown=True)  # on by default: soul drops show here (no pop-up)
 
     def __init__(self, app):
         super().__init__(app)
@@ -193,8 +204,10 @@ class PetPanel(Panel):
                         self.droppers.setdefault(t, []).append(pid)
         if not pets.levels and not pets.synced:
             return ("unsynced",)
-        in_view = {}
-        for m in snap["monsters"]:
+        in_view, here = {}, snap["position"]
+        for m in snap["monsters"] if here else ():
+            if math.hypot(m["xyz"][0] - here[0], m["xyz"][1] - here[1]) / 100 > VIEW_M:
+                continue
             for pid in self.droppers.get(m["type"], ()):
                 in_view[pid] = in_view.get(pid, 0) + 1
         unfinished = lambda pid: pets.levels.get(pid, 0) < MAX_LEVEL
@@ -202,13 +215,19 @@ class PetPanel(Panel):
         near = sorted((pid for pid in in_view if unfinished(pid) and pid in pets.data.pets),
                       key=lambda pid: (pets.pet(pid)[2] - pets.pet(pid)[1], pets.name(pid)))
         head = targets[0] if targets else (near[0] if near else None)
-        row = lambda pid: (pid, pets.name(pid), pets.data.pets[pid]["genus"]) + pets.pet(pid)[:3]
+        row = lambda pid: (pid, pets.name(pid), pets.data.pets[pid]["genus"]) + pets.pet(pid)[:3] + \
+            (pid in pets.cfg["targets"],)
         rest = [row(pid) for pid in near if pid != head]
         return ("ok", row(head) + (in_view.get(head, 0),) if head else None, tuple(rest), self.cfg["expanded"])
 
     def toggle(self):
         self.cfg["expanded"] = not self.cfg["expanded"]
         self.save()
+
+    def track(self, pid):
+        """☆ / ★: make the pet a target (its soul monsters on the radar, the overlay and this card) or stop."""
+        self.pets().toggle_target(pid)
+        self.drawn = None
 
     def paint(self, c, content, w):
         pad, right = 14, w - 14
@@ -221,9 +240,10 @@ class PetPanel(Panel):
             return 84
         _, head, rest, expanded = content
         if head:
-            pid, name, genus, level, souls, need, seen = head
+            pid, name, genus, level, souls, need, tracked, seen = head
             color = GENUS_COLORS.get(genus, ACCENT)
             c.create_text(pad, 18, text=genus.upper(), fill=color, anchor="w", font=(FONT, 8, "bold"))
+            self.star(c, right - 16, 18, tracked, lambda pid=pid: self.track(pid), color)
             c.create_text(pad, 40, text=name, fill=TEXT, anchor="w", font=(FONT, 13, "bold"))
             c.create_text(right, 40, text=("%d in view" % seen) if seen else "none in view",
                           fill=color if seen else MUTED, anchor="e", font=(FONT, 9))
@@ -249,7 +269,7 @@ class PetPanel(Panel):
         if not expanded:
             return y + 4
         shown, genus_now = 0, None
-        for pid, name, genus, level, souls, need in sorted(rest, key=lambda r: (r[2], -r[4] / (r[5] or 1), r[1])):
+        for pid, name, genus, level, souls, need, tracked in sorted(rest, key=lambda r: (r[2], -r[4] / (r[5] or 1), r[1])):
             if shown >= self.cfg["rows"]:
                 c.create_text(pad, y + 8, text="+%d more" % (len(rest) - shown), fill=MUTED, anchor="w",
                               font=(FONT, 8))
@@ -261,8 +281,9 @@ class PetPanel(Panel):
                 c.create_text(pad, y + 10, text=genus.upper(), fill=color, anchor="w", font=(FONT, 8, "bold"))
                 y += 22
             c.create_text(pad, y + 6, text=name, fill=TEXT, anchor="w", font=(FONT, 10))
-            c.create_text(right, y + 6, text="Lv%d %d/%d" % (level, souls, need), fill=MUTED, anchor="e",
+            c.create_text(right - 22, y + 6, text="Lv%d %d/%d" % (level, souls, need), fill=MUTED, anchor="e",
                           font=(FONT, 9))
+            self.star(c, right, y + 6, tracked, lambda pid=pid: self.track(pid), color)
             self.bar(c, pad, right, y + 17, souls / need if need else 1, color, 2)
             y += 26
             shown += 1

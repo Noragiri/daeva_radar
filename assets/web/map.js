@@ -336,6 +336,8 @@ const WorldMapPage = (() => {
   // ---- loading and the live part
   async function loadMap(key) {
     data = await get("/api/map/data?map=" + encodeURIComponent(key));
+    for (const [g, c] of Object.entries(data.genus_colors || {})) if (GENUS[g]) GENUS[g][0] = c;  // the app's colours
+    $("wm-legend").innerHTML = Object.entries(GENUS).map(([g, [c, i]]) => `<b style="color:${c}">${i} ${g}</b>`).join("");
     mapKey = key;
     selected = null; clicked = null; fitted = false;
     $("wm-map").innerHTML = data.keys.map(([k, n]) => `<option value="${k}" ${k === key ? "selected" : ""}>${esc(n)}</option>`).join("");

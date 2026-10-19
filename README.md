@@ -5,7 +5,7 @@ A companion radar for **AION 2** that runs next to the game and shows what's aro
 - 🧊 **Hidden Cubes** with a callout when one appears, and their spawn points
 - ✧ **Empyrean Traces** (feathers), remembering the ones you've collected
 - ☠ **Monsters** you're hunting, with a watch list
-- ❀ **Pets**: your collection's progress to Lv3, a pop-up on every soul drop, and where the monsters that drop the
+- ❀ **Pets**: your collection's progress to Lv3, a Pet tracker card over the game, and where the monsters that drop the
   souls you need spawn
 - ⛏ **Gathering** nodes (ore, gems, Odyle, herbs…), including ones the game hasn't shown you yet
 - ❖ **Wardrobe**: your Closet by set, and every piece you're still missing
