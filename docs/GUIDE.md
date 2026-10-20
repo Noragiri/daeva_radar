@@ -107,6 +107,16 @@ app: closing it quits.)
 - Names: the first time a node type shows up, its position is matched against the map data, and the name is saved
   for that type for good. Map data exists for Verteron, Altgard and Lower Reshanta so far.
 
+### Boss timers
+
+The field bosses' respawn times, one list per map (Verteron, Altgard), sorted by time left:
+
+- Open the **boss list in the map menu** in the game: that is when it sends the list, and only for the map you're in
+  (Altgard can only be entered every 3 hours). Each list shows how long ago it was read.
+- Times are absolute, so they keep counting while you're elsewhere. **Up** means the time has passed (it may have been
+  killed since); the last 10 minutes show in orange.
+- Altgard has one boss without a name yet.
+
 ### Wardrobe
 
 Your appearance collection (the game's Closet, account-wide: any character's login updates it):

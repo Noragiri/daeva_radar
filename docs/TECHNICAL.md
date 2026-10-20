@@ -89,6 +89,10 @@ stays on this PC.
   - `00 90`: your whole collection when you enter the world: each pet's level, then souls in its current stage
   - `0d 90`: a soul drop (pet, souls gained); several pets can come in one message
   - `14 90` then `0e 90`: a level up (pet, new level) and the souls it used (5 to unlock, 25 to Lv2, 75 to Lv3)
+- `01 91`: the map menu's boss respawn list (`00 | map u32 (1110 Altgard, 1010 Verteron) | count |` records of
+  `flag | boss id (3 bytes) | x, y, z f32 if flag=1 | respawn time u64 ms since 1970`; the first record has one spare
+  byte after its id). Ids are consecutive in ascending monster-type order; `data/bosses.json` maps them to types.
+  Sent when the list is opened, for the current map only.
 - `5b 8d`: your wardrobe when you enter the world: every appearance piece you own (skin item id = set x 100 + piece;
   checked live 2026-10-15 against a character's equipped skins, 219 pieces, and the Closet's own counts)
 - Your sheet (checked live 2026-10-19 on two characters against the game's screens), sent at login just before

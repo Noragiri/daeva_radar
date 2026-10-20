@@ -325,6 +325,39 @@ def pet_souls(data):
     except (ValueError, IndexError, struct.error):
         pass
     return None
+BOSS_MAPS = {0x456: "altgard", 0x3f2: "verteron"}  # the boss list's header -> the map it belongs to
+
+
+def boss_list(data):
+    """'01 91' the map menu's boss respawn list (live 2026-10-20): 00 | map u32 (1110 Altgard, 1010 Verteron) | count |
+    the records: [flag | boss id 3 bytes | x, y, z f32 only when flag is 1] respawn time u64 (ms since 1970; in the
+    past means the boss is up, and then its place comes with it). The first record has one spare byte after its id.
+    Boss ids run consecutively in ascending monster-type order (data/bosses.json names them), so records are found
+    by where each time ends (its top bytes are always a1 01 00 00).
+    -> (map name, {boss id: time in seconds}, {boss id: (x, y, z)}) or None."""
+    if data[:2] != b"\x01\x91" or len(data) < 20:
+        return None
+    try:
+        code = struct.unpack_from("<I", data, 4)[0]
+        n, p = varint(data, 8)
+        if code not in BOSS_MAPS or not 0 < n < 100:
+            return None
+        times, places = {}, {}
+        while True:
+            q = data.find(b"\xa1\x01\x00\x00", p + 4)
+            if q < 0:
+                break
+            region = data[p:q - 4]
+            boss = int.from_bytes(region[1:4], "little")
+            if len(region) >= 16 and region[0]:
+                places[boss] = struct.unpack_from("<fff", region, 4)
+            times[boss] = struct.unpack_from("<Q", data, q - 4)[0] / 1000
+            p = q + 4
+        return (BOSS_MAPS[code], times, places) if len(times) == n else None
+    except (ValueError, IndexError, struct.error):
+        return None
+
+
 def wardrobe(data):
     """'5b 8d' your appearance (wardrobe) collection, sent when you enter the world (live 2026-10-15, 219 pieces):
     count (LEB128) | count x (skin item id u32, a small number u32: 1 for most, up to 8) | slot data.
@@ -531,6 +564,8 @@ class Tracker:
         self.soul_count = 0
         self.wardrobe = None  # dict(skins={id: number}, time) from the last '5b 8d'
         self.wardrobe_count = 0
+        self.bosses = {}  # map -> dict(times={boss id: respawn time}, time) from the last '01 91' of that map
+        self.boss_count = 0
         self.shop = {}  # tab -> dict(items, time) from the last '91 56' of that tab
         self.shop_count = 0
         # your sheet: dict(owner, counters, currencies, time). A login sends the counters and the inventory just
@@ -685,6 +720,12 @@ class Tracker:
                 continue
             if kind in (b"\x0ba", b"\x0ca", b"\x11V", b"\x1bV") and self.note_sheet(kind, data, when):
                 continue
+            if kind == b"\x01\x91":
+                found = boss_list(data)
+                if found:
+                    self.bosses[found[0]] = dict(times=found[1], places=found[2], time=when)
+                    self.boss_count += 1
+                    continue
             if kind == b"\x91V":
                 tab = shop_tab(data)
                 if tab:
@@ -858,6 +899,7 @@ class Tracker:
                         soul_events=list(self.soul_events), soul_count=self.soul_count,
                         wardrobe=self.wardrobe, wardrobe_count=self.wardrobe_count,
                         shop=dict(self.shop), shop_count=self.shop_count,
+                        bosses=dict(self.bosses), boss_count=self.boss_count,
                         sheet=None if self.sheet is None else dict(self.sheet, counters=dict(self.sheet["counters"]),
                                                                    currencies=dict(self.sheet["currencies"])),
                         sheet_count=self.sheet_count, own_profile=self.own_profile)

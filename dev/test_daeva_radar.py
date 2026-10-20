@@ -266,6 +266,21 @@ chars.commands_set(0, 2); assert chars.commands_get()['duty'] == 12  # setting a
 store['commands']['week'] = '2000-01-05T09:00:00'; assert chars.commands_get()['duty'] == 0
 print('duty commands: manual counts, weekly reset')
 
+# 18) the boss respawn list ('01 91', recorded 2026-10-20): Verteron, 24 records; two are up and one comes with its place
+boss = bytes.fromhex('01910000f20300001800909506a068d6c559a10100000089950615c5b659a1010000008a9506dce8b359a1010000008e9506cdc2d959a1010000008b950645c8b059a1010000018c950600768dc6004c23c6001ca84665429759a101000000939506efc9145aa1010000018d95060012d3c600be9b460052904643b59459a1010000008f9506007ee4b759a101000000919506939cc859a1010000009295063d3ee159a10100000094950638ee575aa1010000009595062a8a0b5aa101000000969506ef7c7e5aa101000000979506a538b459a1010000009895067df6e659a1010000009995060088adff59a1010000009a95066e24f659a1010000009b9506035cfa59a1010000009c95068d985c5aa1010000009d9506e232885ba1010000009e9506b8ffb65aa1010000009f950641a2ad5aa101000000a09506b300985ba1010000000000')
+found = cf.boss_list(boss)
+assert found[0] == 'verteron' and len(found[1]) == 24
+assert min(found[1]) == 0x69589 and max(found[1]) == 0x695a0 and len(found[2]) == 2
+assert abs(found[2][0x6958c][0] + 18107.0) < 1
+assert cf.boss_list(boss[:30]) is None and cf.boss_list(b'\x01\x91' + bytes(40)) is None
+t = cf.Tracker(); t.feed([boss], 1.0)
+assert t.snapshot(now=1.0)['bosses']['verteron']['times'] == found[1] and t.snapshot(now=1.0)['boss_count'] == 1
+from daevaradar.features.bosses import BossData
+bd = BossData()
+assert bd.describe('verteron', 0x69589)[0] == 'Neikel of the East'
+assert all(bd.describe('verteron', b)[1] for b in found[1])  # every record is named
+print('bosses: list parsed,', len(found[1]), 'records,', len(found[2]), 'with a place')
+
 # 17) the first-run notice: until it's agreed to, the tracker reads nothing
 t = cf.Tracker(); t.paused = True
 t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 1.0)

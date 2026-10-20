@@ -8,12 +8,28 @@ A companion radar for **AION 2** that runs next to the game and shows what's aro
 - ❀ **Pets**: your collection's progress to Lv3, a Pet tracker card over the game, and where the monsters that drop the
   souls you need spawn
 - ⛏ **Gathering** nodes (ore, gems, Odyle, herbs…), including ones the game hasn't shown you yet
+- ⏱ **Boss timers**: when each field boss respawns in Verteron and Altgard, read from the map menu's boss list
 - ❖ **Wardrobe**: your Closet by set, and every piece you're still missing
 - ⚖ **Shop**: the rotating shop's offers marked owned / missing, with a pop-up for the deals you care about
 - 🗺 A **world map** of soul spawns and gathering nodes, **minimap overlays** that sit on top of the game's minimap,
   and timed **alerts** for recurring events
 
 It only listens: it reads the game's network traffic on your PC and never changes, sends or uploads anything.
+
+<p align="center"><img src="docs/img/world-map.png" alt="The world map: pet soul spawns on Verteron" width="760"></p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/img/cubes.png" alt="Cubes radar"><br><sub><b>Cubes</b>: a radar of the hidden cubes around you</sub></td>
+    <td width="50%"><img src="docs/img/boss-timers.png" alt="Boss timers"><br><sub><b>Boss timers</b>: when each field boss respawns</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/img/checklist.png" alt="Checklist"><br><sub><b>Checklist</b>: every character's keys, entries and currencies</sub></td>
+    <td><img src="docs/img/wardrobe.png" alt="Wardrobe"><br><sub><b>Wardrobe</b>: your Closet by set</sub></td>
+  </tr>
+</table>
+
+<sub>Screenshots are from the built-in demo (<code>--demo</code>) with made-up characters.</sub>
 
 > ⚠️ **Use at your own risk.** NCSOFT's rules prohibit third-party tools that read the game's traffic, even
 > read-only ones like this. Using it could get your account sanctioned.

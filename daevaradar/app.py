@@ -25,6 +25,7 @@ from .features.gathering import GatherFeature
 from .features.alerts import AlertsFeature
 from .features.viewcone import ViewFeature
 from .features.wardrobe import WardrobeFeature
+from .features.bosses import BossesFeature
 from .features.shop import ShopFeature
 from .panels import PANELS
 from .tray import start_tray
@@ -37,7 +38,7 @@ TERMS_VERSION = 1  # the first-run notice (assets/web/terms.js): raise it when i
 class App:
     """Runs from the tray: Settings is a web page in its own window (a page per feature); each feature has its
     minimap overlay and info card over the game. Every feature's background() runs each tick."""
-    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, ShopFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, BossesFeature, ShopFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk

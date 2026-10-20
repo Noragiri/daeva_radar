@@ -36,6 +36,7 @@ const P = {
   Feathers: '<path d="M20 4c-6 0-12 4-13 13l-3 3"/><path d="M20 4c0 7-5 12-13 13M10 14h5"/>',
   Monsters: '<path d="M5 11a7 7 0 0 1 14 0v4l-2 2v3h-3v-2h-4v2H7v-3l-2-2z"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/>',
   Gathering: '<path d="M14 4l6 6M17 7L7 17M4 20l3-3"/><path d="M12 4c3 0 6 1 8 3"/>',
+  "Boss timers": '<circle cx="12" cy="13" r="8"/><path d="M12 8v5l3 2M9 2h6"/>',
   Wardrobe: '<path d="M8 3l4 3 4-3 5 4-3 3v10H6V10L3 7z"/>',
   Shop: '<path d="M4 8h16l-1.5 12h-13z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
   Alerts: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
