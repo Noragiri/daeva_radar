@@ -383,7 +383,8 @@ def currencies(data):
 # Checked 2026-10-19 on three characters against the game and aion2t: 1 Shugo keys (12 / 21), 8 Invasion keys (5 / 7),
 # 4 Nightmare ([8, 2] = "8 (+2) / 14"), 6 Unknown Fissure with its bonus in 101 ("0 (+26) / 14"), 80000001
 # Ascension Trial, 3 Abyss time (ms: 25,138,000 = "6h58m58s / 7h"), 60000001 Odyle energy ([325, 970] = "325 (+970)").
-# A two-number value is [left, bonus]. Server = shared by the account's characters on the server.
+# A two-number value is [left, bonus]: type 0c has both, type 08 only a bonus (left 0), 04 only left, 00 nothing.
+# Bonuses ("(+1)") are extras that resets don't touch. Server = shared by the account's characters on the server.
 COUNTERS = {
     4: dict(name="Nightmare", max=14, group="stock", scope="char"),
     1: dict(name="Shugo keys", max=21, group="stock", scope="server"),
@@ -391,6 +392,10 @@ COUNTERS = {
     6: dict(name="Unknown Fissure", max=14, group="weekly", scope="server", bonus=101, note="14 entries a week"),
     80000001: dict(name="Ascension Trial", max=3, group="weekly", scope="char", note="3 entries a week"),
     3: dict(name="Abyss time", max=7 * 3600 * 1000, group="weekly", scope="char", unit="ms", note="7 hours a week"),
+    # the Abyss artifacts' passage time (Reshanta's Root, Sulfur Tree Island, Siel's Wings): 6m30s a day (3 x 2m10s) per
+    # character, ms left. Nowagiwi 130000 = "Passage Usage Time 02:10"; 0 = "Usage Time Expired" (2026-10-20). It does NOT
+    # refill daily (aion2t lists it as daily, the game doesn't), so it's a "stock": shown as last read, never refilled.
+    10000003: dict(name="Abyss Corridors", max=390000, group="stock", scope="char", unit="ms", note="2m10s per corridor"),
 }
 ENERGY = 60000001  # Odyle energy: [now, bonus]
 
@@ -403,10 +408,12 @@ def _counter(b, p):
         return ident, 0, p
     if kind == 1:
         return ident, int.from_bytes(b[p:p + 8], "little", signed=True), p + 8
-    if kind == 3:
-        return ident, int.from_bytes(b[p:p + 8], "little", signed=True), p + 16
-    if kind in (4, 8):
+    if kind == 3:  # [left, bonus]: Abyss time with the added hour on top ("3h19m (+1h)")
+        return ident, [int.from_bytes(b[p:p + 8], "little", signed=True), int.from_bytes(b[p + 8:p + 16], "little", signed=True)], p + 16
+    if kind == 4:  # attempts left
         return ident, b[p], p + 1
+    if kind == 8:  # a bonus only: "0 (+1) / 3" is a type 08 entry of 1 (checked 2026-10-20 on Noragiri's Ascension Trial)
+        return ident, [0, b[p]], p + 1
     if kind == 0x0c:
         first, p = varint(b, p)
         second, p = varint(b, p)
@@ -530,6 +537,7 @@ class Tracker:
         # BEFORE the message with the name: a full counter list starts a new sheet, the next login names it.
         self.sheet = None
         self.sheet_count = 0
+        self.paused = False
         self.own_profile = None  # (class id, level) from the login message
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
         # that identified every character correctly. (Guessing from teleports or remembered ids was unsafe: other
@@ -591,6 +599,8 @@ class Tracker:
             self.recorder.write(batch, when, "c")
 
     def feed(self, batch, when):
+        if self.paused:  # the first-run notice isn't agreed yet: nothing is read
+            return
         if self.recorder:
             self.recorder.write(batch, when)
         with self.lock:

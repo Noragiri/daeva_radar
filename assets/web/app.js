@@ -214,6 +214,7 @@ const CL_ICONS = {
   "Unknown Fissure": ['#5ad1ff', '<path d="M12 3l3 6-2 2 4 4-3 6M9 6l-2 5 3 2-2 6"/>'],
   "Ascension Trial": ['#7cf08a', '<path d="M12 3l3 5h-2v5h-2V8H9zM5 21h14M7 17h10"/>'],
   "Abyss time": ['#4fa3ff', '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>'],
+  "Abyss Corridors": ['#b48cff', '<path d="M12 3c3 3 3 6 0 9s-3 6 0 9"/><path d="M6 6c4 2 8 2 12 0M6 18c4-2 8-2 12 0"/>'],
   "Odyle energy": ['#9fd8ff', '<path d="M12 3l6 9-6 9-6-9z"/><path d="M12 8l3 4-3 4-3-4z"/>'],
 };
 const clIcon = (name) => {
@@ -221,22 +222,49 @@ const clIcon = (name) => {
   return `<span class="cl-icon" style="--c:${color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
 };
 const ENERGY_CAP = 840, ENERGY_WARN = 700;  // Odyle energy's limit, and where it's close
+// Duty Commands: 4 tiers x 5 a week per server. The game doesn't send the count, so you fill it in (cleared at the weekly reset)
+function commandsBlock() {
+  const c = state.commands, total = c.t.reduce((a, b) => a + b, 0), all = c.t.every((n) => n >= c.max), reset = untilReset(true);
+  const box = (on, onchange, label) => `<label class="cm-box"><input type="checkbox" ${on ? "checked" : ""} data-h="${reg(onchange)}"><span></span>${label || ""}</label>`;
+  const tiers = c.t.map((n, i) => `<div class="cm-tier cm-t${i + 1} ${n >= c.max ? "done" : ""}">
+      <img src="/icons/${c.ids[i]}.png" alt="" width="40" height="40"><div class="cm-info"><b>T${i + 1}</b>
+      <span class="cm-count"><button class="cm-step" data-h="${reg(() => act("commands_fill", { tier: i, value: n - 1 }))}" ${n <= 0 ? "disabled" : ""}>−</button>
+        <b>${n}</b> / ${c.max}
+        <button class="cm-step" data-h="${reg(() => act("commands_fill", { tier: i, value: n + 1 }))}" ${n >= c.max ? "disabled" : ""}>+</button></span></div>
+      ${box(n >= c.max, (v) => act("commands_fill", { tier: i, value: v ? c.max : 0 }))}</div>`).join("");
+  const duty = `<div class="cm-tier ${c.duty >= c.duty_max ? "done" : ""}">
+      <img src="/icons/duty_command.png" alt="" width="40" height="40"><div class="cm-info"><b>Duty Command</b>
+      <span class="cm-count"><button class="cm-step" data-h="${reg(() => act("duty_fill", { value: c.duty - 1 }))}" ${c.duty <= 0 ? "disabled" : ""}>−</button>
+        <b>${c.duty}</b> / ${c.duty_max}
+        <button class="cm-step" data-h="${reg(() => act("duty_fill", { value: c.duty + 1 }))}" ${c.duty >= c.duty_max ? "disabled" : ""}>+</button></span></div>
+      ${box(c.duty >= c.duty_max, (v) => act("duty_fill", { value: v ? c.duty_max : 0 }))}</div>`;
+  return `<div class="section">Duty Commands <small class="muted">· weekly, shared on the server, filled in by you (the game doesn't send it)</small></div>
+    <div class="cm"><div class="cm-tiers">${duty}</div></div>
+    <div class="section" style="margin-top:4px">Duty Command: Abyss <small class="muted">· 4 tiers x 5</small></div>
+    <div class="cm"><div class="cm-tiers">${tiers}</div>
+      <div class="cm-all">${box(all, (v) => act("commands_fill", { tier: -1, value: v ? c.max : 0 }), "<b>All</b>")}
+        <span class="cm-total ${all ? "done" : ""}"><b>${total}</b> / ${c.max * c.t.length}</span>
+        <small class="muted">resets ${reset.when} (in ${reset.text})</small></div></div>`;
+}
 function checklist() {
   // one grid: a column per character, a row per item; what's shared on the server shown once, from the newest reading
   const chars = state.characters.filter((c) => c.checklist && c.checklist.read);
   if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs. Its keys, entries and currencies are read from the game at login and saved.</p>`;
   chars.sort((x, y) => (y.playing - x.playing) || x.name.localeCompare(y.name));
   const fmt = (n) => Number(n).toLocaleString("en-US");
+  // 3h19m for hours of time, 2m10s for minutes (the corridors' 6m30s)
+  const dur = (ms, max) => { const t = Math.round(ms / 1000);
+    return max >= 3600000 ? `${Math.floor(t / 3600)}h${String(Math.floor(t / 60) % 60).padStart(2, "0")}m` : `${Math.floor(t / 60)}m${String(t % 60).padStart(2, "0")}s`; };
   const hms = (ms) => { const t = Math.round(ms / 1000); return `${Math.floor(t / 3600)}h${String(Math.floor(t / 60) % 60).padStart(2, "0")}m`; };
   const staleFor = (c, weekly) => !c.playing && c.checklist.read_at && c.checklist.read_at * 1000 < lastReset(weekly).getTime();
   const daily = untilReset(false), weekly = untilReset(true);
   // a counter's cell: what's left (refilled to full when read before the list's last reset)
-  const cell = (c, r, isWeekly) => {
+  const cell = (c, r, group) => {
     if (!r) return '<td class="cl-na">—</td>';
-    const refilled = isWeekly && r.max && staleFor(c, true);
+    const refilled = (group === "weekly" || group === "daily") && r.max && staleFor(c, group === "weekly");
     const left = refilled ? r.max : r.left;
-    const done = left <= 0 && !r.bonus;
-    const text = r.unit === "ms" ? `${hms(left)} / ${r.max / 3600000}h`
+    const done = left <= 0;  // the bonus (+x) doesn't count: 0 (+3) / 3 is done too
+    const text = r.unit === "ms" ? `${dur(left, r.max)}${r.bonus ? ` <small>(+${dur(r.bonus, r.max)})</small>` : ""} / ${dur(r.max, r.max)}`
       : `${left}${r.bonus ? ` <small>(+${fmt(r.bonus)})</small>` : ""}${r.max ? ` / ${r.max}` : ""}`;
     const part = r.max ? Math.min(100, 100 * left / r.max) : null;
     return `<td class="${done ? "cl-ok" : ""}${refilled ? " cl-refilled" : ""}" title="${refilled ? "Refilled at the reset (last read before it)" : ""}">
@@ -264,7 +292,7 @@ function checklist() {
     const level = e[0] >= ENERGY_CAP ? "cl-full" : e[0] > ENERGY_WARN ? "cl-near" : "";
     return `<td><span class="${level}">${fmt(e[0])}</span>${e[1] ? ` <small>(+${fmt(e[1])})</small>` : ""} / ${ENERGY_CAP}</td>`;
   }).join("")}</tr>`;
-  const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.weekly)).join("")}</tr>`).join("");
+  const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.group)).join("")}</tr>`).join("");
   const coins = [];
   for (const c of chars) for (const [n, , id] of c.checklist.currencies) if (!coins.some((x) => x[0] === n)) coins.push([n, id]);
   const coinRows = coins.map(([n, id]) => `<tr><th><img class="cl-coin-icon" src="/icons/${id}.png" alt="" width="24" height="24">${esc(n)}</th>${chars.map((c) => {
@@ -276,7 +304,7 @@ function checklist() {
   const newest = [...chars].sort((x, y) => (y.playing - x.playing) || ((y.checklist.read_at || 0) - (x.checklist.read_at || 0)))[0];
   const serverTable = serverRows.length ? `<table class="cl-grid cl-server"><tbody>${serverRows.map((row) => {
     const owner = chars.find((c) => find(c, row.group, row.name) && c === newest) || chars.find((c) => find(c, row.group, row.name));
-    return `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${cell(owner, find(owner, row.group, row.name), row.weekly)}
+    return `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${cell(owner, find(owner, row.group, row.name), row.group)}
       <td class="cl-src">from ${esc(owner.name)}, ${owner.playing ? "live" : esc(owner.checklist.read)}</td></tr>`;
   }).join("")}</tbody></table>` : "";
   return `<h2>${icon("Checklist")}Checklist</h2>
@@ -286,6 +314,7 @@ function checklist() {
     <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span></div>
   <div class="section">Server <small class="muted">· shared by your characters on the server</small></div>
   ${serverTable || '<p class="muted">Not read yet.</p>'}
+  ${commandsBlock()}
   <div class="section">Characters</div>
   <div class="cl-scroll"><table class="cl-grid"><thead>${head}</thead><tbody>
     ${energy}${counterRows}
@@ -352,6 +381,7 @@ function about() {
   return `<h2>${icon("About")}About</h2>
   <p class="lead">Daeva Radar reads AION 2's network traffic on this PC to show what's around you. It never changes, sends or uploads anything.</p>
   <p class="lead warn">NCSOFT's rules prohibit third-party tools that read the game's traffic, even read-only ones. Use at your own risk.</p>
+  <div class="row"><div class="label">The notice you agreed to<span class="hint">What the app is, its risk, and what it keeps and sends.</span></div>${btn("Read it again", () => Terms.open(false, state.terms.when))}</div>
   <div class="section">Credits</div>
   <p class="lead">AION 2 game data and map art © NCSOFT (official AION 2 web API), collected via Shugo.GG and metabot.gg.
   Packet capture on Windows uses WinDivert (LGPLv3 / GPLv2). A fan-made tool, not affiliated with NCSOFT.</p>`;
@@ -424,6 +454,7 @@ async function refresh() {
     focusSeen = next.focus;
     const json = JSON.stringify({ ...next, status: null });
     state = next;
+    if (!next.terms.agreed && !Terms.shown) Terms.open(true);  // the first-run notice, over everything
     const busy = document.activeElement && document.activeElement.tagName === "SELECT";
     if (json !== lastJson && !busy) { lastJson = json; render(); } else renderFooter();
   } catch (e) {

@@ -31,6 +31,9 @@ from .tray import start_tray
 from .webui import ACTIONS, WebUI, overlays
 
 
+TERMS_VERSION = 1  # the first-run notice (assets/web/terms.js): raise it when its meaning changes, to ask again
+
+
 class App:
     """Runs from the tray: Settings is a web page in its own window (a page per feature); each feature has its
     minimap overlay and info card over the game. Every feature's background() runs each tick."""
@@ -53,6 +56,12 @@ class App:
         self.web_view = None  # (feature, tab, when) last asked for by the Settings page
         self.overlays_visible = True  # overlays and cards show only while the game has the focus
         self.closing = False
+        settings = load_settings()
+        agreed = settings.get("terms") or {}
+        # the demo reads nothing real, so it needs no notice; otherwise nothing is read until it's agreed to
+        self.agreed = bool(args.demo) or agreed.get("version") == TERMS_VERSION
+        self.agreed_at = agreed.get("when")
+        tracker.paused = not self.agreed
         self.root = root = tk.Tk()
         root.withdraw()  # only the windows over the game show; Settings is the web page
         root.title("Daeva Radar")
@@ -80,7 +89,8 @@ class App:
         self.web = WebUI(self)
         self.engine.say("Settings page on " + self.web.url.split("?")[0])
         self.tray = start_tray(self)
-        if self.tray is None or settings.get("settings_at_start", True) or getattr(args, "open_settings", False):
+        if (self.tray is None or settings.get("settings_at_start", True) or getattr(args, "open_settings", False)
+                or not self.agreed):  # the notice is in Settings
             root.after(400, self.open_settings)  # without a tray, Settings is the only way in (and out: Quit)
         self.cone_serial = -1
         if args.debug:  # Settings, at Position debug
@@ -90,10 +100,25 @@ class App:
             root.after(300, self.open_map)
         self.tick()
         self.cone_tick()
-        if settings.get("check_updates", True) and not getattr(args, "no_update_check", False):
+        if self.agreed:
+            self.start_update_checks()
+
+    def start_update_checks(self):
+        """At start and every full hour (not before the notice is agreed to: it's the only thing that goes online)."""
+        if load_settings().get("check_updates", True) and not getattr(self.args, "no_update_check", False):
             threading.Thread(target=update.cleanup, daemon=True).start()
             self.check_updates()
             self.schedule_update_check()
+
+    def accept_terms(self):
+        """The first-run notice was agreed to: remember it (on this PC only) and start reading."""
+        if self.agreed:
+            return
+        self.agreed, self.agreed_at = True, time.strftime("%Y-%m-%d %H:%M")
+        save_settings(dict(load_settings(), terms=dict(version=TERMS_VERSION, when=self.agreed_at)))
+        self.tracker.paused = False
+        self.engine.say("Notice agreed: reading the game now")
+        self.start_update_checks()
 
     # ---- map: picked in Settings, else detected from live gathering nodes or cubes
     def picked(self):
@@ -367,6 +392,8 @@ class App:
 
     def cone_needed(self):
         """Is anything showing the vision cone right now? Only then is the screen read for it."""
+        if not self.agreed:
+            return False
         if any(f.overlay and f.overlay.cfg["cone"] for f in self.features.values() if f.enabled):
             return True
         if self.web_view and time.time() - self.web_view[2] < 3:  # a radar or View cone open in Settings

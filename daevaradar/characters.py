@@ -1,5 +1,6 @@
 """The characters seen logging in, with the faction you set for each (Settings → Characters). Keyed by name: the
 login message's 4-byte "character number" turned out not to be stable (one character showed 15 of them)."""
+import datetime as _dt
 import time
 
 from .common import load_settings, save_settings
@@ -10,6 +11,48 @@ HISTORY_DAYS, HISTORY_CHANGES = 120, 300  # what's kept per character: a value p
 FACTION_MAPS = {"Elyos": {"poeta", "verteron", "eltnen"}, "Asmodian": {"ishalgen", "altgard", "morheim"}}
 HOME_MAP = {"Elyos": "verteron", "Asmodian": "altgard"}  # each side's land where pet souls are farmed
 SHARED_MAP = "reshanta-lower"  # both sides farm here
+
+
+# Duty Command: Abyss (the Abyss Command Shop's scrolls): 4 tiers, 5 per tier a week per SERVER (20); and the plain
+# Duty Command, 12 a week (32 together, as on aion2t). The game doesn't send the counts (2026-10-20), so the player
+# fills them in; they're cleared at the weekly reset.
+COMMAND_IDS = (134019901, 134019902, 134019903, 134019904)  # tier 1-4 (white, green, blue, gold): also their icons
+COMMAND_MAX = 5
+DUTY_MAX = 12
+
+
+def last_weekly_reset(now=None):
+    """Wednesday 09:00 (this PC's clock, like the game's "Resets: Wed 09:00 AM") at or before now."""
+    now = now or _dt.datetime.now()
+    r = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    r -= _dt.timedelta(days=(r.weekday() - 2) % 7)
+    return r - _dt.timedelta(days=7) if r > now else r
+
+
+def commands_get():
+    """-> dict(t=[n, n, n, n], max=5, ids=[...], duty=n, duty_max=12) for this week: what was saved, or zeros after a reset."""
+    saved = load_settings().get("commands") or {}
+    week = last_weekly_reset().isoformat()
+    fresh = saved.get("week") == week
+    counts = saved.get("t", []) if fresh else []
+    counts = [max(0, min(COMMAND_MAX, int(counts[i]))) if i < len(counts) else 0 for i in range(len(COMMAND_IDS))]
+    duty = max(0, min(DUTY_MAX, int(saved.get("duty", 0)))) if fresh else 0
+    return dict(t=counts, max=COMMAND_MAX, ids=list(COMMAND_IDS), duty=duty, duty_max=DUTY_MAX, week=week)
+
+
+def commands_set(tier, value):
+    """tier 0-3 sets that tier's count; -1 sets every tier (the All box). The count is clamped to 0-5."""
+    now = commands_get()
+    counts = now["t"]
+    for i in (range(len(counts)) if tier == -1 else [int(tier)]):
+        counts[i] = max(0, min(COMMAND_MAX, int(value)))
+    save_settings(dict(load_settings(), commands=dict(week=now["week"], t=counts, duty=now["duty"])))
+
+
+def duty_set(value):
+    """The plain Duty Command's count, clamped to 0-12."""
+    now = commands_get()
+    save_settings(dict(load_settings(), commands=dict(week=now["week"], t=now["t"], duty=max(0, min(DUTY_MAX, int(value))))))
 
 
 class Characters:
@@ -117,8 +160,9 @@ class Characters:
                 continue
             value = counters[str(ident)]
             left, bonus = (value[0], value[1]) if isinstance(value, list) else (value, 0)
-            if c.get("bonus") and str(c["bonus"]) in counters:
-                bonus = counters[str(c["bonus"])]
+            if c.get("bonus") and str(c["bonus"]) in counters:  # a separate bonus counter (Unknown Fissure's)
+                extra = counters[str(c["bonus"])]
+                bonus = extra[1] if isinstance(extra, list) else extra
             out[c["group"]].append(dict(name=c["name"], left=left, bonus=bonus, max=c["max"], scope=c["scope"],
                                         unit=c.get("unit"), note=c.get("note")))
         amounts = [(name, money[str(i)], i) for i, name in CURRENCIES.items() if str(i) in money]

@@ -16,6 +16,7 @@ import time
 
 from urllib.parse import parse_qs
 
+from .characters import commands_get, commands_set, duty_set
 from .common import ASSETS, WINDOWS, load_settings, save_settings
 from .worldmap import TILES
 from . import update
@@ -141,6 +142,7 @@ class WebUI:
                          tray=bool(app.tray)),
             features=features, overlays=overlays(app), screens=screens(app),
             layout=bool(app.layout), characters=app.characters.listing(),
+            terms=dict(agreed=app.agreed, when=app.agreed_at), commands=commands_get(),
             focus=app.focus_seq, map_focus=app.map_focus, goto=goto)
 
 
@@ -310,6 +312,19 @@ def restart_app(app):
     app.restart_now()
 
 
+def commands_fill(app, tier, value):
+    """The Checklist's Duty Commands boxes (filled in by the player)."""
+    commands_set(int(tier), int(value))
+
+
+def duty_fill(app, value):
+    duty_set(int(value))
+
+
+def accept_terms(app):
+    app.accept_terms()
+
+
 def quit_app(app):
     app.root.after(200, app.close)
 
@@ -317,4 +332,4 @@ def quit_app(app):
 ACTIONS = {f.__name__: f for f in (feature_act, set_feature, overlay_show, overlay_lock, overlay_move, overlay_scale,
                                    overlay_cone, overlay_recenter, edit_layout, lock_all, set_map, set_topmost,
                                    set_settings_at_start, check_updates, install_update, open_map,
-                                   quit_app, restart_app, set_faction, forget_character, map_cfg, map_target, map_watch)}
+                                   quit_app, restart_app, accept_terms, commands_fill, duty_fill, set_faction, forget_character, map_cfg, map_target, map_watch)}

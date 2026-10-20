@@ -27,11 +27,13 @@ It only listens: it reads the game's network traffic on your PC and never change
    - If Windows says *"Windows protected your PC"*, click **More info → Run anyway** (the exe isn't code-signed).
    - Want a Desktop shortcut? Run `DaevaRadar.exe --shortcut` once.
    - Just looking around? `DaevaRadar.exe --demo` runs the window on simulated data, without the game or admin rights.
-3. Daeva Radar lives in the **tray** (bottom right of the taskbar): double-click its icon for **Settings**,
+3. The first time, Settings opens with a **notice** (an unofficial tool, at your own risk; what it keeps and sends). Nothing is
+   read until you tick both boxes and press **I agree**.
+4. Daeva Radar lives in the **tray** (bottom right of the taskbar): double-click its icon for **Settings**,
    right-click it for the overlays and **Quit**. Closing Settings keeps it running.
-4. **Start the radar before you enter the world** (or teleport / change zone once it's running), so it learns your
+5. **Start the radar before you enter the world** (or teleport / change zone once it's running), so it learns your
    character, your position, your pets and your wardrobe.
-5. Play in **borderless or windowed** mode if you want the overlays on top of the game.
+6. Play in **borderless or windowed** mode if you want the overlays on top of the game.
 
 From source, or on Linux under Wine / Proton: see [Running from source](docs/GUIDE.md#running-from-source).
 

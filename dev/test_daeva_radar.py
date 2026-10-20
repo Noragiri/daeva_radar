@@ -1,6 +1,8 @@
 """Offline decoder/tracker tests: python dev/test_daeva_radar.py (no game, capture or admin)."""
-import sys, struct, random
+import os, sys, struct, random, tempfile
 from pathlib import Path
+# the tests must never touch the real settings (%APPDATA%\DaevaRadar): they get an empty folder of their own
+os.environ["APPDATA"] = os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp(prefix="daeva-tests-")
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from types import SimpleNamespace
 from daevaradar import protocol, game, ui
@@ -234,5 +236,43 @@ from daevaradar import haptics
 assert [haptics.level_for(d, 60, 10) for d in (0, 30, 59, 60, 90, None)] == [10, 5, 1, 0, 0, 0]
 assert haptics.level_for(10, 60, 0) == 0
 print('haptics: level by distance')
+
+# 18) Abyss time with added time: type 03 carries [left ms, bonus ms] (3h19m + 1h)
+bonus = b'a' + bytes([1]) + b'' + struct.pack('<Iqq', 3, 3 * 3600000 + 19 * 60000, 3600000)
+assert cf.counters(bonus) == {3: [11940000, 3600000]}
+print('abyss time: left + added hour')
+
+# 19) a bonus-only counter (type 08): Ascension Trial "0 (+1) / 3" is [0, 1], not 1 left
+assert cf.counters(b'a' + bytes([2]) + b'' + struct.pack('<I', 80000001) + b'' + b'' + struct.pack('<I', 7) + b'') ==     {80000001: [0, 1], 7: 3}
+print('bonus-only counter: 0 (+1)')
+
+# 20) Duty Commands, filled in by hand: 4 tiers x 5, clamped, cleared at the weekly reset (Wednesday 09:00)
+import datetime as dt
+from daevaradar import characters as chars
+assert chars.last_weekly_reset(dt.datetime(2026, 10, 20, 12, 0)) == dt.datetime(2026, 10, 14, 9, 0)   # a Tuesday
+assert chars.last_weekly_reset(dt.datetime(2026, 10, 21, 8, 59)) == dt.datetime(2026, 10, 14, 9, 0)  # just before the reset
+assert chars.last_weekly_reset(dt.datetime(2026, 10, 21, 9, 0)) == dt.datetime(2026, 10, 21, 9, 0)   # at the reset
+store = {}
+chars.load_settings, chars.save_settings = (lambda: dict(store)), (lambda x: (store.clear(), store.update(x)))
+chars.commands_set(0, 3); chars.commands_set(1, 99); chars.commands_set(2, -4)
+assert chars.commands_get()['t'] == [3, 5, 0, 0]
+chars.commands_set(-1, 5)
+assert chars.commands_get()['t'] == [5, 5, 5, 5]
+store['commands']['week'] = '2000-01-05T09:00:00'  # saved in an earlier week
+assert chars.commands_get()['t'] == [0, 0, 0, 0]
+chars.duty_set(7); assert chars.commands_get()['duty'] == 7 and chars.commands_get()['t'] == [0, 0, 0, 0]
+chars.duty_set(99); assert chars.commands_get()['duty'] == 12
+chars.commands_set(0, 2); assert chars.commands_get()['duty'] == 12  # setting a tier keeps the Duty Command count
+store['commands']['week'] = '2000-01-05T09:00:00'; assert chars.commands_get()['duty'] == 0
+print('duty commands: manual counts, weekly reset')
+
+# 17) the first-run notice: until it's agreed to, the tracker reads nothing
+t = cf.Tracker(); t.paused = True
+t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 1.0)
+assert t.messages == 0 and t.own is None
+t.paused = False
+t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 2.0)
+assert t.own == 5898 and t.own_name == 'Noragiri'
+print('notice: nothing read until agreed')
 
 print('ALL OK')

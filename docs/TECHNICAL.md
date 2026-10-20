@@ -23,6 +23,7 @@ daevaradar/          the program
   panels.py            info cards over the game (the Pet tracker)
   page.py              the blocks feature pages are made of (for assets/web/page.js), and a canvas that records radars
   haptics.py           Lovense Game Mode client (Cubes): vibration level by distance, short fail-safe commands
+  (assets/web/terms.js: the first-run notice; App.accept_terms stores the version agreed, Tracker.paused gates reading)
   layout.py            overlay layout mode: a see-through grid over the game window to place them
   characters.py        the characters seen logging in (by name) and the faction set for each
   worldmap.py          the World map's data for its page (assets/web/map.js; tiles served at /tiles/)
@@ -100,6 +101,9 @@ stays on this PC.
   - `0b 61`: every content counter as `[type][u32 id][value]` (type 00 none = 0 left, 01 u64, 03 two u64, 04 / 08 one
     byte, 0c two LEB128); values are what's left. Named: 4 Nightmare runs, 80000001 Ascension Trial, 3 Abyss time
     (ms). `0c 61` changes one (`00 | entry | reason byte`): Nightmare went 2 → 1 at the end of a run.
+- Abyss Command Shop (checked live 2026-10-20): a purchase is `03 8c` (`00 06 56 42 00 00 | count | item id u32 | qty u32`)
+  with a `1b 56` that carries the new kinah; the scrolls are items 134019901-134019904 (tier 1-4, 15,000 / 37,500 / 75,000 /
+  150,000). The shop's items, prices and "Per Server 0/5" limits are not in any message from the game.
 - `91 56`: one tab of the rotating shop (Special `65`, Pets `68`, Skins `67`), sent when you open it: item id,
   quantity, discount code (0-3 = 10/20/30/50 %), original price and price. Each character has its own shop; the
   server doesn't push new offers at the hourly refresh.

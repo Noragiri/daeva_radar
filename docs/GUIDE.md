@@ -10,6 +10,9 @@ for **Settings**; right-click it for the menu: Settings, each overlay on / off, 
 World map and **Quit**. Closing Settings keeps the radar running in the tray. (Without a tray icon, Settings is the
 app: closing it quits.)
 
+- **First start:** Settings opens with a notice (an unofficial tool, at your own risk; what it keeps on your PC and what
+  it sends: only update checks to GitHub). Until you agree, the app reads no game traffic and checks for no updates; **About →
+  Read it again** shows it later.
 - **Settings** has a page per feature (its On/Off switch, its tabs: radar, lists, settings, and its overlays),
   **General** (map, start-up, updates, troubleshooting), **Overlay layout** and **About**. Turn off *Open Settings when Daeva Radar starts* to start
   straight in the tray.
@@ -26,6 +29,9 @@ app: closing it quits.)
   play it): Nightmare runs, Ascension Trial entries and Abyss time left, and its currencies (Kinah, Abyss Points,
   Nightmare Points, Oath Coin, Silver Medal of Merit, Centuryroot Token). Other characters show their last reading. Set each one's faction, **Elyos** or **Asmodian** (click again to
   unset); unset, it's guessed from those maps. **Forget** removes one until it logs in again.
+- **Duty Command** (12 a week) and **Duty Command: Abyss** (the Abyss Command Shop's scrolls, 4 tiers x 5 = 20 a week), in the
+  Checklist's Server section, shared on the server. The game doesn't send these counts, so you fill them in: **− / +**, a tick box
+  that fills one, and **All** for the Abyss tiers. It clears itself at the weekly reset (Wednesday 09:00).
 - **Checklist** (under Characters): per character, read from the game at login and live while you play it, like the
   game's own lists: Stock and keys (Nightmare, Shugo keys, Invasion keys), Weekly (Unknown Fissure, Ascension Trial,
   Abyss time) with the time to the daily (09:00) and weekly (Wednesday 09:00) resets, and the currencies. CHAR / SERVER
