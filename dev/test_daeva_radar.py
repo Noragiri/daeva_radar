@@ -281,6 +281,13 @@ assert bd.describe('verteron', 0x69589)[0] == 'Neikel of the East'
 assert all(bd.describe('verteron', b)[1] for b in found[1])  # every record is named
 print('bosses: list parsed,', len(found[1]), 'records,', len(found[2]), 'with a place')
 
+# 21) kinah: the server storage's stack (container byte 02) comes with the character's (01) and must not count
+upd = bytes.fromhex('1b56020100f3900d0000d602003f337037f1490e0000000000025700000000000000000000000000002200010056be150000f000003f3370376e000000000000000123000000000000000000000000100000')
+assert cf.currencies(upd) == {930100031: 110}
+upd = bytes.fromhex('1b5602010056be150000f000003f33703767000000000000000123000000000000000000000000000019000100f3900d0000d602003f337037f8490e000000000002570000000000000000000000000f0000')
+assert cf.currencies(upd) == {930100031: 103}
+print('kinah: server storage not counted')
+
 # 17) the first-run notice: until it's agreed to, the tracker reads nothing
 t = cf.Tracker(); t.paused = True
 t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 1.0)

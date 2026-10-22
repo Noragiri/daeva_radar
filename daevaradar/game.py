@@ -391,7 +391,9 @@ CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100))
 
 
 def currencies(data):
-    """'11 56' / '1b 56' -> {item id: count} of the currency records in it."""
+    """'11 56' / '1b 56' -> {item id: count} of the currency records in it. Only what is in the character's inventory:
+    a record's last byte after its count says where it is (1 inventory; 2 the server storage, which comes with the
+    kinah when you use it: recorded 2026-10-21, storage 936533 against 10 on the character)."""
     out = {}
     b = bytes(data)
     for lo, hi in CURRENCY_RANGES:
@@ -401,7 +403,7 @@ def currencies(data):
             start = p - 2
             if start >= 7 and start + 12 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
                 item = int.from_bytes(b[start:start + 4], "little")
-                if lo <= item < hi and item in CURRENCIES:
+                if lo <= item < hi and item in CURRENCIES and b[start + 12:start + 13] != b"":  # 02 = server storage
                     count = int.from_bytes(b[start + 4:start + 12], "little")
                     if count < 10 ** 12:
                         out[item] = count

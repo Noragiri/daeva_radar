@@ -10,7 +10,7 @@ from ..feature import Feature
 from .. import page as P
 
 
-GATHER_DEFAULT = dict(watch=[], mode="watched", map_nodes=True, alert=True, me_on_top=True, unnamed=False)
+GATHER_DEFAULT = dict(watch=[], mode="watched", map_nodes=True, alert=True, me_on_top=True, unnamed=False, gray=True)
 class GatherFeature(Feature):
     """Gathering nodes. Live nodes come from the game ('46' object messages); their names are learned once by
     matching their position to the local map data (data/maps, credit Shugo.GG) and then remembered by type,
@@ -85,12 +85,12 @@ class GatherFeature(Feature):
                 if not self.cfg["unnamed"]:
                     continue
                 name = "Object %d" % n["type"]
-            if self.cfg["mode"] == "watched" and name not in self.cfg["watch"]:
+            if (self.cfg["mode"] == "watched" or not self.cfg["gray"]) and name not in self.cfg["watch"]:
                 continue
             live.append((name, n))
         extra = []
         if self.cfg["map_nodes"] and self.map_key and snap["position"]:
-            names = self.cfg["watch"] if self.cfg["mode"] == "watched" else self.mapdata.names()
+            names = self.cfg["watch"] if self.cfg["mode"] == "watched" or not self.cfg["gray"] else self.mapdata.names()
             live_px = [MapData.to_px(n["xyz"]) for _, n in live]
             for name, xyz in self.mapdata.nearby(self.map_key, names, snap["position"], 400):
                 px, py = MapData.to_px(xyz)
@@ -231,6 +231,7 @@ class GatherFeature(Feature):
                          self.cfg["map_nodes"]),
                 P.toggle("flag_me_on_top", "Your position on top (radar and overlay)", self.cfg["me_on_top"]),
                 P.toggle("flag_alert", "Beep when a watched resource appears", self.cfg["alert"]),
+                P.toggle("flag_gray", "Show gray dots (resources you don't watch, in All mode)", self.cfg["gray"]),
                 P.toggle("flag_unnamed", "Include objects without a known name", self.cfg["unnamed"])]
 
     def on_group(self, group):
