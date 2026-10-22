@@ -393,25 +393,34 @@ CURRENCIES = {930100031: "Kinah", 930100001: "Kinah (bound)", 930100003: "Abyss 
 CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100))
 
 
-def currencies(data):
-    """'11 56' / '1b 56' -> {item id: count} of the currency records in it. Only what is in the character's inventory:
-    a record's last byte after its count says where it is (1 inventory; 2 the server storage, which comes with the
-    kinah when you use it: recorded 2026-10-21, storage 936533 against 10 on the character)."""
-    out = {}
+def currency_records(data):
+    """'11 56' / '1b 56' -> [(item id, count, container)] of the currency records in it. A record's last byte after its
+    count says where it is: 1 the character's inventory, 2 the server storage (which comes with the kinah when you use
+    it: recorded 2026-10-21, storage 936533 against 10 on the character)."""
+    out = []
     b = bytes(data)
     for lo, hi in CURRENCY_RANGES:
         prefix = (lo // 0x100).to_bytes(3, "little")[1:]  # the id's top bytes, to find candidates fast
         p = b.find(prefix)
         while p >= 0:
             start = p - 2
-            if start >= 7 and start + 12 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
+            if start >= 7 and start + 13 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
                 item = int.from_bytes(b[start:start + 4], "little")
-                if lo <= item < hi and item in CURRENCIES and b[start + 12:start + 13] != b"":  # 02 = server storage
-                    count = int.from_bytes(b[start + 4:start + 12], "little")
-                    if count < 10 ** 12:
-                        out[item] = count
+                count = int.from_bytes(b[start + 4:start + 12], "little")
+                if lo <= item < hi and item in CURRENCIES and count < 10 ** 12:
+                    out.append((item, count, b[start + 12]))
             p = b.find(prefix, p + 1)
     return out
+
+
+def currencies(data):
+    """-> {item id: count} of what is in the character's inventory (the server storage's stack is left out)."""
+    return {item: count for item, count, where in currency_records(data) if where != 2}
+
+
+def storage_kinah(data):
+    """-> the kinah in the server storage if this message has it (when you use the storage), else None."""
+    return next((count for item, count, where in currency_records(data) if where == 2 and item == 930100031), None)
 
 
 # '0b 61' at login: every content counter; '0c 61': one counter changed. An entry is [type][u32 id][value], the
@@ -577,6 +586,8 @@ class Tracker:
         # BEFORE the message with the name: a full counter list starts a new sheet, the next login names it.
         self.sheet = None
         self.sheet_count = 0
+        self.storage = None  # dict(kinah, time, by): the server storage's kinah, last seen when a character used the storage
+        self.storage_count = 0
         self.paused = False
         self.own_profile = None  # (class id, level) from the login message
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
@@ -723,6 +734,11 @@ class Tracker:
             kind = data[:2]
             if kind[1:] == b"\x90" and self.note_souls(data, when):
                 continue
+            if kind in (b"\x11V", b"\x1bV"):
+                stored = storage_kinah(data)
+                if stored is not None:
+                    self.storage = dict(kinah=stored, time=when, by=self.own_name)
+                    self.storage_count += 1
             if kind in (b"\x0ba", b"\x0ca", b"\x11V", b"\x1bV") and self.note_sheet(kind, data, when):
                 continue
             if kind == b"\x01\x91":
@@ -905,6 +921,7 @@ class Tracker:
                         wardrobe=self.wardrobe, wardrobe_count=self.wardrobe_count,
                         shop=dict(self.shop), shop_count=self.shop_count,
                         bosses=dict(self.bosses), boss_count=self.boss_count,
+                        storage=None if self.storage is None else dict(self.storage), storage_count=self.storage_count,
                         sheet=None if self.sheet is None else dict(self.sheet, counters=dict(self.sheet["counters"]),
                                                                    currencies=dict(self.sheet["currencies"])),
                         sheet_count=self.sheet_count, own_profile=self.own_profile)

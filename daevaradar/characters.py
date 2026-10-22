@@ -83,6 +83,8 @@ class Characters:
         for entry in settings.get("shop_offers", {}).get("characters", {}).values():  # seen before this page existed
             if entry.get("name"):
                 self.data.setdefault(entry["name"], dict(faction=None, first=None, last=None, maps=[]))
+        self.storage = settings.get("storage")  # the server storage's kinah: dict(kinah, read, by), shared by all
+        self.storage_seen = None
         self.playing = None
         self.saved_at = 0
         self.sheet_seen = None  # the tracker's sheet_count already stored
@@ -94,6 +96,11 @@ class Characters:
     def note(self, snap):
         """Every tick: the character playing (from the login message) and the map it's detected on."""
         self.note_sheet(snap)
+        if snap.get("storage") and snap["storage_count"] != self.storage_seen:  # the storage was used: its kinah is known
+            self.storage_seen = snap["storage_count"]
+            self.storage = dict(kinah=snap["storage"]["kinah"], by=snap["storage"]["by"],
+                                read=time.strftime("%Y-%m-%d %H:%M", time.localtime(snap["storage"]["time"])))
+            save_settings(dict(load_settings(), storage=self.storage))
         name = snap["own_name"]
         if not name:
             return

@@ -142,7 +142,7 @@ class WebUI:
                          tray=bool(app.tray)),
             features=features, overlays=overlays(app), screens=screens(app),
             layout=bool(app.layout), characters=app.characters.listing(bool(load_settings().get("subscriber"))),
-            subscriber=bool(load_settings().get("subscriber")),
+            subscriber=bool(load_settings().get("subscriber")), storage=app.characters.storage,
             terms=dict(agreed=app.agreed, when=app.agreed_at), commands=commands_get(),
             focus=app.focus_seq, map_focus=app.map_focus, goto=goto)
 

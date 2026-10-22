@@ -307,7 +307,10 @@ function checklist() {
   const readRow = `<tr class="cl-read"><th>Last read</th>${chars.map((c) => `<td>${c.playing ? "live" : esc(c.checklist.read)}</td>`).join("")}</tr>`;
   // server-wide: once, from the character read most recently
   const newest = [...chars].sort((x, y) => (y.playing - x.playing) || ((y.checklist.read_at || 0) - (x.checklist.read_at || 0)))[0];
-  const serverTable = serverRows.length ? `<table class="cl-grid cl-server"><tbody>${serverRows.map((row) => {
+  const st = state.storage;
+  const storageRow = st ? `<tr><th><img class="cl-coin-icon" src="/icons/930100031.png" alt="" width="24" height="24">Kinah in storage</th>
+      <td>${fmt(st.kinah)}</td><td class="cl-src">${st.by ? `from ${esc(st.by)}, ` : ""}${esc(st.read)} (read when the storage is used)</td></tr>` : "";
+  const serverTable = serverRows.length || st ? `<table class="cl-grid cl-server"><tbody>${storageRow}${serverRows.map((row) => {
     const owner = chars.find((c) => find(c, row.group, row.name) && c === newest) || chars.find((c) => find(c, row.group, row.name));
     return `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${cell(owner, find(owner, row.group, row.name), row.group)}
       <td class="cl-src">from ${esc(owner.name)}, ${owner.playing ? "live" : esc(owner.checklist.read)}</td></tr>`;

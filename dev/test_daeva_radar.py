@@ -286,7 +286,11 @@ upd = bytes.fromhex('1b56020100f3900d0000d602003f337037f1490e0000000000025700000
 assert cf.currencies(upd) == {930100031: 110}
 upd = bytes.fromhex('1b5602010056be150000f000003f33703767000000000000000123000000000000000000000000000019000100f3900d0000d602003f337037f8490e000000000002570000000000000000000000000f0000')
 assert cf.currencies(upd) == {930100031: 103}
-print('kinah: server storage not counted')
+t = cf.Tracker(); t.own_name = 'Aelwyn'; t.feed([upd], 5.0)  # upd: the second message (character 103, storage 936440)
+assert t.snapshot(now=6.0)['storage'] == dict(kinah=936440, time=5.0, by='Aelwyn') and cf.storage_kinah(upd) == 936440
+t2 = cf.Tracker(); t2.feed([bytes.fromhex('0b61') + bytes(30)], 1.0)
+assert t2.snapshot(now=2.0)['storage'] is None
+print('kinah: server storage not counted, but kept on its own')
 
 # 22) refills between two readings: energy +15 every 3 h (0, 3, 6 ...), Nightmare +2 and Shugo keys +2 / +3 daily at 09:00
 import datetime as dt2
