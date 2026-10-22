@@ -8,7 +8,7 @@ A companion radar for **AION 2** that runs next to the game and shows what's aro
 - ❀ **Pets**: your collection's progress to Lv3, a Pet tracker card over the game, and where the monsters that drop the
   souls you need spawn
 - ⛏ **Gathering** nodes (ore, gems, Odyle, herbs…), including ones the game hasn't shown you yet
-- ⏱ **Boss timers**: when each field boss respawns in Verteron and Altgard, read from the map menu's boss list
+- ⏱ **Boss timers**: when each field boss respawns in Verteron, Altgard and Lower Reshanta, read from the map menu's boss list
 - ❖ **Wardrobe**: your Closet by set, and every piece you're still missing
 - ⚖ **Shop**: the rotating shop's offers marked owned / missing, with a pop-up for the deals you care about
 - 🗺 A **world map** of soul spawns and gathering nodes, **minimap overlays** that sit on top of the game's minimap,

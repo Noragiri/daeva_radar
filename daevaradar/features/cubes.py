@@ -292,7 +292,8 @@ class CubesFeature(Feature):
                 dist, dz, compass = relative(snap["position"], new["xyz"])
                 where = " %d m %s" % (dist, compass)
             self.app.engine.say("Cube!" + where)
-            play(self.voice, self.app.args.sound, self.volume)
+            if not self.app.args.demo:  # the demo's made-up cubes stay quiet (the Test button still plays)
+                play(self.voice, self.app.args.sound, self.volume)
             self.seen_detections = snap["detections"]
         self.apply_haptics(snap)
         super().background(snap)

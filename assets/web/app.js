@@ -226,15 +226,17 @@ const ENERGY_CAP = 840, ENERGY_WARN = 700;  // Odyle energy's limit, and where i
 // Duty Commands: 4 tiers x 5 a week per server. The game doesn't send the count, so you fill it in (cleared at the weekly reset)
 function commandsBlock() {
   const c = state.commands, total = c.t.reduce((a, b) => a + b, 0), all = c.t.every((n) => n >= c.max), reset = untilReset(true);
+  const kin = (n) => Number(n).toLocaleString("en-US");
+  const toBuy = c.t.reduce((a, n, i) => a + (c.max - n) * c.cost[i], 0), weekly = c.cost.reduce((a, k) => a + k * c.max, 0);
   const box = (on, onchange, label) => `<label class="cm-box"><input type="checkbox" ${on ? "checked" : ""} data-h="${reg(onchange)}"><span></span>${label || ""}</label>`;
   const tiers = c.t.map((n, i) => `<div class="cm-tier cm-t${i + 1} ${n >= c.max ? "done" : ""}">
-      <img src="/icons/${c.ids[i]}.png" alt="" width="40" height="40"><div class="cm-info"><b>T${i + 1}</b>
+      <img src="/icons/${c.ids[i]}.png" alt="" width="40" height="40"><div class="cm-info"><b>T${i + 1}</b> <small class="muted cm-cost">${kin(c.cost[i])} each</small>
       <span class="cm-count"><button class="cm-step" data-h="${reg(() => act("commands_fill", { tier: i, value: n - 1 }))}" ${n <= 0 ? "disabled" : ""}>−</button>
         <b>${n}</b> / ${c.max}
         <button class="cm-step" data-h="${reg(() => act("commands_fill", { tier: i, value: n + 1 }))}" ${n >= c.max ? "disabled" : ""}>+</button></span></div>
       ${box(n >= c.max, (v) => act("commands_fill", { tier: i, value: v ? c.max : 0 }))}</div>`).join("");
   const duty = `<div class="cm-tier ${c.duty >= c.duty_max ? "done" : ""}">
-      <img src="/icons/duty_command.png" alt="" width="40" height="40"><div class="cm-info"><b>Duty Command</b>
+      <img src="/icons/duty_command.png" alt="" width="40" height="40"><div class="cm-info"><b>Duty Command</b> <small class="muted cm-cost">${kin(c.duty_cost)} each · ${kin((c.duty_max - c.duty) * c.duty_cost)} left to buy</small>
       <span class="cm-count"><button class="cm-step" data-h="${reg(() => act("duty_fill", { value: c.duty - 1 }))}" ${c.duty <= 0 ? "disabled" : ""}>−</button>
         <b>${c.duty}</b> / ${c.duty_max}
         <button class="cm-step" data-h="${reg(() => act("duty_fill", { value: c.duty + 1 }))}" ${c.duty >= c.duty_max ? "disabled" : ""}>+</button></span></div>
@@ -245,7 +247,7 @@ function commandsBlock() {
     <div class="cm"><div class="cm-tiers">${tiers}</div>
       <div class="cm-all">${box(all, (v) => act("commands_fill", { tier: -1, value: v ? c.max : 0 }), "<b>All</b>")}
         <span class="cm-total ${all ? "done" : ""}"><b>${total}</b> / ${c.max * c.t.length}</span>
-        <small class="muted">resets ${reset.when} (in ${reset.text})</small></div></div>`;
+        <small class="muted">${toBuy ? `${kin(toBuy)} kinah left to buy (${kin(weekly)} for all)` : `all bought (${kin(weekly)} kinah)`} · resets ${reset.when} (in ${reset.text})</small></div></div>`;
 }
 function checklist() {
   // one grid: a column per character, a row per item; what's shared on the server shown once, from the newest reading
@@ -268,7 +270,8 @@ function checklist() {
     const text = r.unit === "ms" ? `${dur(left, r.max)}${r.bonus ? ` <small>(+${dur(r.bonus, r.max)})</small>` : ""} / ${dur(r.max, r.max)}`
       : `${left}${r.bonus ? ` <small>(+${fmt(r.bonus)})</small>` : ""}${r.max ? ` / ${r.max}` : ""}`;
     const part = r.max ? Math.min(100, 100 * left / r.max) : null;
-    return `<td class="${done ? "cl-ok" : ""}${refilled ? " cl-refilled" : ""}" title="${refilled ? "Refilled at the reset (last read before it)" : ""}">
+    const title = refilled ? "Refilled at the reset (last read before it)" : r.proj ? `Estimated: +${r.proj} since it was read (daily recovery)` : "";
+    return `<td class="${done ? "cl-ok" : ""}${refilled ? " cl-refilled" : ""}${r.proj ? " cl-proj" : ""}" title="${title}">
       ${done ? '<span class="cl-tick">✓</span>' : ""}${text}${part !== null ? `<i class="cl-bar" style="--p:${part}%"></i>` : ""}</td>`;
   };
   const find = (c, group, name) => (c.checklist[group] || []).find((r) => r.name === name);
@@ -291,7 +294,8 @@ function checklist() {
     if (!e) return "<td>—</td>";
     // it stops filling at ENERGY_CAP: orange when close (over 700), red when full (spend it before it's wasted)
     const level = e[0] >= ENERGY_CAP ? "cl-full" : e[0] > ENERGY_WARN ? "cl-near" : "";
-    return `<td><span class="${level}">${fmt(e[0])}</span>${e[1] ? ` <small>(+${fmt(e[1])})</small>` : ""} / ${ENERGY_CAP}</td>`;
+    const est = c.checklist.energy_proj;
+    return `<td class="${est ? "cl-proj" : ""}" title="${est ? `Estimated: +${est} since it was read (15 every 3 hours)` : ""}"><span class="${level}">${fmt(e[0])}</span>${e[1] ? ` <small>(+${fmt(e[1])})</small>` : ""} / ${ENERGY_CAP}</td>`;
   }).join("")}</tr>`;
   const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.group)).join("")}</tr>`).join("");
   const coins = [];
@@ -310,9 +314,11 @@ function checklist() {
   }).join("")}</tbody></table>` : "";
   return `<h2>${icon("Checklist")}Checklist</h2>
   <p class="lead">Saved from each character's last login (live for the one you're playing): what's left. Weekly items read
-  before the last reset show refilled. Keys and Nightmare refill over time, so they may be higher than saved.</p>
+  before the last reset show refilled. Odyle energy (+15 every 3 h), Nightmare (+2 a day) and Shugo keys (+2 a day, +3 with Sub) are filled in
+  by estimate since the reading (marked with a dotted underline).</p>
   <div class="cl-resets"><span>☀ Daily reset in <b>${daily.text}</b> <small>(${daily.when})</small></span>
-    <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span></div>
+    <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span>
+    <label class="cm-box" title="Subscriber: Shugo keys come 3 a day instead of 2"><input type="checkbox" ${state.subscriber ? "checked" : ""} data-h="${reg((v) => act("set_subscriber", { value: v }))}"><span></span>Sub</label></div>
   <div class="section">Server <small class="muted">· shared by your characters on the server</small></div>
   ${serverTable || '<p class="muted">Not read yet.</p>'}
   ${commandsBlock()}

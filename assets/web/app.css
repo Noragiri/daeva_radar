@@ -381,3 +381,5 @@ select:hover, .btn:hover { border-color: #33404f; background: var(--hover); }
 .cm-total { font-size: 15px; color: var(--muted); }
 .cm-total b { color: var(--text); }
 .cm-total.done, .cm-total.done b { color: #3ec46d; }
+.cm-cost { white-space: nowrap; font-weight: 400; }
+.cl-grid td.cl-proj { text-decoration: underline dotted var(--muted); text-underline-offset: 4px; }

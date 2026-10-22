@@ -11,7 +11,7 @@ import webbrowser
 from pathlib import Path
 
 from . import update
-from .common import FROZEN, NO_WINDOW, WINDOWS, launch_command, load_settings, save_settings
+from .common import FROZEN, NO_WINDOW, WINDOWS, focus_requested, launch_command, load_settings, save_settings
 from .characters import Characters
 from .worldmap import WorldMap
 from .vision import ViewCone
@@ -50,6 +50,8 @@ class App:
         self.map_proc = None  # the World map's window (its own process, like Settings)
         self.debug = PositionDebug(self)  # the Position debug page (Settings)
         self.calls = queue.Queue()  # work handed to the Tk thread (the web server's and the tray's threads)
+        self.ticks = 0
+        focus_requested()  # an old request isn't for this copy
         self.focus_seq = self.map_focus = 0  # bumped to ask the open Settings / map window to come to the front
         self.settings_proc, self.settings_started, self.tray = None, 0, None
         self.panels = {}
@@ -417,6 +419,9 @@ class App:
     def tick(self):
         if self.closing:
             return
+        self.ticks += 1
+        if self.ticks % 5 == 0 and focus_requested():  # a second copy was started: show the Settings window
+            self.open_settings()
         snap = self.snapshot()
         self.view.update(self.cone_needed())
         snap["cone"] = self.view.cone if self.view.ready() else None

@@ -109,6 +109,42 @@ def set_window_icon(hwnd):
             user32.SendMessageW(hwnd, 0x80, kind, icon)  # WM_SETICON
 
 
+def native_handle(window):
+    """The window's HWND (pywebview's native form), or None."""
+    try:
+        return int(window.native.Handle.ToInt64())
+    except Exception:
+        return None
+
+
+class _Rect(ctypes.Structure):
+    _fields_ = [("l", ctypes.c_long), ("t", ctypes.c_long), ("r", ctypes.c_long), ("b", ctypes.c_long)]
+
+
+def window_rect(hwnd):
+    r = _Rect()
+    ctypes.windll.user32.GetWindowRect(ctypes.c_void_p(hwnd), ctypes.byref(r))
+    return r.l, r.t, r.r - r.l, r.b - r.t
+
+
+def work_area(hwnd):
+    """-> (x, y, w, h) of the monitor the window is on, without the taskbar (physical pixels)."""
+    class Info(ctypes.Structure):
+        _fields_ = [("size", ctypes.c_ulong), ("monitor", _Rect), ("work", _Rect), ("flags", ctypes.c_ulong)]
+    user32 = ctypes.windll.user32
+    user32.MonitorFromWindow.restype = ctypes.c_void_p
+    monitor = user32.MonitorFromWindow(ctypes.c_void_p(hwnd), 2)  # MONITOR_DEFAULTTONEAREST
+    info = Info()
+    info.size = ctypes.sizeof(Info)
+    user32.GetMonitorInfoW(ctypes.c_void_p(monitor), ctypes.byref(info))
+    w = info.work
+    return w.l, w.t, w.r - w.l, w.b - w.t
+
+
+def move_window(hwnd, x, y, w, h):
+    ctypes.windll.user32.SetWindowPos(ctypes.c_void_p(hwnd), None, x, y, w, h, 0x14)  # SWP_NOZORDER | SWP_NOACTIVATE
+
+
 UNBLOCKED = []
 
 
@@ -145,9 +181,21 @@ def run(url):
         def minimize(self):
             window.minimize()
 
+        _normal = None  # the window's rectangle before "maximize"
+
         def toggle_maximize(self):
+            """Maximize to the monitor's work area: Windows' own maximize of a frameless window covers the taskbar."""
+            if not WINDOWS:
+                window.restore() if self._maximized else window.maximize()
+                self._maximized = not self._maximized
+                return self._maximized
+            hwnd = native_handle(window)
             if self._maximized:
-                window.restore()
+                if self._normal and hwnd:
+                    move_window(hwnd, *self._normal)
+            elif hwnd:
+                self._normal = window_rect(hwnd)
+                move_window(hwnd, *work_area(hwnd))
             else:
                 window.maximize()
             self._maximized = not self._maximized

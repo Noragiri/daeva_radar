@@ -1,0 +1,856 @@
+{
+"altgard": [
+[
+null,
+"Abandoned Campsite",
+2577,
+2431
+],
+[
+null,
+"Abandoned Site",
+2043,
+2024
+],
+[
+null,
+"Amunta's Hideout",
+2917,
+2361
+],
+[
+null,
+"Basfelt Ruins Cliff",
+2836,
+1829
+],
+[
+null,
+"Basfelt Waterfall",
+2732,
+1386
+],
+[
+null,
+"Basfelt Waterfall Arch Zone",
+2864,
+1259
+],
+[
+null,
+"Battlescar Mound Clifftop",
+2535,
+1303
+],
+[
+null,
+"Beneath the Tranein Highland Bridge",
+1635,
+1874
+],
+[
+null,
+"Briskwind Shelter",
+2276,
+1459
+],
+[
+null,
+"Collapsed Chasm",
+1768,
+2169
+],
+[
+null,
+"Collapsed Hall of Fame",
+2722,
+2859
+],
+[
+null,
+"Creion Campsite",
+1558,
+1690
+],
+[
+null,
+"Dranactus Shore",
+2532,
+1138
+],
+[
+null,
+"Eastern Gribade Highland Cliff",
+2906,
+2496
+],
+[
+null,
+"Eastern Gribade Highland Tail Island",
+3131,
+2180
+],
+[
+null,
+"Elim's Rest",
+1824,
+2305
+],
+[
+null,
+"Faded Stump",
+2356,
+1604
+],
+[
+null,
+"Fang Hideout",
+1347,
+1786
+],
+[
+null,
+"Fissure Cave",
+2997,
+1587
+],
+[
+null,
+"Forest Hideout",
+1990,
+2124
+],
+[
+null,
+"Galorik's Inspection Area",
+1569,
+1545
+],
+[
+null,
+"Gravekeeper Camp",
+1289,
+1661
+],
+[
+null,
+"Graverobber Campsite",
+2752,
+1575
+],
+[
+null,
+"Gribade Highland Crossroad",
+2729,
+2117
+],
+[
+null,
+"Guide Rest Stop",
+2386,
+1727
+],
+[
+null,
+"Guide's Dwelling",
+3209,
+972
+],
+[
+null,
+"Healing Spring",
+2139,
+1759
+],
+[
+null,
+"Hidden Cave",
+2355,
+1057
+],
+[
+null,
+"Idun's Lake",
+2750,
+2536
+],
+[
+null,
+"Impetusium Lower Path",
+2595,
+3007
+],
+[
+null,
+"Kumrica's Cellar",
+2461,
+2811
+],
+[
+null,
+"Mahindel Cliff",
+2748,
+1962
+],
+[
+null,
+"Minushan Site",
+2192,
+2040
+],
+[
+null,
+"Mire Campsite",
+1664,
+1841
+],
+[
+null,
+"Moslan Forest Cliff",
+1588,
+2102
+],
+[
+null,
+"Moslan Forest Dry Shade",
+1843,
+2192
+],
+[
+null,
+"Neglected Crematorium",
+1194,
+1569
+],
+[
+null,
+"Nornir Assembly",
+2425,
+1925
+],
+[
+null,
+"Odar's Shade",
+1800,
+2051
+],
+[
+null,
+"Outskirts Stall",
+2674,
+2930
+],
+[
+null,
+"Purifying Forest Coastal Cliff",
+2529,
+1752
+],
+[
+null,
+"Purifying Forest Sunny Hill",
+2590,
+1636
+],
+[
+null,
+"Quai Campsite",
+1491,
+1718
+],
+[
+null,
+"Remote Island",
+990,
+2436
+],
+[
+null,
+"Safe Haven",
+1600,
+1428
+],
+[
+null,
+"Safe Haven Cliff",
+1837,
+1295
+],
+[
+null,
+"Sanctum Outpost Sky Island",
+1355,
+2218
+],
+[
+null,
+"Secret Rendezvous Point",
+2486,
+2776
+],
+[
+null,
+"Silent Hill Coastal Cliff",
+1034,
+1813
+],
+[
+null,
+"Silent Hill Mushroom Rock",
+1104,
+1760
+],
+[
+null,
+"Steel Hammer Merchants HQ",
+2873,
+2077
+],
+[
+null,
+"Steel Hammer Temporary Trading Post",
+2857,
+2600
+],
+[
+null,
+"Steel Hammer Temporary Trading Post",
+2701,
+1735
+],
+[
+null,
+"Steel Hammer Workcamp",
+2671,
+2287
+],
+[
+null,
+"Temporary Investigation Base",
+1743,
+1636
+],
+[
+null,
+"Temporary Retreat",
+1288,
+1982
+],
+[
+null,
+"Uruthumheim Cliff",
+2293,
+2035
+],
+[
+null,
+"Victorious Daeva's Statue",
+2107,
+1826
+],
+[
+null,
+"Watcher's Tent",
+1525,
+1864
+],
+[
+null,
+"Wave-Swept Cliff",
+1451,
+2361
+],
+[
+null,
+"Zemurru's Tomb",
+2695,
+2645
+]
+],
+"ishalgen": [
+[
+null,
+"Abandoned Barracks Site",
+2875,
+2158
+],
+[
+null,
+"Aldelle Village",
+2718,
+2059
+],
+[
+null,
+"Witch's Cabin",
+2818,
+1885
+]
+],
+"poeta": [
+[
+null,
+"Dawn Legion Forward Base",
+1988,
+1881
+]
+],
+"reshanta-lower": [
+[
+null,
+"Branding Island",
+1926,
+1574
+],
+[
+null,
+"Latesran Eastern Root",
+2610,
+1499
+],
+[
+null,
+"Latesran Western Root",
+1521,
+2570
+],
+[
+null,
+"River of Rotten Sap",
+1409,
+1947
+],
+[
+null,
+"River of Rotten Sap",
+1543,
+1666
+],
+[
+null,
+"Siel's Left Wing",
+2321,
+2669
+],
+[
+null,
+"Siel's Left Wing",
+2240,
+2253
+],
+[
+null,
+"Siel's Right Wing",
+2516,
+2329
+],
+[
+null,
+"Siel's Right Wing",
+2684,
+2537
+],
+[
+null,
+"Sulfur Tree Island",
+1923,
+1808
+]
+],
+"reshanta-middle": [
+[
+null,
+"Latesran Eastern Ridge",
+1712,
+1015
+],
+[
+null,
+"Latesran Western Ridge",
+379,
+1002
+]
+],
+"reshanta-upper": [
+[
+null,
+"Dukysas Fortress",
+1024,
+1591
+],
+[
+null,
+"Krotan Fortress",
+1024,
+389
+]
+],
+"verteron": [
+[
+1,
+"Dawn Legion Base",
+1494,
+1512
+],
+[
+2,
+"Valley Outpost",
+1582,
+1671
+],
+[
+3,
+"Western Cantas Valley Camp",
+1495,
+1794
+],
+[
+4,
+"Coastal Camp",
+1575,
+1882
+],
+[
+5,
+"Eastern Cantas Valley Campsite",
+1691,
+1688
+],
+[
+6,
+"Cantas Valley Mushroom Tree Peak",
+1773,
+1582
+],
+[
+7,
+"Cantas Valley Mushroom Tree Peak",
+1800,
+1750
+],
+[
+8,
+"Cantas Valley Sky Island",
+1271,
+1759
+],
+[
+9,
+"Marsh Outpost",
+1935,
+1700
+],
+[
+10,
+"Collapsed Verteron Barrier Tower",
+2025,
+1516
+],
+[
+11,
+"Spirit's Rest",
+2210,
+1527
+],
+[
+12,
+"Ellun River Marsh Cliff",
+1870,
+1587
+],
+[
+13,
+"Illusion Cavaliers' Campsite",
+1954,
+1830
+],
+[
+14,
+"Hideout in Front of the Ruins",
+1838,
+1969
+],
+[
+15,
+"Pamos Farm",
+1723,
+1934
+],
+[
+16,
+"Ruin Exploration Campsite",
+1721,
+2038
+],
+[
+17,
+"Ellun River Midstream Highland",
+1502,
+2213
+],
+[
+18,
+"Ellun River Midstream Pond",
+1561,
+2093
+],
+[
+19,
+"Collapsed Pillar",
+2002,
+2045
+],
+[
+20,
+"Illusion Oratory Entrance",
+1933,
+2096
+],
+[
+21,
+"Verteron Fortress Valley",
+2119,
+2009
+],
+[
+22,
+"Dawn Legion Temporary Outpost",
+1927,
+2273
+],
+[
+23,
+"Zumion Temple Pilgrimage Path",
+2062,
+2490
+],
+[
+24,
+"Zumion Statue",
+2236,
+2148
+],
+[
+25,
+"Wind Breeze Merchants HQ",
+1619,
+2252
+],
+[
+26,
+"Southern Shugo Station",
+1695,
+2342
+],
+[
+27,
+"Astin Mercenaries Base",
+1726,
+2480
+],
+[
+28,
+"Eastern Shugo Station",
+1874,
+2333
+],
+[
+29,
+"Aullaeu Village Border",
+1930,
+2416
+],
+[
+30,
+"Tolbas Forest Outskirts",
+1536,
+2369
+],
+[
+31,
+"Aullaeu Funeral Island",
+1413,
+2383
+],
+[
+32,
+"Abandoned Wind Breeze Office",
+1836,
+2632
+],
+[
+33,
+"Aullaeu Village Valley",
+1953,
+2771
+],
+[
+34,
+"Forest of Exiles",
+1733,
+2751
+],
+[
+35,
+"Aullaeu Village Sky Island",
+1723,
+2847
+],
+[
+36,
+"Zumion Village",
+2356,
+2134
+],
+[
+37,
+"Rock Hill Outpost",
+2229,
+2347
+],
+[
+38,
+"Canyon Campsite",
+2442,
+2370
+],
+[
+39,
+"Canyon Sky Island",
+2573,
+2563
+],
+[
+40,
+"Scar of the Wind",
+2407,
+2618
+],
+[
+41,
+"Alert Observation Post",
+2657,
+2221
+],
+[
+42,
+"Hill of Purification",
+2860,
+2259
+],
+[
+43,
+"Altamia Highland Ruins",
+2755,
+2153
+],
+[
+44,
+"Ancient Zumion Temple Site",
+2593,
+2364
+],
+[
+45,
+"Beast Hunter Campsite",
+2283,
+2637
+],
+[
+46,
+"Highland's End Campsite",
+2348,
+2860
+],
+[
+47,
+"Southern Altamia Coastal Cliffs",
+2269,
+2910
+],
+[
+48,
+"Kraka Footpath Campsite",
+2547,
+2039
+],
+[
+49,
+"Kraka Uphill Path",
+2224,
+1874
+],
+[
+50,
+"Kraka Footpath Wastewater Downstream",
+2138,
+1695
+],
+[
+51,
+"Nahid Brigade Fortress Hill",
+2939,
+1887
+],
+[
+52,
+"Notos Legion Outpost",
+2615,
+1823
+],
+[
+53,
+"Laborer's Rest Stop",
+2469,
+1778
+],
+[
+54,
+"Drana Transport Hub",
+2665,
+1736
+],
+[
+55,
+"Scarlet Forest Observation Site",
+2435,
+1517
+],
+[
+56,
+"Red Maple Forest",
+2315,
+1666
+],
+[
+57,
+"Nahid Disposal Plant",
+2736,
+1388
+],
+[
+58,
+"Pilgrim's Rest",
+2444,
+2787
+],
+[
+59,
+"Garden of the Illusion God West Observatory",
+2511,
+2967
+],
+[
+60,
+"Garden of the Illusion God East Observatory",
+2680,
+2763
+],
+[
+61,
+"Crimson Isle Outpost",
+2505,
+1100
+]
+]
+}

@@ -141,7 +141,8 @@ class WebUI:
             general=dict(topmost=app.topmost.get(), settings_at_start=settings.get("settings_at_start", True),
                          tray=bool(app.tray)),
             features=features, overlays=overlays(app), screens=screens(app),
-            layout=bool(app.layout), characters=app.characters.listing(),
+            layout=bool(app.layout), characters=app.characters.listing(bool(load_settings().get("subscriber"))),
+            subscriber=bool(load_settings().get("subscriber")),
             terms=dict(agreed=app.agreed, when=app.agreed_at), commands=commands_get(),
             focus=app.focus_seq, map_focus=app.map_focus, goto=goto)
 
@@ -321,6 +322,11 @@ def duty_fill(app, value):
     duty_set(int(value))
 
 
+def set_subscriber(app, value):
+    """The Checklist's premium switch: Shugo keys come 3 a day instead of 2."""
+    save_settings(dict(load_settings(), subscriber=bool(value)))
+
+
 def accept_terms(app):
     app.accept_terms()
 
@@ -332,4 +338,4 @@ def quit_app(app):
 ACTIONS = {f.__name__: f for f in (feature_act, set_feature, overlay_show, overlay_lock, overlay_move, overlay_scale,
                                    overlay_cone, overlay_recenter, edit_layout, lock_all, set_map, set_topmost,
                                    set_settings_at_start, check_updates, install_update, open_map,
-                                   quit_app, restart_app, accept_terms, commands_fill, duty_fill, set_faction, forget_character, map_cfg, map_target, map_watch)}
+                                   quit_app, restart_app, accept_terms, set_subscriber, commands_fill, duty_fill, set_faction, forget_character, map_cfg, map_target, map_watch)}

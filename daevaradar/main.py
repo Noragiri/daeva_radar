@@ -10,7 +10,8 @@ import sys
 import threading
 import time
 
-from .common import ASSETS, FROZEN, HERE, LINUX, NO_WINDOW, WINDOWS, launch_command, load_settings
+from .common import (ASSETS, FROZEN, HERE, LINUX, NO_WINDOW, WINDOWS, instance_running, launch_command, load_settings,
+                     request_focus, take_instance)
 from . import game
 from .game import Recorder, TEMPLATES, Tracker
 from .capture import Engine, capture_helper, find_windivert
@@ -69,6 +70,8 @@ def main():
                         help="don't check GitHub for a new version (at launch and every full hour)")
     parser.add_argument("--settings-window", metavar="URL", help=argparse.SUPPRESS)  # the Settings window's process
     parser.add_argument("--open-settings", action="store_true", help=argparse.SUPPRESS)  # restarted from Settings
+    parser.add_argument("--restarted", action="store_true", help=argparse.SUPPRESS)  # started by the old copy: wait for it
+    parser.add_argument("--allow-multiple", action="store_true", help=argparse.SUPPRESS)  # development: a second copy
     parser.add_argument("--demo", action="store_true",
                         help="no capture or admin rights: simulated player and cubes, to try the window")
     args = parser.parse_args()
@@ -104,6 +107,14 @@ def main():
             ctypes.windll.user32.SetProcessDPIAware()
     if WINDOWS:  # our own taskbar entry and icon, not Python's
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DaevaRadar.Radar")
+    if args.restarted:  # the copy that started this one is closing: give it a moment
+        for _ in range(100):
+            if not instance_running():
+                break
+            time.sleep(0.2)
+    if not args.allow_multiple and instance_running():  # two copies would fight over the settings and the capture
+        request_focus()  # the running copy brings its Settings window forward
+        return
     if WINDOWS and not is_admin() and not args.demo:  # WinDivert needs elevation: relaunch through UAC (it starts in System32)
         command = launch_command()
         argv = command[1:]
@@ -116,6 +127,9 @@ def main():
             exe = exe.with_name("pythonw.exe")
         if ctypes.windll.shell32.ShellExecuteW(None, "runas", str(exe), params, None, 1) <= 32:
             show_error("Administrator rights are required (WinDivert needs them).")
+        return
+    if not args.allow_multiple and not take_instance():  # (also catches two copies starting together)
+        request_focus()
         return
     try:
         folder = find_windivert(args.windivert) if WINDOWS and not args.demo else None
@@ -234,5 +248,6 @@ def console_loop(tracker, engine, args):
                     break
             else:
                 engine.say("Cube! (your position not known yet)")
-            play(args.voice, args.sound, args.volume)
+            if not args.demo:
+                play(args.voice, args.sound, args.volume)
         time.sleep(0.25)

@@ -325,15 +325,14 @@ def pet_souls(data):
     except (ValueError, IndexError, struct.error):
         pass
     return None
-BOSS_MAPS = {0x456: "altgard", 0x3f2: "verteron"}  # the boss list's header -> the map it belongs to
+BOSS_MAPS = {1110: "altgard", 1010: "verteron", 20: "lower reshanta"}  # the boss list's header -> the map it belongs to
 
 
 def boss_list(data):
-    """'01 91' the map menu's boss respawn list (live 2026-10-20): 00 | map u32 (1110 Altgard, 1010 Verteron) | count |
-    the records: [flag | boss id 3 bytes | x, y, z f32 only when flag is 1] respawn time u64 (ms since 1970; in the
-    past means the boss is up, and then its place comes with it). The first record has one spare byte after its id.
-    Boss ids run consecutively in ascending monster-type order (data/bosses.json names them), so records are found
-    by where each time ends (its top bytes are always a1 01 00 00).
+    """'01 91' the map menu's boss respawn list (live 2026-10-20 / 21): 00 | map u32 (1110 Altgard, 1010 Verteron, 20
+    Lower Reshanta) | count | the records: [flag | boss id (LEB128) | x, y, z f32 only when flag is 1 | respawn time u64
+    (ms since 1970; in the past it's up, 0 = no time known)]. A record of a boss that is up has one spare byte before its time.
+    Boss ids run in ascending monster-type order (data/bosses.json names them).
     -> (map name, {boss id: time in seconds}, {boss id: (x, y, z)}) or None."""
     if data[:2] != b"\x01\x91" or len(data) < 20:
         return None
@@ -343,17 +342,21 @@ def boss_list(data):
         if code not in BOSS_MAPS or not 0 < n < 100:
             return None
         times, places = {}, {}
-        while True:
-            q = data.find(b"\xa1\x01\x00\x00", p + 4)
-            if q < 0:
-                break
-            region = data[p:q - 4]
-            boss = int.from_bytes(region[1:4], "little")
-            if len(region) >= 16 and region[0]:
-                places[boss] = struct.unpack_from("<fff", region, 4)
-            times[boss] = struct.unpack_from("<Q", data, q - 4)[0] / 1000
-            p = q + 4
-        return (BOSS_MAPS[code], times, places) if len(times) == n else None
+        for i in range(n):
+            flag = data[p]
+            boss, p = varint(data, p + 1)
+            if flag:
+                places[boss] = struct.unpack_from("<fff", data, p)
+                p += 12
+            when = struct.unpack_from("<Q", data, p)[0]
+            if not (when == 0 or 1.5e12 < when < 2.5e12):  # a boss that is up has a spare byte before its time
+                p += 1
+                when = struct.unpack_from("<Q", data, p)[0]
+            if not (when == 0 or 1.5e12 < when < 2.5e12):
+                return None
+            times[boss] = when / 1000
+            p += 8
+        return BOSS_MAPS[code], times, places
     except (ValueError, IndexError, struct.error):
         return None
 

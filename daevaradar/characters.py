@@ -18,6 +18,8 @@ SHARED_MAP = "reshanta-lower"  # both sides farm here
 # fills them in; they're cleared at the weekly reset.
 COMMAND_IDS = (134019901, 134019902, 134019903, 134019904)  # tier 1-4 (white, green, blue, gold): also their icons
 COMMAND_MAX = 5
+COMMAND_COST = (15000, 37500, 75000, 150000)  # kinah each, from the Command Shop (2026-10-22)
+DUTY_COST = 15000  # "Command: Verteron (Bound)", 12 a week
 DUTY_MAX = 12
 
 
@@ -37,7 +39,7 @@ def commands_get():
     counts = saved.get("t", []) if fresh else []
     counts = [max(0, min(COMMAND_MAX, int(counts[i]))) if i < len(counts) else 0 for i in range(len(COMMAND_IDS))]
     duty = max(0, min(DUTY_MAX, int(saved.get("duty", 0)))) if fresh else 0
-    return dict(t=counts, max=COMMAND_MAX, ids=list(COMMAND_IDS), duty=duty, duty_max=DUTY_MAX, week=week)
+    return dict(t=counts, max=COMMAND_MAX, ids=list(COMMAND_IDS), duty=duty, duty_max=DUTY_MAX, cost=list(COMMAND_COST), duty_cost=DUTY_COST, week=week)
 
 
 def commands_set(tier, value):
@@ -53,6 +55,24 @@ def duty_set(value):
     """The plain Duty Command's count, clamped to 0-12."""
     now = commands_get()
     save_settings(dict(load_settings(), commands=dict(week=now["week"], t=now["t"], duty=max(0, min(DUTY_MAX, int(value))))))
+
+
+# What refills by itself between two readings (the player's rules, 2026-10-22); the PC's clock, like the resets:
+# Odyle energy +15 every 3 hours (at 0, 3, 6, 9 ...) up to 840; Nightmare +2 a day and Shugo keys +2 a day (+3 with
+# the premium subscription) at the daily reset (09:00), up to their limits. Weekly counters refill in the page.
+RESET_HOUR = 9  # the daily and weekly reset (Wednesday for the weekly one)
+ENERGY_MAX, ENERGY_STEP, ENERGY_EVERY_H = 840, 15, 3
+DAILY_GAIN = {4: 2}  # counter id -> gained at each daily reset; Shugo keys (1) are 2, or 3 for subscribers
+SHUGO_KEYS = 1
+_EPOCH = _dt.datetime(2000, 1, 1)
+
+
+def ticks_between(a, b, every_h, anchor_h=0):
+    """How many times the local clock passed anchor_h + n x every_h hours after time a, up to and including b."""
+    def n(ts):
+        seconds = (_dt.datetime.fromtimestamp(ts) - _EPOCH).total_seconds()
+        return int((seconds - anchor_h * 3600) // (every_h * 3600))
+    return max(0, n(b) - n(a))
 
 
 class Characters:
@@ -140,8 +160,10 @@ class Characters:
         del history["changes"][:-HISTORY_CHANGES]
 
     @staticmethod
-    def checklist(entry):
-        """For the Checklist page: the last reading, grouped like the game's own lists."""
+    def checklist(entry, subscriber=False, now=None):
+        """For the Checklist page: the last reading, grouped like the game's own lists, with what has refilled by
+        itself since it was read (ticks: energy every 3 h, Nightmare and Shugo keys at the daily reset)."""
+        now = time.time() if now is None else now
         sheet = entry.get("sheet")
         cls = CLASSES.get(entry.get("cls"), "Class %s" % entry["cls"] if entry.get("cls") else None)
         history = entry.get("history") or {}
@@ -153,8 +175,16 @@ class Characters:
             return out
         counters, money = sheet.get("counters", {}), sheet.get("currencies", {})
         out.update(read=sheet["read"], read_at=sheet.get("read_at"))
+        read_at = sheet.get("read_at")
+        daily_ticks = ticks_between(read_at, now, 24, RESET_HOUR) if read_at else 0
         energy = counters.get(str(ENERGY))
         out["energy"] = energy if isinstance(energy, list) else ([energy, 0] if energy is not None else None)
+        if out["energy"] and read_at:
+            gain = ticks_between(read_at, now, ENERGY_EVERY_H) * ENERGY_STEP
+            if gain and out["energy"][0] < ENERGY_MAX:
+                full = min(ENERGY_MAX, out["energy"][0] + gain)
+                out["energy_proj"] = full - out["energy"][0]
+                out["energy"] = [full] + list(out["energy"][1:])
         for ident, c in COUNTERS.items():
             if str(ident) not in counters:
                 continue
@@ -163,8 +193,14 @@ class Characters:
             if c.get("bonus") and str(c["bonus"]) in counters:  # a separate bonus counter (Unknown Fissure's)
                 extra = counters[str(c["bonus"])]
                 bonus = extra[1] if isinstance(extra, list) else extra
+                if isinstance(extra, list):  # its left count is in there too: [14, 30] = "14 (+30) / 14" (2026-10-22);
+                    left = extra[0]          # the main counter (6) always reads 0 in the login message
+            gain = daily_ticks * (DAILY_GAIN.get(ident, 0) or ((3 if subscriber else 2) if ident == SHUGO_KEYS else 0))
+            proj = 0
+            if gain and c["max"] and left < c["max"]:
+                proj, left = min(c["max"], left + gain) - left, min(c["max"], left + gain)
             out[c["group"]].append(dict(name=c["name"], left=left, bonus=bonus, max=c["max"], scope=c["scope"],
-                                        unit=c.get("unit"), note=c.get("note")))
+                                        unit=c.get("unit"), note=c.get("note"), proj=proj))
         amounts = [(name, money[str(i)], i) for i, name in CURRENCIES.items() if str(i) in money]
         kinah = [v for n, v, _ in amounts if n.startswith("Kinah")]
         out["currencies"] = ([("Kinah (total)", sum(kinah), 930100030)] if len(kinah) == 2 else []) + amounts
@@ -189,10 +225,10 @@ class Characters:
         if self.data.pop(name, None) is not None:
             self.save()
 
-    def listing(self):
+    def listing(self, subscriber=False):
         """For the page: the one playing first, then the most recently played."""
         rows = [dict({k: v for k, v in e.items() if k != "sheet"}, name=name, playing=name == self.playing,
-                     guess=self.guess(e), checklist=self.checklist(e)) for name, e in self.data.items()]
+                     guess=self.guess(e), checklist=self.checklist(e, subscriber)) for name, e in self.data.items()]
         rows.sort(key=lambda r: r.get("last") or "", reverse=True)
         rows.sort(key=lambda r: not r["playing"])  # stable: the playing one first, the rest still newest first
         return rows

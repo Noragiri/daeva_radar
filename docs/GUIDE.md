@@ -109,13 +109,18 @@ app: closing it quits.)
 
 ### Boss timers
 
-The field bosses' respawn times, one list per map (Verteron, Altgard), sorted by time left:
+The field bosses' respawn times, one list per map (Verteron, Altgard, Lower Reshanta), sorted by time left:
 
 - Open the **boss list in the map menu** in the game: that is when it sends the list, and only for the map you're in
   (Altgard can only be entered every 3 hours). Each list shows how long ago it was read.
 - Times are absolute, so they keep counting while you're elsewhere. **Up** means the time has passed (it may have been
   killed since); the last 10 minutes show in orange.
-- Altgard has one boss without a name yet.
+
+**Route** tab: a boss train. It lists the bosses that are up or respawn within the window you pick (Up now … 4 h) in
+the order to visit them, by distance: on foot from where you are, or by the obelisk (teleport) nearest to the boss,
+shown with its number in the game's Complete List (Verteron only so far: Altgard shows the name; Lower Reshanta has no obelisks, so it is on foot). A boss's
+place is learned the first time it is up while you read the list, so the route grows with use; bosses without a
+known place are listed under it. It assumes every obelisk is unlocked and a run speed of 8 m/s.
 
 ### Wardrobe
 

@@ -270,14 +270,14 @@ print('duty commands: manual counts, weekly reset')
 boss = bytes.fromhex('01910000f20300001800909506a068d6c559a10100000089950615c5b659a1010000008a9506dce8b359a1010000008e9506cdc2d959a1010000008b950645c8b059a1010000018c950600768dc6004c23c6001ca84665429759a101000000939506efc9145aa1010000018d95060012d3c600be9b460052904643b59459a1010000008f9506007ee4b759a101000000919506939cc859a1010000009295063d3ee159a10100000094950638ee575aa1010000009595062a8a0b5aa101000000969506ef7c7e5aa101000000979506a538b459a1010000009895067df6e659a1010000009995060088adff59a1010000009a95066e24f659a1010000009b9506035cfa59a1010000009c95068d985c5aa1010000009d9506e232885ba1010000009e9506b8ffb65aa1010000009f950641a2ad5aa101000000a09506b300985ba1010000000000')
 found = cf.boss_list(boss)
 assert found[0] == 'verteron' and len(found[1]) == 24
-assert min(found[1]) == 0x69589 and max(found[1]) == 0x695a0 and len(found[2]) == 2
-assert abs(found[2][0x6958c][0] + 18107.0) < 1
+assert min(found[1]) == 101001 and max(found[1]) == 101024 and len(found[2]) == 2
+assert abs(found[2][101004][0] + 18107.0) < 1
 assert cf.boss_list(boss[:30]) is None and cf.boss_list(b'\x01\x91' + bytes(40)) is None
 t = cf.Tracker(); t.feed([boss], 1.0)
 assert t.snapshot(now=1.0)['bosses']['verteron']['times'] == found[1] and t.snapshot(now=1.0)['boss_count'] == 1
 from daevaradar.features.bosses import BossData
 bd = BossData()
-assert bd.describe('verteron', 0x69589)[0] == 'Neikel of the East'
+assert bd.describe('verteron', 101001)[0] == 'Neikel of the East'
 assert all(bd.describe('verteron', b)[1] for b in found[1])  # every record is named
 print('bosses: list parsed,', len(found[1]), 'records,', len(found[2]), 'with a place')
 
@@ -287,6 +287,25 @@ assert cf.currencies(upd) == {930100031: 110}
 upd = bytes.fromhex('1b5602010056be150000f000003f33703767000000000000000123000000000000000000000000000019000100f3900d0000d602003f337037f8490e000000000002570000000000000000000000000f0000')
 assert cf.currencies(upd) == {930100031: 103}
 print('kinah: server storage not counted')
+
+# 22) refills between two readings: energy +15 every 3 h (0, 3, 6 ...), Nightmare +2 and Shugo keys +2 / +3 daily at 09:00
+import datetime as dt2
+from daevaradar import characters as chars2
+ts = lambda *a: dt2.datetime(*a).timestamp()
+assert chars2.ticks_between(ts(2026, 10, 22, 2, 59), ts(2026, 10, 22, 3, 0), 3) == 1
+assert chars2.ticks_between(ts(2026, 10, 22, 3, 0), ts(2026, 10, 22, 5, 59), 3) == 0       # the tick at 03:00 was already in
+assert chars2.ticks_between(ts(2026, 10, 22, 4, 0), ts(2026, 10, 23, 4, 0), 3) == 8
+assert chars2.ticks_between(ts(2026, 10, 22, 8, 0), ts(2026, 10, 23, 10, 0), 24, 9) == 2    # two daily resets
+entry = dict(cls=34, level=60, sheet=dict(read='x', read_at=ts(2026, 10, 22, 4, 0),
+             counters={'4': [8, 0], '1': [10, 8], '60000001': [800, 5]}, currencies={}))
+now = ts(2026, 10, 23, 10, 0)  # two resets and 8 energy ticks later
+out = chars2.Characters.checklist(entry, False, now)
+rows = {r['name']: r for g in ('stock', 'daily', 'weekly') for r in out[g]}
+assert rows['Nightmare']['left'] == 12 and rows['Shugo keys']['left'] == 14 and out['energy'][0] == 840 and out['energy_proj'] == 40
+subs = {r['name']: r for g in ('stock',) for r in chars2.Characters.checklist(entry, True, now)[g]}
+assert subs['Shugo keys']['left'] == 16 and subs['Nightmare']['proj'] == 4
+assert chars2.Characters.checklist(entry, False, ts(2026, 10, 22, 4, 30))['energy'][0] == 800  # nothing passed
+print('refills: energy, Nightmare, Shugo keys')
 
 # 17) the first-run notice: until it's agreed to, the tracker reads nothing
 t = cf.Tracker(); t.paused = True
