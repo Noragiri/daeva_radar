@@ -241,9 +241,7 @@ class FeathersFeature(Feature):
 
     def page_settings(self, snap):
         key = self.map_key()
-        blocks = [P.heading("Feather settings", "Empyrean Trace spots from the local map data (© NCSOFT, via "
-                            "Shugo.GG). The game's id for feathers is learned the first time one is near you; picking "
-                            "one up marks its spot collected."),
+        blocks = [P.heading("Feather settings", "Spots from the map data. The feather id is learned when one is near you; picking one up marks it collected."),
                   P.section("Show")]
         blocks += [P.toggle("flag_" + k, text, self.cfg[k]) for k, text in self.FLAGS]
         blocks += [P.section("Feather type ids"),

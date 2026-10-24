@@ -386,7 +386,7 @@ class Pets:
                 P.toggle("pet_flag_live", "Target pets' soul monsters in range (solid)", self.cfg["live"]),
                 P.toggle("pet_card_fade", "Fade the Pet tracker card out 60 s after the last soul drop",
                          self.app.panels["pet_tracker"].cfg["fade"] if "pet_tracker" in self.app.panels else True,
-                         hint="It comes back with the next soul. Unlocked or in Overlay layout, it always shows.")]
+                         hint="It returns with the next soul.")]
 
     def on_pet_card_fade(self, on):
         card = self.app.panels.get("pet_tracker")

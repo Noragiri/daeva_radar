@@ -181,12 +181,10 @@ class CubesFeature(Feature):
                    P.text("Your own WAV or MP3: put it in sounds/custom/ (Open folder), then pick it here.", small=True),
                    P.section("Show"),
                    P.toggle("flag_spawns", "Spawn points from the map data", self.cfg["spawns"],
-                            hint="Hollow red circles; © NCSOFT, via Shugo.GG."),
+                            hint="Hollow red circles."),
                    P.section("Haptics (Lovense)"),
-                   P.text("The closer you get to a cube, the stronger the vibration. Open Lovense Remote on your phone → "
-                          "Discover → Game Mode, switch it on, and type the IP and port it shows (same Wi-Fi as this PC). "
-                          "Nothing leaves your network. Your position only updates on dashes, teleports and aura ticks, so "
-                          "keep an aura on.", small=True),
+                   P.text("Closer cube, stronger vibration. Lovense Remote → Discover → Game Mode: enter its IP and port (same Wi-Fi). "
+                          "Needs an aura on for position updates.", small=True),
                    P.toggle("flag_haptics_on", "Vibrate as I get close to a cube", self.cfg["haptics_on"]),
                    P.row(P.field("haptics_host", self.cfg["haptics_host"], "IP, e.g. 192.168.1.20", label="IP", width=200),
                          P.number("haptics_port", self.cfg["haptics_port"], 1, 65535, label="Port")),

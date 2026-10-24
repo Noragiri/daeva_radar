@@ -92,9 +92,7 @@ class ViewFeature(Feature):
         super().__init__(app)
 
     def page_setup(self, snap):
-        blocks = [P.heading("Vision cone", "Mirrors the camera cone from the game's minimap onto the Cubes and Monsters "
-                            "radars and overlays. It's read from the screen (the game traffic doesn't contain your view "
-                            "direction), so the minimap must be visible: borderless or windowed mode.")]
+        blocks = [P.heading("Vision cone", "Shows the camera cone from the game's minimap on the radars and overlays. Read from the screen: the minimap must be visible (borderless or windowed).")]
         if not WINDOWS:
             return blocks + [P.text("Windows only for now.", color="#ff6ad5")]
         view = self.view

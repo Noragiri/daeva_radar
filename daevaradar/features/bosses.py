@@ -147,9 +147,7 @@ class BossesFeature(Feature):
     def page_timers(self, snap):
         now = time.time()
         blocks = [P.heading("Boss timers"),
-                  P.text("The game sends the list of the map you're in every few seconds, so each map is read while you're "
-                         "on it (Altgard can only be entered every 3 hours). Times are absolute, so they keep counting "
-                         "while you're elsewhere. 'Up' means the respawn time passed: it may have been killed since.", small=True)]
+                  P.text("Each map is read while you're on it. Up = the time passed (it may be dead since).", small=True)]
         for m, title in MAP_TITLES:
             blocks.append(P.section(title))
             d = self.lists.get(m)
@@ -289,10 +287,8 @@ class BossesFeature(Feature):
         now = time.time()
         m = self.route_map()
         blocks = [P.heading("Boss route"),
-                  P.text("A route through the bosses that are up or about to respawn, by distance: on foot from where you "
-                         "are, or by the obelisk (teleport) nearest to the boss. A boss's place is learned when it is "
-                         "up while you are on its map, so the route grows with use. It assumes every obelisk is "
-                         "unlocked (Lower Reshanta has none: on foot).", small=True),
+                  P.text("Bosses up or respawning soon, by distance: on foot or via the nearest obelisk. Places are learned when a "
+                         "boss is up; assumes every obelisk is unlocked.", small=True),
                   P.row(P.choice("map", (("auto", "Auto"), ("verteron", "Verteron"), ("altgard", "Altgard"),
                                          ("lower reshanta", "Lower Reshanta")), self.cfg["map"]),
                         P.choice("window", WINDOWS_MIN, self.cfg["window"]))]

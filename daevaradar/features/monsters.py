@@ -185,8 +185,7 @@ class MonstersFeature(Feature):
     def page_settings(self, snap):
         results = self.results()
         watch = self.cfg["watch"]
-        return [P.heading("Monster settings", "Pick the monsters to watch. Several at once is fine; each gets its own "
-                          "colour on the radar and the overlay."),
+        return [P.heading("Monster settings", "Pick the monsters to watch; each gets a colour."),
                 P.section("Find a monster"),
                 P.field("search", self.search, "Monster name", width=320),
                 P.listbox("result", [(("★ " if self.watched(n) else "   ") + n, None) for n in results],

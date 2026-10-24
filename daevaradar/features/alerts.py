@@ -93,8 +93,7 @@ class AlertsFeature(Feature):
     # ---- Upcoming tab
     def page_upcoming(self, snap):
         now = self.now()
-        blocks = [P.heading("Upcoming", "Click a name to switch that alarm on or off. Your own alarms have a × to "
-                            "delete them. Times are server time (EU servers: Berlin time)."),
+        blocks = [P.heading("Upcoming", "Click an alarm to switch it. Times are server time (EU: Berlin)."),
                   P.text("Server time %s%s" % (now.strftime("%H:%M:%S"),
                                                "" if not self.cfg["offset"] else "  (PC %+dh)" % self.cfg["offset"]),
                          mono=True, small=True)]

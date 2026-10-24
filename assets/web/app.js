@@ -108,19 +108,19 @@ function general() {
   const mine = s.version ? "v" + esc(s.version) : (s.git ? "a git checkout" : "version unknown");
   return `<h2>${icon("General")}General</h2>
   <div class="section">Map</div>
-  <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Detected: " + esc(label(s.map.detected)) : "Not detected yet: Auto reads the map from the boss list the game sends every few seconds, or pick the map."}</span></div>
+  <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Detected: " + esc(label(s.map.detected)) : "Not detected yet: read from the boss list, or pick one."}</span></div>
     <select data-h="${reg((v) => act("set_map", { key: v }))}">${s.map.choices.map(([k, t]) => `<option value="${esc(k)}" ${k === s.map.choice ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
   <div class="section">Windows</div>
-  <div class="row"><div class="label">Open Settings when Daeva Radar starts<span class="hint">Otherwise it starts in the tray: double-click the tray icon for Settings.</span></div>
+  <div class="row"><div class="label">Open Settings when Daeva Radar starts<span class="hint">Else it starts in the tray.</span></div>
     ${toggle(g.settings_at_start, (v) => act("set_settings_at_start", { on: v }))}</div>
   <div class="row"><div class="label">Keep the World map on top</div>${toggle(g.topmost, (v) => act("set_topmost", { on: v }))}</div>
-  <div class="row"><div class="label">World map<span class="hint">Pet soul spawns, hidden cubes and gathering nodes.</span></div>${btn("Open map", () => act("open_map"))}</div>
+  <div class="row"><div class="label">World map<span class="hint">Pet spawns, cubes, gathering nodes.</span></div>${btn("Open map", () => act("open_map"))}</div>
   <div class="section">Updates</div>
   <div class="row"><div class="label">This is ${mine}.<span class="hint">${upd}${s.git && u.state === "available" ? " Update it with git pull." : ""}</span></div>
     ${u.state === "available" && !s.git ? btn("Update and restart", () => confirm(`Update to ${u.release} now? The app restarts; your settings are kept.`) && act("install_update"), "primary") : ""}
     ${btn("Check now", () => act("check_updates"), "", ["checking", "installing", "installed"].includes(u.state))}</div>
   <div class="section">Troubleshooting</div>
-  <div class="row"><div class="label">Position debug<span class="hint">Your position, its last packet and how often it updates.</span></div>${btn("Open", () => { page = "Debug"; store.set("page", page); render(true); })}</div>
+  <div class="row"><div class="label">Position debug<span class="hint">Your position and how it updates.</span></div>${btn("Open", () => { page = "Debug"; store.set("page", page); render(true); })}</div>
   <div class="divider"></div>
   <div class="btns">${btn("Restart Daeva Radar", () => confirm("Restart Daeva Radar? It closes and starts again (this window too); your settings are kept.") && act("restart_app"))}
   ${btn("Quit Daeva Radar", () => confirm("Quit Daeva Radar? Capture, overlays and alerts stop.") && act("quit_app"), "danger")}</div>`;
@@ -142,7 +142,7 @@ function featureHead(f) {
   const tab = featureTab(f);
   return `<h2>${icon(f.title)}${esc(f.title)} <span style="margin-left:auto"></span>
       <span class="switch-label">${f.enabled ? "On" : "Off"}${toggle(f.enabled, (v) => act("set_feature", { title: f.title, on: v }))}</span></h2>
-    <p class="lead">${f.enabled ? esc(f.status || "Running.") : "Off: nothing is tracked, alerted or drawn. Its settings can still be changed."}</p>
+    <p class="lead">${f.enabled ? esc(f.status || "Running.") : "Off: nothing is tracked or drawn."}</p>
     <div class="tabs">${featureTabs(f).map((t) => `<button class="tab ${t === tab ? "on" : ""}" data-tab="${esc(t)}">${esc(t)}</button>`).join("")}</div>
     ${tab === "Overlays" ? state.overlays.filter((o) => o.feature === f.title).map((o) => overlayRow(o, true)).join("") : ""}`;
 }
@@ -154,20 +154,19 @@ document.addEventListener("click", (e) => {
 });
 function overlayRow(o, detail) {
   const place = async () => { await act("edit_layout"); if (window.pywebview && window.pywebview.api.minimize) window.pywebview.api.minimize(); };
-  let html = `<div class="row"><div class="label">${esc(o.title)}<span class="hint">${o.kind === "radar" ? "Sits on the game's minimap." : "Info card."} ${o.shown ? (o.locked ? "Locked: clicks go to the game." : "Unlocked: drag it to move.") : "Hidden."}</span></div>
+  let html = `<div class="row"><div class="label">${esc(o.title)}<span class="hint">${o.kind === "radar" ? "Minimap overlay." : "Info card."} ${o.shown ? (o.locked ? "Locked." : "Unlocked: drag to move.") : "Hidden."}</span></div>
     <span class="switch-label">Locked${toggle(o.locked, (v) => act("overlay_lock", { id: o.id, on: v }), !o.shown)}</span>
     <span class="switch-label">Shown${toggle(o.shown, (v) => act("overlay_show", { id: o.id, on: v }), !o.allowed)}</span>
     ${o.allowed ? btn("Place", place) : ""}</div>`;
   if (detail && o.kind === "radar") {
-    html += `<p class="lead">${esc(o.text)} It keeps running whichever page is open. The game must be in borderless or windowed mode.</p>
-    <div class="row"><div class="label">Scale<span class="hint">${o.across} m across. The mouse wheel on the unlocked overlay does the same.</span></div>
+    html += `<p class="lead">${esc(o.text)} Needs borderless or windowed mode.</p>
+    <div class="row"><div class="label">Scale<span class="hint">${o.across} m across. Mouse wheel works too.</span></div>
       <div class="btns">${btn("−", () => act("overlay_scale", { id: o.id, factor: 1 / 1.1 }))}${btn("+", () => act("overlay_scale", { id: o.id, factor: 1.1 }))}</div></div>
     <div class="row"><div class="label">Show the view cone on this overlay<span class="hint">Needs View cone on.</span></div>${toggle(o.cone, (v) => act("overlay_cone", { id: o.id, on: v }))}</div>
     <div class="row"><div class="label">Lost it off-screen?</div>${btn("Bring it here", () => act("overlay_recenter", { id: o.id }), "", !o.allowed)}</div>
     <div class="section">How to line it up</div>
-    <p class="lead">1. Unlocked, drag the overlay so its crosshair sits on your arrow.<br>2. Drag its bottom-right corner to the minimap's size.<br>
-    3. Mouse wheel (or − / + here) until its rings match the game's distances.<br>4. Lock it: right-click it, the switch here, or Ctrl+Shift+O (works in game).
-    Locked, clicks go through to the game. Ctrl+Shift+O locks / unlocks every shown overlay.</p>`;
+    <p class="lead">1. Drag the overlay so its crosshair sits on your arrow.<br>2. Drag its bottom-right corner to the minimap's size.<br>
+    3. Mouse wheel (or − / +) until its rings match the game's distances.<br>4. Lock it: right-click, the switch above, or Ctrl+Shift+O (locks all).</p>`;
   }
   return html;
 }
@@ -179,9 +178,7 @@ function characters() {
     "seg faction " + f.toLowerCase() + (c.faction === f ? " on" : ""));
   const where = (c) => c.maps.length ? "seen in " + c.maps.map(label).join(", ") : "no map detected yet";
   return `<h2>${icon("Characters")}Characters</h2>
-  <p class="lead">Every character Daeva Radar has seen log in (by name). Set each one's faction: Elyos or Asmodian
-  (unset, it's guessed from the maps the character was detected on). Their keys, entries and currencies are on the
-  <b>Checklist</b> page.</p>
+  <p class="lead">Set each character's faction (unset: guessed from its maps). Keys and currencies are on <b>Checklist</b>.</p>
   ${rows.length ? rows.map((c) => `<div class="row"><div class="label"><b>${esc(c.name)}</b>
       ${c.playing ? '<span class="badge on">playing now</span>' : ""}
       <span class="hint">${c.last ? "Last played " + esc(c.last) : "Seen before this page existed"} · ${esc(where(c))}${
@@ -241,7 +238,7 @@ function commandsBlock() {
         <b>${c.duty}</b> / ${c.duty_max}
         <button class="cm-step" data-h="${reg(() => act("duty_fill", { value: c.duty + 1 }))}" ${c.duty >= c.duty_max ? "disabled" : ""}>+</button></span></div>
       ${box(c.duty >= c.duty_max, (v) => act("duty_fill", { value: v ? c.duty_max : 0 }))}</div>`;
-  return `<div class="section">Duty Commands <small class="muted">· weekly, shared on the server, filled in by you (the game doesn't send it)</small></div>
+  return `<div class="section">Duty Commands <small class="muted">· weekly, per server, set by hand</small></div>
     <div class="cm"><div class="cm-tiers">${duty}</div></div>
     <div class="section" style="margin-top:4px">Duty Command: Abyss <small class="muted">· 4 tiers x 5</small></div>
     <div class="cm"><div class="cm-tiers">${tiers}</div>
@@ -252,7 +249,7 @@ function commandsBlock() {
 function checklist() {
   // one grid: a column per character, a row per item; what's shared on the server shown once, from the newest reading
   const chars = state.characters.filter((c) => c.checklist && c.checklist.read);
-  if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs. Its keys, entries and currencies are read from the game at login and saved.</p>`;
+  if (!chars.length) return `<h2>${icon("Checklist")}Checklist</h2><p class="lead">Nothing read yet: log in with a character while Daeva Radar runs.</p>`;
   chars.sort((x, y) => (y.playing - x.playing) || x.name.localeCompare(y.name));
   const fmt = (n) => Number(n).toLocaleString("en-US");
   // 3h19m for hours of time, 2m10s for minutes (the corridors' 6m30s)
@@ -316,9 +313,8 @@ function checklist() {
       <td class="cl-src">from ${esc(owner.name)}, ${owner.playing ? "live" : esc(owner.checklist.read)}</td></tr>`;
   }).join("")}</tbody></table>` : "";
   return `<h2>${icon("Checklist")}Checklist</h2>
-  <p class="lead">Saved from each character's last login (live for the one you're playing): what's left. Weekly items read
-  before the last reset show refilled. Odyle energy (+15 every 3 h), Nightmare (+2 a day) and Shugo keys (+2 a day, +3 with Sub) are filled in
-  by estimate since the reading (marked with a dotted underline).</p>
+  <p class="lead">What's left, from each character's last login. Weekly items read before the reset show refilled; energy,
+  Nightmare and Shugo keys are estimated since the reading (dotted underline).</p>
   <div class="cl-resets"><span>☀ Daily reset in <b>${daily.text}</b> <small>(${daily.when})</small></span>
     <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span>
     <label class="cm-box" title="Subscriber: Shugo keys come 3 a day instead of 2"><input type="checkbox" ${state.subscriber ? "checked" : ""} data-h="${reg((v) => act("set_subscriber", { value: v }))}"><span></span>Sub</label></div>
@@ -330,7 +326,7 @@ function checklist() {
     ${energy}${counterRows}
     <tr class="cl-sep"><th colspan="${chars.length + 1}">Currencies</th></tr>
     ${coinRows}${readRow}</tbody></table></div>
-  <p class="muted cl-foot">More of the game's lists (Abyss Corridors, Supply Requests, Daeva Pass…) are added as they're decoded.</p>`;
+  <p class="muted cl-foot">More lists are added as they're decoded.</p>`;
 }
 
 // ---- FAQ: the problems people actually run into, with what to do
@@ -389,9 +385,9 @@ function faq() {
 
 function about() {
   return `<h2>${icon("About")}About</h2>
-  <p class="lead">Daeva Radar reads AION 2's network traffic on this PC to show what's around you. It never changes, sends or uploads anything.</p>
-  <p class="lead warn">NCSOFT's rules prohibit third-party tools that read the game's traffic, even read-only ones. Use at your own risk.</p>
-  <div class="row"><div class="label">The notice you agreed to<span class="hint">What the app is, its risk, and what it keeps and sends.</span></div>${btn("Read it again", () => Terms.open(false, state.terms.when))}</div>
+  <p class="lead">Reads AION 2's network traffic on this PC. Read-only: it never changes, sends or uploads anything.</p>
+  <p class="lead warn">NCSOFT's rules prohibit tools that read the game's traffic. Use at your own risk.</p>
+  <div class="row"><div class="label">The notice you agreed to<span class="hint">Its risk, and what it keeps and sends.</span></div>${btn("Read it again", () => Terms.open(false, state.terms.when))}</div>
   <div class="section">Credits</div>
   <p class="lead">AION 2 game data and map art © NCSOFT (official AION 2 web API), collected via Shugo.GG and metabot.gg.
   Packet capture on Windows uses WinDivert (LGPLv3 / GPLv2). A fan-made tool, not affiliated with NCSOFT.</p>`;
@@ -404,12 +400,11 @@ function layout() {
     if (window.pywebview && window.pywebview.api.minimize) window.pywebview.api.minimize();  // out of the way
   };
   return `<h2>${icon("Layout")}Overlay layout</h2>
-  <p class="lead">Place every overlay and info card on the real screen: a see-through grid covers the game window
-  (or your main screen if the game isn't running), everything shown is unlocked, and what you drag snaps to the grid.
-  Hidden ones show as dashed boxes you can place too. <b>Done</b> or <b>Esc</b> locks them back as they were.</p>
+  <p class="lead">Place overlays and info cards on the game window: drag them on a grid (hidden ones show dashed).
+  <b>Done</b> or <b>Esc</b> locks them again.</p>
   <div class="btns">${state.layout ? btn("Finish layout", () => act("edit_layout"), "primary") : btn("Edit layout over the game", startLayout, "primary")}
     ${btn("Lock all", () => act("lock_all", { on: true }))}${btn("Unlock all", () => act("lock_all", { on: false }))}</div>
-  <p class="muted">Ctrl+Shift+O locks / unlocks every shown overlay in game. Also in the tray menu: Edit overlay layout.</p>
+  <p class="muted">Ctrl+Shift+O locks / unlocks every overlay.</p>
   <div class="section">Overlays</div>
   ${state.overlays.map((o) => overlayRow(o)).join("")}`;
 }

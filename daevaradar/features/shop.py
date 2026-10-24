@@ -269,13 +269,11 @@ class ShopFeature(Feature):
                              bold=True),
                       P.choice("character", chars, shown_char, style="select") if chars else None),
                 P.text(sub + ("  ·  %s" % faction if faction else
-                             "  ·  Set this character's faction in Characters to mark pets only farmable on the other side."),
+                             "  ·  Set its faction in Characters."),
                        small=True),
                 P.choice("tab", ["All"] + list(TAB_ORDER), shown),
                 P.listbox("offer", rows, None, height=24, dbl=False, empty="No offers read yet."),
-                P.text("✓ owned · ✗ missing · ★ target pet · ⊘ pet not farmable in Verteron, Altgard or Lower Reshanta"
-                       " · ⇄ pet only farmable in the other faction's land · green: passes your notification rules "
-                       "(Settings)", small=True)]
+                P.text("✓ owned · ✗ missing · ★ target · ⊘ not farmable · ⇄ other faction's land only · green: matches your rules", small=True)]
 
     def on_character(self, key):
         if key in self.shops:
@@ -293,16 +291,14 @@ class ShopFeature(Feature):
 
     # ---- Settings tab
     FLAGS = (("missing_only", "Only items I don't own (pets, skins)"),
-             ("targets", "Always for my target pets (any discount)"),
-             ("unfarmable", "Always for pets I can't farm until they're Lv3 (any discount; with the character's "
-                            "faction set, also those only in the other side's land)"),
+             ("targets", "Always for my target pets"),
+             ("unfarmable", "Always for pets I can't farm yet (not at Lv3), incl. the other faction's land"),
              ("sound", "Beep with the pop-up"),
-             ("remind", "Remind me at x:00 that the shop has new offers"),
-             ("sticky", "Keep shop pop-ups until I click them, up to 5 minutes (else they fade after a few seconds)"))
+             ("remind", "Remind me at x:00 when the shop has new offers"),
+             ("sticky", "Keep pop-ups until clicked (5 min max)"))
 
     def page_settings(self, snap):
-        return ([P.heading("Shop settings", "Item names: AION 2 data © NCSOFT (official AION 2 web API), via Shugo.GG. "
-                           "Pets are checked against your pet collection, skins against your wardrobe."),
+        return ([P.heading("Shop settings", "Pets are checked against your pet collection, skins against your wardrobe."),
                  P.section("Pop up for offers with at least"),
                  P.choice("min_discount", [(v, "-%d%%" % v) for v in (10, 20, 30, 50)], self.cfg["min_discount"]),
                  P.section("Which items")] +

@@ -211,8 +211,7 @@ class GatherFeature(Feature):
             mark = "✓ " if names and n == len(names) else "◐ " if n else ""
             groups.append(P.button("group", "%s%s (%d)" % (mark, group, len(names)), group, disabled=not names))
         results, watch = self.results(), self.cfg["watch"]
-        return [P.heading("Gathering settings", "Pick the resources to watch; each gets its own colour. Names come from "
-                          "the local map data (© NCSOFT, via Shugo.GG), learned once per node type and remembered."),
+        return [P.heading("Gathering settings", "Pick the resources to watch; each gets a colour."),
                 P.section("Find a resource"),
                 P.field("search", self.search, "Resource name", width=320),
                 P.listbox("result", [(("★ " if self.watched(n) else "   ") + n, None) for n in results], self.result_sel,

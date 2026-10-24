@@ -70,8 +70,7 @@ class PositionDebug:
                      ("Speed", speed, None),
                      ("Heading", self.heading or "–", None)]
         width = max(len(r[0]) for r in rows)
-        return [P.heading("Position debug", "Where the radar thinks you are, and how it's updating. The game only sends "
-                          "your position on teleports, dashes and aura ticks (about once a second)."),
+        return [P.heading("Position debug", "Where the radar thinks you are. The game sends it on teleports, dashes and aura ticks."),
                 P.lines([("%-*s  %s" % (width, label, value), color) for label, value, color in rows]),
                 P.row(P.button("copy", "Copy position", disabled=pos is None)),
                 P.section("Recent changes (Δ m from the previous one)"),
