@@ -588,6 +588,7 @@ class Tracker:
         self.sheet_count = 0
         self.storage = None  # dict(kinah, time, by): the server storage's kinah, last seen when a character used the storage
         self.storage_count = 0
+        self.zone_count = 0  # teleports / zone-ins seen: a change means you're somewhere else
         self.paused = False
         self.own_profile = None  # (class id, level) from the login message
         # Who you are: only the login message ('33 36') and the 'own state' message ('4a 36'), as in the version
@@ -763,6 +764,7 @@ class Tracker:
                 point = xyz(data, 8)
                 if point is not None:
                     self.clear()
+                    self.zone_count += 1
                     self.set_position(point, when, "#6 teleport")
             point = own_position(data, self.own)
             if point is not None:
@@ -921,7 +923,7 @@ class Tracker:
                         wardrobe=self.wardrobe, wardrobe_count=self.wardrobe_count,
                         shop=dict(self.shop), shop_count=self.shop_count,
                         bosses=dict(self.bosses), boss_count=self.boss_count,
-                        storage=None if self.storage is None else dict(self.storage), storage_count=self.storage_count,
+                        storage=None if self.storage is None else dict(self.storage), storage_count=self.storage_count, zone_count=self.zone_count,
                         sheet=None if self.sheet is None else dict(self.sheet, counters=dict(self.sheet["counters"]),
                                                                    currencies=dict(self.sheet["currencies"])),
                         sheet_count=self.sheet_count, own_profile=self.own_profile)

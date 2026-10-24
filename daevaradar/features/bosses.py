@@ -116,6 +116,7 @@ class BossesFeature(Feature):
         self.lists = {m: dict(times={int(k): v for k, v in d.get("times", {}).items()}, time=d.get("time"))
                       for m, d in saved.items()}
         self.seen = None
+        self.read_zone = {}  # boss map -> the zone count when its list was read: you were on that map then
         self.data = BossData()
         self.cfg = dict(ROUTE_DEFAULT, **load_settings().get("boss_route", {}))
         self.learned = {m: {int(k): v for k, v in d.items()} for m, d in load_settings().get("boss_places", {}).items()}
@@ -136,6 +137,7 @@ class BossesFeature(Feature):
                     save_settings(dict(load_settings(), boss_places={k: {str(b): p for b, p in v.items()}
                                                                     for k, v in self.learned.items()}))
             if m not in self.lists or self.lists[m]["time"] != d["time"]:
+                self.read_zone[m] = snap.get("zone_count")
                 self.lists[m] = dict(times=dict(d["times"]), time=d["time"])
                 self.app.engine.say("Boss timers: %s read (%d bosses)" % (m.title(), len(d["times"])))
         save_settings(dict(load_settings(), bosses={m: dict(time=d["time"], times={str(k): v for k, v in d["times"].items()})
@@ -153,7 +155,7 @@ class BossesFeature(Feature):
             if not d or not d["times"]:
                 blocks.append(P.text("Not read yet: open the boss list of this map in the game.", small=True))
                 continue
-            rows = []
+            rows, here = [], self.where(m, snap)
             times = {b: spawn_time(m, b, at, now) for b, at in d["times"].items()}
             for boss, (at, plan) in sorted(times.items(), key=lambda b: (not b[1][0], b[1][0])):
                 name, level = self.data.describe(m, boss)
@@ -165,7 +167,9 @@ class BossesFeature(Feature):
                 else:
                     stamp = time.strftime("%H:%M" if rest < 72000 else "%a %H:%M", time.localtime(at))
                     when, color = "%9s   %s%s" % (left(rest), stamp, "  (schedule)" if plan else ""),                         SOON if rest < SOON_S else LATER
-                rows.append(("%-30.30s %-6s %s" % (name, "Lv %d" % level if level else "", when), color))
+                place = self.boss_place(m, boss)
+                away = "  · %d m" % (math.dist(here[:2], place[:2]) / 100) if here and place else ""
+                rows.append(("%-30.30s %-6s %s%s" % (name, "Lv %d" % level if level else "", when, away), color))
             blocks.append(P.text("read %s ago" % ago(now - d["time"]) if d["time"] else "", small=True))
             blocks.append(P.lines(rows))
         return blocks
@@ -194,11 +198,20 @@ class BossesFeature(Feature):
         """The boss map the route is for: the one picked, else the one you're on, else the list read last."""
         if self.cfg["map"] in MAP_KEYS:
             return self.cfg["map"]
-        here = self.app.map_key
+        here = self.app.map_key()
         for m, key in MAP_KEYS.items():
             if key == here and m in self.lists:
                 return m
         return max(self.lists, key=lambda m: self.lists[m]["time"] or 0, default="verteron")
+
+    def where(self, m, snap):
+        """Your position if you're on boss map m: the map the app works out (or you picked), else the one whose boss list
+        you read since you last teleported (the list only comes for the map you're in)."""
+        if not snap or not snap.get("position"):
+            return None
+        key = self.app.map_key()
+        on = key == MAP_KEYS[m] if key else self.read_zone.get(m) == snap.get("zone_count")
+        return snap["position"] if on else None
 
     def boss_place(self, m, boss):
         return self.learned.get(m, {}).get(boss) or self.data.places.get(m, {}).get(boss)
@@ -267,7 +280,7 @@ class BossesFeature(Feature):
         m = self.route_map()
         if m not in self.lists:
             return None
-        here = self.app.last_snap["position"] if self.app.last_snap and MAP_KEYS[m] == self.app.map_key else None
+        here = self.where(m, self.app.last_snap) if self.app.last_snap else None
         steps, _unknown = self.plan(m, here, time.time(), int(self.cfg["window"]) * 60)
         return dict(copy=self.train(steps))
 
@@ -285,7 +298,7 @@ class BossesFeature(Feature):
         if m not in self.lists or not self.lists[m]["times"]:
             blocks.append(P.text("%s's boss list isn't read yet: open it in the game." % m.title(), small=True))
             return blocks
-        here = snap["position"] if MAP_KEYS[m] == self.app.map_key else None
+        here = self.where(m, snap)
         steps, unknown = self.plan(m, here, now, int(self.cfg["window"]) * 60)
         rows = []
         for i, s in enumerate(steps, 1):

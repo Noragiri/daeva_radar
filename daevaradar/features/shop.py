@@ -23,6 +23,8 @@ PIECE_ALIAS = {"Breastplate": "Top", "Greaves": "Legs", "Boots": "Shoes", "Helme
 DEAL = "#7cf08a"
 
 
+STICKY_S = 300  # a pop-up that waits for a click still goes away after 5 minutes
+
 class ShopFeature(Feature):
     """The rotating shop, one per character (each has its own offers). Opening it in game sends each tab's offers
     ('91 56': item ids, prices, discount); they're kept per character (from the login message, else "this
@@ -216,7 +218,7 @@ class ShopFeature(Feature):
         self.app.engine.say("Shop deals: " + "; ".join(lines))
         Toast(self.root, "%s's shop: %d deal%s\n%s" % (self.name_of(self.char), len(lines), "" if len(lines) == 1 else "s",
                                                   "\n".join(lines[:5]) + ("\n…" if len(lines) > 5 else "")), color=DEAL, label="Shop deals",
-              seconds=None if self.cfg["sticky"] else 12)  # until clicked: deals are easy to miss mid-fight
+              seconds=STICKY_S if self.cfg["sticky"] else 12)  # until clicked (5 min at most): easy to miss mid-fight
         if self.cfg["sound"]:
             play("system beep")
 
@@ -226,7 +228,7 @@ class ShopFeature(Feature):
         if self.cfg["remind"] and now.tm_min == 0 and self.reminded != self.hour(time.time()):
             self.reminded = self.hour(time.time())
             Toast(self.root, "The shop has new offers\nOpen it in game to check the deals", color=DEAL,
-                  seconds=None if self.cfg["sticky"] else 6,
+                  seconds=STICKY_S if self.cfg["sticky"] else 6,
                   label="Shop")
 
     # ---- Offers tab
@@ -288,7 +290,7 @@ class ShopFeature(Feature):
                             "faction set, also those only in the other side's land)"),
              ("sound", "Beep with the pop-up"),
              ("remind", "Remind me at x:00 that the shop has new offers"),
-             ("sticky", "Keep shop pop-ups until I click them (else they fade after a few seconds)"))
+             ("sticky", "Keep shop pop-ups until I click them, up to 5 minutes (else they fade after a few seconds)"))
 
     def page_settings(self, snap):
         return ([P.heading("Shop settings", "Item names: AION 2 data © NCSOFT (official AION 2 web API), via Shugo.GG. "

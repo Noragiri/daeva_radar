@@ -388,7 +388,7 @@ class Toast:
     def __init__(self, root, text, color=ACCENT, seconds=8, label="Daeva Radar", on_click=None):
         title, *lines = text.split("\n")
         self.card = Card(root, color, on_click)
-        self.card.fill(label, title, [(line, None) for line in lines], None if seconds else "click to close")
+        self.card.fill(label, title, [(line, None) for line in lines], None if seconds and seconds < 60 else "click to close")
         win = self.card.win
         win.geometry("+%d+%d" % ((root.winfo_screenwidth() - win.winfo_reqwidth()) // 2, 60))
         self.card.show_for(seconds)
