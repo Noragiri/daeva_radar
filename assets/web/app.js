@@ -108,7 +108,7 @@ function general() {
   const mine = s.version ? "v" + esc(s.version) : (s.git ? "a git checkout" : "version unknown");
   return `<h2>${icon("General")}General</h2>
   <div class="section">Map</div>
-  <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Detected: " + esc(label(s.map.detected)) : "Not detected yet: Auto works it out from gathering nodes and cubes."}</span></div>
+  <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Detected: " + esc(label(s.map.detected)) : "Not detected yet: Auto reads the map from the boss list the game sends every few seconds, or pick the map."}</span></div>
     <select data-h="${reg((v) => act("set_map", { key: v }))}">${s.map.choices.map(([k, t]) => `<option value="${esc(k)}" ${k === s.map.choice ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
   <div class="section">Windows</div>
   <div class="row"><div class="label">Open Settings when Daeva Radar starts<span class="hint">Otherwise it starts in the tray: double-click the tray icon for Settings.</span></div>

@@ -111,8 +111,8 @@ app: closing it quits.)
 
 The field bosses' respawn times, one list per map (Verteron, Altgard, Lower Reshanta), sorted by time left:
 
-- Open the **boss list in the map menu** in the game: that is when it sends the list, and only for the map you're in
-  (Altgard can only be entered every 3 hours). Each list shows how long ago it was read.
+- The game sends the **boss list of the map you're in** every few seconds, with the map menu open or not, and only
+  for that map (Altgard can only be entered every 3 hours). Each list shows how long ago it was read.
 - Times are absolute, so they keep counting while you're elsewhere. **Up** means the time has passed (it may have been
   killed since); the last 10 minutes show in orange.
 

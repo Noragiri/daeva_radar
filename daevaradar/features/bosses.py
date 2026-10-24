@@ -106,8 +106,9 @@ def spawn_time(m, boss, at, now):
 
 
 class BossesFeature(Feature):
-    """Respawn times of the bosses in the map menu. The game sends a map's list when you open it (and only the map
-    you're in), so each map shows when it was last read; times are absolute, so they stay right while the map is closed."""
+    """Respawn times of the bosses in the map menu. The game sends the list of the map you're in every few
+    seconds, whether or not the map menu is open, so each map shows when it was last read; times are absolute, so they
+    stay right after you leave the map."""
     title, icon, TABS = "Boss timers", "⏱", ("Timers", "Route")
     off_text = "The boss lists aren't read while it's off."
 
@@ -146,14 +147,14 @@ class BossesFeature(Feature):
     def page_timers(self, snap):
         now = time.time()
         blocks = [P.heading("Boss timers"),
-                  P.text("Open the map menu's boss list in the game to read a map: each map only sends its own list, "
-                         "and Altgard can only be entered every 3 hours. Times are absolute, so they keep counting while "
-                         "you're elsewhere. 'Up' means the respawn time passed: it may have been killed since.", small=True)]
+                  P.text("The game sends the list of the map you're in every few seconds, so each map is read while you're "
+                         "on it (Altgard can only be entered every 3 hours). Times are absolute, so they keep counting "
+                         "while you're elsewhere. 'Up' means the respawn time passed: it may have been killed since.", small=True)]
         for m, title in MAP_TITLES:
             blocks.append(P.section(title))
             d = self.lists.get(m)
             if not d or not d["times"]:
-                blocks.append(P.text("Not read yet: open the boss list of this map in the game.", small=True))
+                blocks.append(P.text("Not read yet: it is read while you are on this map.", small=True))
                 continue
             rows, here = [], self.where(m, snap)
             times = {b: spawn_time(m, b, at, now) for b, at in d["times"].items()}
@@ -290,13 +291,13 @@ class BossesFeature(Feature):
         blocks = [P.heading("Boss route"),
                   P.text("A route through the bosses that are up or about to respawn, by distance: on foot from where you "
                          "are, or by the obelisk (teleport) nearest to the boss. A boss's place is learned when it is "
-                         "up (open the boss list in the game), so the route grows with use. It assumes every obelisk is "
+                         "up while you are on its map, so the route grows with use. It assumes every obelisk is "
                          "unlocked (Lower Reshanta has none: on foot).", small=True),
                   P.row(P.choice("map", (("auto", "Auto"), ("verteron", "Verteron"), ("altgard", "Altgard"),
                                          ("lower reshanta", "Lower Reshanta")), self.cfg["map"]),
                         P.choice("window", WINDOWS_MIN, self.cfg["window"]))]
         if m not in self.lists or not self.lists[m]["times"]:
-            blocks.append(P.text("%s's boss list isn't read yet: open it in the game." % m.title(), small=True))
+            blocks.append(P.text("%s's boss list isn't read yet: it is read while you are on that map." % m.title(), small=True))
             return blocks
         here = self.where(m, snap)
         steps, unknown = self.plan(m, here, now, int(self.cfg["window"]) * 60)

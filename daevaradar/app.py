@@ -16,7 +16,7 @@ from .characters import Characters
 from .worldmap import WorldMap
 from .vision import ViewCone
 from .debug import PositionDebug
-from .game import MapData, map_name
+from .game import BOSS_MAP_KEYS, MapData, map_name
 from .ui import OVERLAY_CONE, Toast, draw_cone, foreground_exe, hotkey_thread, set_icon
 from .features.cubes import CubesFeature
 from .features.feathers import FeathersFeature
@@ -46,7 +46,7 @@ class App:
         self.tracker, self.engine, self.args = tracker, engine, args
         self.view = ViewCone()
         self.mapdata = MapData()  # shared by the features that use the map data
-        self.detected, self.map_checked = None, 0  # the map the live nodes / cubes line up with
+        self.detected, self.detected_zone, self.boss_seen = None, None, {}  # the map the boss list was read on, and when
         self.map_proc = None  # the World map's window (its own process, like Settings)
         self.debug = PositionDebug(self)  # the Position debug page (Settings)
         self.calls = queue.Queue()  # work handed to the Tk thread (the web server's and the tray's threads)
@@ -123,7 +123,7 @@ class App:
         self.engine.say("Notice agreed: reading the game now")
         self.start_update_checks()
 
-    # ---- map: picked in Settings, else detected from live gathering nodes or cubes
+    # ---- map: picked in Settings, else the map whose boss list you opened since you last teleported
     def picked(self):
         """The map picked by hand, or None for Auto (also when its data is gone)."""
         return self.map_cfg if self.map_cfg in self.mapdata.keys() else None
@@ -136,15 +136,19 @@ class App:
         save_settings(dict(load_settings(), map=self.map_cfg))
 
     def detect_map(self, snap):
-        """Gathering nodes decide when there are any; cubes only when there aren't."""
-        if not snap["position"] or time.time() - self.map_checked < 2:
-            return
-        self.map_checked = time.time()
-        nodes, cubes = [n["xyz"] for n in snap["nodes"]], [c["xyz"] for c in snap["cubes"]]
-        key = (nodes and self.mapdata.which_map(nodes)) or (cubes and self.mapdata.cube_map(cubes)) or None
-        if key and key != self.detected:
-            self.detected = key
-            self.engine.say("Map is %s" % key)
+        """The boss list (map menu) comes only for the map you're in, so reading one says where you are. It holds until
+        you teleport or zone elsewhere (then the map is unknown until the next list arrives, a few seconds later)."""
+        zone = snap.get("zone_count")
+        if self.detected and zone != self.detected_zone:
+            self.detected = None
+            self.engine.say("Zone changed: map unknown until the boss list arrives")
+        for name, d in snap.get("bosses", {}).items():
+            if d["time"] > self.boss_seen.get(name, 0):
+                self.boss_seen[name] = d["time"]
+                key = BOSS_MAP_KEYS.get(name)
+                if key and key in self.mapdata.keys() and (key != self.detected or zone != self.detected_zone):
+                    self.detected, self.detected_zone = key, zone
+                    self.engine.say("Map is %s (from the boss list)" % key)
 
     # ---- updates: checked at launch and every full hour; installed from Settings
     def schedule_update_check(self):

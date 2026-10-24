@@ -325,6 +325,7 @@ def pet_souls(data):
     except (ValueError, IndexError, struct.error):
         pass
     return None
+BOSS_MAP_KEYS = {"verteron": "verteron", "altgard": "altgard", "lower reshanta": "reshanta-lower"}  # boss list -> map data name
 BOSS_MAPS = {1110: "altgard", 1010: "verteron", 20: "lower reshanta"}  # the boss list's header -> the map it belongs to
 
 
