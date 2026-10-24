@@ -4,7 +4,7 @@ import datetime as _dt
 import os
 import time
 
-from ..common import SOUNDS, load_settings, save_settings
+from ..common import SOUNDS, berlin_offset, load_settings, save_settings
 from ..sound import play, voices
 from ..ui import ACCENT, MUTED, Toast
 from ..feature import Feature
@@ -16,7 +16,7 @@ BUILTIN_ALARMS = [
     dict(id="invasion", name="Dimensional Invasion", rule=dict(type="hourly", minute=30), lead=2, builtin=True),
     dict(id="rift", name="Spacetime Rift", rule=dict(type="every", hours=3, start="02:00"), lead=5, builtin=True),
 ]
-ALERTS_DEFAULT = dict(voice="system beep", custom=None, volume=100, popup=True, at_start=False, offset=0,
+ALERTS_DEFAULT = dict(voice="system beep", custom=None, volume=100, popup=True, at_start=False, offset=0, berlin=True,
                       disabled=[], custom_alarms=[])
 def next_occurrence(rule, now):
     """Next start (naive datetime, server clock) of a rule strictly after `now`, or None (a past one-off)."""
@@ -73,6 +73,8 @@ class AlertsFeature(Feature):
         save_settings(dict(load_settings(), alerts=self.cfg))
 
     def now(self):
+        if self.cfg["berlin"]:  # the EU servers' clock, summer / winter time included (CEST -> CET on 2026-10-25)
+            return _dt.datetime.fromtimestamp(time.time() + berlin_offset(time.time()), _dt.timezone.utc).replace(tzinfo=None)
         return _dt.datetime.now() + _dt.timedelta(hours=self.cfg["offset"])
 
     def alarms(self):
@@ -95,7 +97,7 @@ class AlertsFeature(Feature):
         now = self.now()
         blocks = [P.heading("Upcoming", "Click an alarm to switch it. Times are server time (EU: Berlin)."),
                   P.text("Server time %s%s" % (now.strftime("%H:%M:%S"),
-                                               "" if not self.cfg["offset"] else "  (PC %+dh)" % self.cfg["offset"]),
+                                               "  (Berlin)" if self.cfg["berlin"] else "" if not self.cfg["offset"] else "  (PC %+dh)" % self.cfg["offset"]),
                          mono=True, small=True)]
         for when, alarm in self.upcoming():
             left = int((when - now).total_seconds())
@@ -225,9 +227,9 @@ class AlertsFeature(Feature):
             P.toggle("flag_popup", "Popup on top of the game", self.cfg["popup"]),
             P.toggle("flag_at_start", "Also alert when it starts", self.cfg["at_start"]),
             P.section("Server clock"),
+            P.toggle("flag_berlin", "Berlin time, with summer / winter time (EU servers)", self.cfg["berlin"]),
             P.row(P.number("offset", self.cfg["offset"], -23, 23),
-                  P.text("hours from this PC's clock (0 if you play on servers in your time zone; EU servers run on "
-                         "Berlin time)", small=True))]
+                  P.text("else: hours from this PC's clock", small=True))]
 
     def on_voice(self, voice):
         if voice == "custom" and not (self.cfg["custom"] and os.path.exists(self.cfg["custom"])):

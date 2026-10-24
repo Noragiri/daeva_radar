@@ -4,7 +4,7 @@ import json
 import math
 import time
 
-from ..common import ROOT, load_settings, save_settings
+from ..common import ROOT, berlin_offset, load_settings, save_settings
 from ..game import MapData
 from ..feature import Feature
 from ..ui import MUTED
@@ -38,18 +38,6 @@ def left(seconds):
     if seconds < 3600:
         return "%d:%02d" % (seconds // 60, seconds % 60)
     return "%d:%02d:%02d" % (seconds // 3600, seconds % 3600 // 60, seconds % 60)
-
-
-def berlin_offset(ts):
-    """Seconds Europe/Berlin is ahead of UTC at unix time ts (CEST from the last Sunday of March 01:00 UTC to the last
-    Sunday of October 01:00 UTC; written out because Windows has no tz database in Python)."""
-    year = dt.datetime.fromtimestamp(ts, dt.timezone.utc).year
-
-    def last_sunday(month):
-        day = dt.datetime(year, month + 1, 1, 1, tzinfo=dt.timezone.utc) - dt.timedelta(days=1) if month < 12 else             dt.datetime(year, 12, 31, 1, tzinfo=dt.timezone.utc)
-        return day - dt.timedelta(days=(day.weekday() + 1) % 7)
-
-    return 7200 if last_sunday(3).timestamp() <= ts < last_sunday(10).timestamp() else 3600
 
 
 def next_every_three_hours(now):

@@ -1,5 +1,6 @@
 """Platform flags, the project's folders, and the settings file."""
 from pathlib import Path
+import datetime as dt
 import os
 import shutil
 import subprocess
@@ -66,7 +67,7 @@ def save_settings(settings):
 
 
 _INSTANCE = []  # keeps the single-instance lock alive for as long as the process runs
-_MUTEX = "Local\DaevaRadar.SingleInstance"
+_MUTEX = r"Local\DaevaRadar.SingleInstance"
 
 
 def instance_running():
@@ -134,3 +135,15 @@ def focus_requested():
         return True
     except OSError:
         return False
+
+
+def berlin_offset(ts):
+    """Seconds Europe/Berlin is ahead of UTC at unix time ts (CEST from the last Sunday of March 01:00 UTC to the last
+    Sunday of October 01:00 UTC; written out because Windows has no tz database in Python)."""
+    year = dt.datetime.fromtimestamp(ts, dt.timezone.utc).year
+
+    def last_sunday(month):
+        day = dt.datetime(year, month + 1, 1, 1, tzinfo=dt.timezone.utc) - dt.timedelta(days=1) if month < 12 else             dt.datetime(year, 12, 31, 1, tzinfo=dt.timezone.utc)
+        return day - dt.timedelta(days=(day.weekday() + 1) % 7)
+
+    return 7200 if last_sunday(3).timestamp() <= ts < last_sunday(10).timestamp() else 3600
