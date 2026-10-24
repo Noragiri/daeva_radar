@@ -23,6 +23,7 @@ PIECE_ALIAS = {"Breastplate": "Top", "Greaves": "Legs", "Boots": "Shoes", "Helme
 DEAL = "#7cf08a"
 
 
+GENUS_STAT = {"Cogni": "Might", "Fera": "Dexterity", "Natura": "Precision", "Varian": "Constitution"}  # a pet's category -> its stat
 STICKY_S = 300  # a pop-up that waits for a click still goes away after 5 minutes
 
 class ShopFeature(Feature):
@@ -97,6 +98,12 @@ class ShopFeature(Feature):
         if faction and not maps & {HOME_MAP[faction], SHARED_MAP}:
             return "other"
         return "yes"
+
+    def category(self, item):
+        """A pet's category with its stat, "Cogni (Might)", else "" (not a pet)."""
+        pets, pid = self.pet_of(item)
+        genus = pets.data.pets[pid]["genus"] if pid is not None else None
+        return "%s (%s)" % (genus, GENUS_STAT[genus]) if genus in GENUS_STAT else (genus or "")
 
     def farm_note(self, item, char):
         """"⊘ not farmable · 28/105" / "⇄ only in Altgard · 28/105" (souls toward Lv3) for the offer list and the
@@ -212,7 +219,8 @@ class ShopFeature(Feature):
             self.notify(fresh)
 
     def notify(self, fresh):
-        lines = ["-%d%% %s %s%s" % (o["discount"], self.info(o["item"])["name"], "{:,}".format(o["price"]),
+        lines = ["-%d%% %s%s %s%s" % (o["discount"], self.info(o["item"])["name"],
+                                      " [%s]" % self.category(o["item"]) if self.category(o["item"]) else "", "{:,}".format(o["price"]),
                                     " (%s)" % self.farm_note(o["item"], self.char)[2:] if self.farm_note(o["item"], self.char) else "")
                  for tab, o in sorted(fresh, key=lambda f: -f[1]["discount"])]
         self.app.engine.say("Shop deals: " + "; ".join(lines))
@@ -252,8 +260,8 @@ class ShopFeature(Feature):
             for o in sorted(self.offers[tab]["items"], key=lambda o: -o["discount"]):
                 info, status = self.info(o["item"]), self.status_of(o["item"])
                 mark = {"owned": "✓", "missing": "✗", "target": "★"}.get(status, " ")
-                rows.append((" %s -%2d%%  %-40.40s %10s  %s%s" % (
-                    mark, o["discount"], info["name"], "{:,}".format(o["price"]), info["grade"],
+                rows.append((" %s -%2d%%  %-34.34s %-18s %10s  %s%s" % (
+                    mark, o["discount"], info["name"], self.category(o["item"]), "{:,}".format(o["price"]), info["grade"],
                     ("  " + self.farm_note(o["item"], shown_char)) if self.farm_note(o["item"], shown_char) else ""),
                     DEAL if self.wanted(o, shown_char) and not self.stale(tab) else (MUTED if status == "owned" else None)))
         return [P.heading("Shop offers"),
