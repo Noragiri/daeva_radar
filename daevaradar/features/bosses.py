@@ -7,7 +7,8 @@ import time
 from ..common import ROOT, berlin_offset, load_settings, save_settings
 from ..game import MapData
 from ..feature import Feature
-from ..ui import MUTED
+from ..sound import play
+from ..ui import MUTED, Toast
 from .. import page as P
 
 MAP_TITLES = (("verteron", "Verteron"), ("altgard", "Altgard"), ("lower reshanta", "Lower Reshanta"))
@@ -19,7 +20,8 @@ NO_TELEPORT = {"lower reshanta"}  # no obelisks there: routes are on foot
 RUN_MS = 8.0   # metres a second on foot (a guess: a mount is faster)
 TELEPORT_S = 25  # a teleport: the loading and the cast
 WINDOWS_MIN = (("0", "Up now"), ("15", "15 min"), ("30", "30 min"), ("60", "1 h"), ("120", "2 h"), ("240", "4 h"))
-ROUTE_DEFAULT = dict(window="30", map="auto")
+ROUTE_DEFAULT = dict(window="30", map="auto", alerts=[], lead="5", at_up=True, beep=True)  # alerts: "map:boss id"
+LEADS = (("0", "Off"), ("5", "5 min"), ("10", "10 min"), ("15", "15 min"), ("30", "30 min"))
 
 
 def ago(seconds):
@@ -105,10 +107,14 @@ class BossesFeature(Feature):
         self.lists = {m: dict(times={int(k): v for k, v in d.get("times", {}).items()}, time=d.get("time"))
                       for m, d in saved.items()}
         self.seen = None
+        self.fired = set()  # (alert, respawn time, "lead" | "up") already announced
+        self.rows = {}  # boss map -> the boss ids of its list rows, in order
         self.read_zone = {}  # boss map -> the zone count when its list was read: you were on that map then
         self.data = BossData()
         self.cfg = dict(ROUTE_DEFAULT, **load_settings().get("boss_route", {}))
         self.learned = {m: {int(k): v for k, v in d.items()} for m, d in load_settings().get("boss_places", {}).items()}
+        for m, _title in MAP_TITLES:  # a click on a row of the map's list toggles that boss's alert
+            setattr(self, "on_bell_" + m.replace(" ", "_"), lambda index, m=m: self.toggle_alert(m, index))
         super().__init__(app)
 
     def sync(self, snap):
@@ -135,7 +141,11 @@ class BossesFeature(Feature):
     def page_timers(self, snap):
         now = time.time()
         blocks = [P.heading("Boss timers"),
-                  P.text("Each map is read while you're on it. Up = the time passed (it may be dead since).", small=True)]
+                  P.text("Each map is read while you're on it. Up = the time passed (it may be dead since). "
+                         "Click a boss to alert for it (★).", small=True),
+                  P.row(P.choice("lead", LEADS, self.cfg["lead"], label="Alert before"),
+                        P.toggle("flag_at_up", "Also when it's up", self.cfg["at_up"]),
+                        P.toggle("flag_beep", "Beep", self.cfg["beep"]))]
         for m, title in MAP_TITLES:
             blocks.append(P.section(title))
             d = self.lists.get(m)
@@ -144,7 +154,9 @@ class BossesFeature(Feature):
                 continue
             rows, here = [], self.where(m, snap)
             times = {b: spawn_time(m, b, at, now) for b, at in d["times"].items()}
-            for boss, (at, plan) in sorted(times.items(), key=lambda b: (not b[1][0], b[1][0])):
+            order = sorted(times.items(), key=lambda b: (not b[1][0], b[1][0]))
+            self.rows[m] = [b for b, _ in order]
+            for boss, (at, plan) in order:
                 name, level = self.data.describe(m, boss)
                 rest = at - now
                 if not at:  # the game sends no time for it
@@ -156,13 +168,55 @@ class BossesFeature(Feature):
                     when, color = "%9s   %s%s" % (left(rest), stamp, "  (schedule)" if plan else ""),                         SOON if rest < SOON_S else LATER
                 place = self.boss_place(m, boss)
                 away = "  · %d m" % (math.dist(here[:2], place[:2]) / 100) if here and place else ""
-                rows.append(("%-30.30s %-6s %s%s" % (name, "Lv %d" % level if level else "", when, away), color))
+                bell = "★" if self.alert_key(m, boss) in self.cfg["alerts"] else " "
+                rows.append(("%s %-30.30s %-6s %s%s" % (bell, name, "Lv %d" % level if level else "", when, away), color))
             blocks.append(P.text("read %s ago" % ago(now - d["time"]) if d["time"] else "", small=True))
-            blocks.append(P.lines(rows))
+            blocks.append(P.listbox("bell_" + m.replace(" ", "_"), rows, None, height=min(len(rows), 24), dbl=False))
         return blocks
+
+    @staticmethod
+    def alert_key(m, boss):
+        return "%s:%d" % (m, boss)
+
+    def toggle_alert(self, m, index):
+        ids = self.rows.get(m, [])
+        if 0 <= int(index) < len(ids):
+            key = self.alert_key(m, ids[int(index)])
+            alerts = self.cfg["alerts"]
+            alerts.remove(key) if key in alerts else alerts.append(key)
+            self.save()
+
+    def on_lead(self, value):
+        self.cfg["lead"] = value
+        self.save()
+
+    def check_alerts(self):
+        """A pop-up (and beep) `lead` minutes before a watched boss respawns, and when it is up."""
+        now, lead = time.time(), int(self.cfg["lead"]) * 60
+        for key in self.cfg["alerts"]:
+            m, _, boss = key.partition(":")
+            d = self.lists.get(m)
+            if not d or int(boss) not in d["times"]:
+                continue
+            at = spawn_time(m, int(boss), d["times"][int(boss)], now)[0]
+            if not at:
+                continue
+            name = self.data.describe(m, int(boss))[0]
+            for kind, due, text in (("lead", lead and at - lead <= now < at, "%s respawns in %d min" % (name, lead // 60)),
+                                    ("up", self.cfg["at_up"] and at <= now < at + 120, "%s is up" % name)):
+                if due and (key, at, kind) not in self.fired:
+                    self.fired.add((key, at, kind))
+                    self.app.engine.say("Boss timers: %s" % text)
+                    Toast(self.root, "%s\n%s" % (text, m.title()), color=SOON if kind == "lead" else UP, seconds=15,
+                          label="Boss timers")
+                    if self.cfg["beep"]:
+                        play("system beep")
+        self.fired = {f for f in self.fired if f[1] > now - 600}
 
     def background(self, snap):
         self.sync(snap)
+        if self.enabled:
+            self.check_alerts()
         super().background(snap)
 
     def status(self, snap):
