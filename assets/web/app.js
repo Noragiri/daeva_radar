@@ -219,6 +219,8 @@ const clIcon = (name) => {
   const [color, path] = CL_ICONS[name] || ["#8a95a5", '<circle cx="12" cy="12" r="7"/>'];
   return `<span class="cl-icon" style="--c:${color}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
 };
+// a counter's value: "left (+bonus) / max"; in a narrow window the bonus moves under it (app.css .cl-v)
+const clValue = (left, bonus, max) => `<span class="cl-v"><span>${left}</span>${bonus ? `<small>(+${bonus})</small>` : ""}${max ? `<span>/ ${max}</span>` : ""}</span>`;
 const ENERGY_CAP = 840, ENERGY_WARN = 700;  // Odyle energy's limit, and where it's close
 // Duty Commands: 4 tiers x 5 a week per server. The game doesn't send the count, so you fill it in (cleared at the weekly reset)
 function commandsBlock() {
@@ -241,7 +243,7 @@ function commandsBlock() {
   return `<div class="section">Duty Commands <small class="muted">· weekly, per server, set by hand</small></div>
     <div class="cm"><div class="cm-tiers">${duty}</div></div>
     <div class="section" style="margin-top:4px">Duty Command: Abyss <small class="muted">· 4 tiers x 5</small></div>
-    <div class="cm"><div class="cm-tiers">${tiers}</div>
+    <div class="cm"><div class="cm-tiers cm-grid">${tiers}</div>
       <div class="cm-all">${box(all, (v) => act("commands_fill", { tier: -1, value: v ? c.max : 0 }), "<b>All</b>")}
         <span class="cm-total ${all ? "done" : ""}"><b>${total}</b> / ${c.max * c.t.length}</span>
         <small class="muted">${toBuy ? `${kin(toBuy)} kinah left to buy (${kin(weekly)} for all)` : `all bought (${kin(weekly)} kinah)`} · resets ${reset.when} (in ${reset.text})</small></div></div>`;
@@ -264,12 +266,13 @@ function checklist() {
     const refilled = (group === "weekly" || group === "daily") && r.max && staleFor(c, group === "weekly");
     const left = refilled ? r.max : r.left;
     const done = left <= 0;  // the bonus (+x) doesn't count: 0 (+3) / 3 is done too
-    const text = r.unit === "ms" ? `${dur(left, r.max)}${r.bonus ? ` <small>(+${dur(r.bonus, r.max)})</small>` : ""} / ${dur(r.max, r.max)}`
-      : `${left}${r.bonus ? ` <small>(+${fmt(r.bonus)})</small>` : ""}${r.max ? ` / ${r.max}` : ""}`;
+    const tick = done ? '<span class="cl-tick">✓</span>' : "";  // inside the value, so it stays beside it when the bonus wraps
+    const text = r.unit === "ms" ? clValue(tick + dur(left, r.max), r.bonus && dur(r.bonus, r.max), dur(r.max, r.max))
+      : clValue(tick + left, r.bonus && fmt(r.bonus), r.max);
     const part = r.max ? Math.min(100, 100 * left / r.max) : null;
     const title = refilled ? "Refilled at the reset (last read before it)" : r.proj ? `Estimated: +${r.proj} since it was read (daily recovery)` : "";
     return `<td class="${done ? "cl-ok" : ""}${refilled ? " cl-refilled" : ""}${r.proj ? " cl-proj" : ""}" title="${title}">
-      ${done ? '<span class="cl-tick">✓</span>' : ""}${text}${part !== null ? `<i class="cl-bar" style="--p:${part}%"></i>` : ""}</td>`;
+      ${text}${part !== null ? `<i class="cl-bar" style="--p:${part}%"></i>` : ""}</td>`;
   };
   const find = (c, group, name) => (c.checklist[group] || []).find((r) => r.name === name);
   // rows: [label, icon html, group, name, weekly?] for the per-character counters
@@ -286,13 +289,20 @@ function checklist() {
       ${c.checklist.icon ? `<img src="/classes/${c.checklist.icon}.png" alt="">` : ""}
       <b>${esc(c.name)}</b>${c.playing ? '<em>in game</em>' : ""}
       <small>${esc([c.checklist.cls, c.checklist.level && "Lv " + c.checklist.level].filter(Boolean).join(" · "))}</small></th>`).join("")}</tr>`;
-  const energy = `<tr><th>${clIcon("Odyle energy")}Odyle energy</th>${chars.map((c) => {
+  // all characters' energy added up (estimated as soon as any part is)
+  const withEnergy = chars.filter((c) => c.checklist.energy);
+  const energyTotal = withEnergy.reduce((a, c) => a + c.checklist.energy[0], 0);
+  const energyBonus = withEnergy.reduce((a, c) => a + (c.checklist.energy[1] || 0), 0);
+  const energyEst = withEnergy.some((c) => c.checklist.energy_proj);
+  const totalLine = withEnergy.length > 1 ? `<small class="cl-total${energyEst ? " cl-proj" : ""}" title="All ${withEnergy.length} characters${energyEst ? ", estimated since their readings" : ""}">
+    Total <b>${fmt(energyTotal)}</b>${energyBonus ? ` (+${fmt(energyBonus)})` : ""}</small>` : "";
+  const energy = `<tr><th>${clIcon("Odyle energy")}Odyle energy${totalLine}</th>${chars.map((c) => {
     const e = c.checklist.energy;
     if (!e) return "<td>—</td>";
     // it stops filling at ENERGY_CAP: orange when close (over 700), red when full (spend it before it's wasted)
     const level = e[0] >= ENERGY_CAP ? "cl-full" : e[0] > ENERGY_WARN ? "cl-near" : "";
     const est = c.checklist.energy_proj;
-    return `<td class="${est ? "cl-proj" : ""}" title="${est ? `Estimated: +${est} since it was read (15 every 3 hours)` : ""}"><span class="${level}">${fmt(e[0])}</span>${e[1] ? ` <small>(+${fmt(e[1])})</small>` : ""} / ${ENERGY_CAP}</td>`;
+    return `<td class="${est ? "cl-proj" : ""}" title="${est ? `Estimated: +${est} since it was read (15 every 3 hours)` : ""}">${clValue(`<span class="${level}">${fmt(e[0])}</span>`, e[1] && fmt(e[1]), ENERGY_CAP)}</td>`;
   }).join("")}</tr>`;
   const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.group)).join("")}</tr>`).join("");
   const coins = [];
@@ -312,21 +322,22 @@ function checklist() {
     return `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${cell(owner, find(owner, row.group, row.name), row.group)}
       <td class="cl-src">from ${esc(owner.name)}, ${owner.playing ? "live" : esc(owner.checklist.read)}</td></tr>`;
   }).join("")}</tbody></table>` : "";
-  return `<h2>${icon("Checklist")}Checklist</h2>
+  return `<div class="cl-page"><h2>${icon("Checklist")}Checklist</h2>
   <p class="lead">What's left, from each character's last login. Weekly items read before the reset show refilled; energy,
   Nightmare and Shugo keys are estimated since the reading (dotted underline).</p>
   <div class="cl-resets"><span>☀ Daily reset in <b>${daily.text}</b> <small>(${daily.when})</small></span>
     <span>▦ Weekly reset in <b>${weekly.text}</b> <small>(${weekly.when})</small></span>
     <label class="cm-box" title="Subscriber: Shugo keys come 3 a day instead of 2"><input type="checkbox" ${state.subscriber ? "checked" : ""} data-h="${reg((v) => act("set_subscriber", { value: v }))}"><span></span>Sub</label></div>
-  <div class="section">Server <small class="muted">· shared by your characters on the server</small></div>
-  ${serverTable || '<p class="muted">Not read yet.</p>'}
-  ${commandsBlock()}
+  <div class="cl-top"><div class="cl-block">
+    <div class="section">Server <small class="muted">· shared by your characters on the server</small></div>
+    ${serverTable || '<p class="muted">Not read yet.</p>'}</div>
+    <div class="cl-block">${commandsBlock()}</div></div>
   <div class="section">Characters</div>
   <div class="cl-scroll"><table class="cl-grid"><thead>${head}</thead><tbody>
     ${energy}${counterRows}
     <tr class="cl-sep"><th colspan="${chars.length + 1}">Currencies</th></tr>
     ${coinRows}${readRow}</tbody></table></div>
-  <p class="muted cl-foot">More lists are added as they're decoded.</p>`;
+  <p class="muted cl-foot">More lists are added as they're decoded.</p></div>`;
 }
 
 // ---- FAQ: the problems people actually run into, with what to do

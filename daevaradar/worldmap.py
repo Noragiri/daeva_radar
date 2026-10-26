@@ -4,11 +4,12 @@ live part: where you are, your pets' progress, target pets and highlighted (= wa
 from .common import ROOT, load_settings, save_settings
 from .game import GATHER_GROUPS, SOUL_STAGES, MapData, map_name
 from .features.pets import GENUS_COLORS
+from .characters import HOME_MAP
 
 TILES = ROOT / "data" / "map_tiles"
 MAX_LEVEL, SOUL_CAP = len(SOUL_STAGES), sum(SOUL_STAGES)
 GROUP_ORDER = [group for group, _ in GATHER_GROUPS]
-DEFAULT = dict(layers=["Pets"], genus="All types", unfinished=True, mode="Pets", map=None, open=False)
+DEFAULT = dict(layers=["Pets"], genus="All types", unfinished=True, not_home=False, mode="Pets", map=None, open=False)
 
 
 class WorldMap:
@@ -60,6 +61,7 @@ class WorldMap:
                           for x, y in spawns[t]["points"]]
                 if points:
                     out["pets"].append(dict(id=pid, name=p["name"], genus=p["genus"], points=points,
+                                            farm=sorted(pets.data.farm_maps(pid)),  # every farm map with its souls
                                             souls=[dict(monster=s["monster"], level=s["level"], chance=s["chance"],
                                                         types=s["types"]) for s in p.get("souls", ())]))
         order = {g: i for i, g in enumerate(GROUP_ORDER)}
@@ -83,15 +85,25 @@ class WorldMap:
             synced = bool(pets.levels or pets.synced)
         watch = list(gathering.cfg["watch"]) if gathering else []
         here = self.current_map()
-        return dict(cfg=self.cfg, current=here, initial=self.initial_map(),
+        return dict(cfg=self.cfg, current=here, initial=self.initial_map(), home=self.home(),
                     position=list(MapData.to_px(snap["position"])) if snap["position"] else None,
                     progress=progress, targets=targets, target_colors=colors, synced=synced,
                     watch=watch, watch_colors={n: gathering.color(n) for n in watch} if gathering else {},
                     max_level=MAX_LEVEL, soul_cap=SOUL_CAP, topmost=self.app.topmost.get(), focus=self.app.map_focus)
 
+    def home(self):
+        """The playing character's own land, where its pet souls are farmed (by its faction, Settings → Characters):
+        dict(map, name, char), or dict(map=None, char) while the faction isn't known, or None before a login."""
+        chars = getattr(self.app, "characters", None)
+        name = chars.playing if chars else None
+        if not name:
+            return None
+        key = HOME_MAP.get(chars.faction_of(name))
+        return dict(map=key, name=map_name(key) if key else None, char=name)
+
     # ---- what the page does
     def set_cfg(self, values):
-        for key in ("layers", "genus", "unfinished", "mode", "map"):
+        for key in ("layers", "genus", "unfinished", "not_home", "mode", "map"):
             if key in values:
                 self.cfg[key] = values[key]
         self.save()

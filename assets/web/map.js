@@ -17,7 +17,7 @@ const WorldMapPage = (() => {
   let saveTimer = null;
   function saveCfg() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => post("map_cfg", { values: { layers: cfg.layers, genus: cfg.genus, unfinished: cfg.unfinished, mode: cfg.mode, map: mapKey } }), 200);
+    saveTimer = setTimeout(() => post("map_cfg", { values: { layers: cfg.layers, genus: cfg.genus, unfinished: cfg.unfinished, not_home: cfg.not_home, mode: cfg.mode, map: mapKey } }), 200);
   }
   const on = (layer) => cfg.layers.includes(layer);
 
@@ -32,6 +32,7 @@ const WorldMapPage = (() => {
         <select id="wm-genus"><option>All types</option>${Object.keys(GENUS).slice(0, 4).map((g) => `<option>${g}</option>`).join("")}</select>
         <input id="wm-search" class="m-input" placeholder="Search pets, monsters, resources">
         <label class="switch-label">Unfinished pets only <span class="switch"><input type="checkbox" id="wm-unfinished"><span></span></span></label>
+        <label class="switch-label" id="wm-nothome-label"><span id="wm-nothome-text">Not farmable at home</span> <span class="switch"><input type="checkbox" id="wm-nothome"><span></span></span></label>
       </div>
       <div class="wm-layers" id="wm-layers"></div>
       <div class="wm-body">
@@ -58,6 +59,7 @@ const WorldMapPage = (() => {
     $("wm-genus").onchange = (e) => { cfg.genus = e.target.value; changed(); };
     $("wm-search").oninput = (e) => { search = e.target.value.trim().toLowerCase(); changed(); };
     $("wm-unfinished").onchange = (e) => { cfg.unfinished = e.target.checked; changed(); };
+    $("wm-nothome").onchange = (e) => { cfg.not_home = e.target.checked; changed(); };
     $("wm-modes").onclick = (e) => { const b = e.target.closest("[data-mode]"); if (b) setMode(b.dataset.mode); };
     $("wm-act").onclick = toggleSelected;
     document.querySelector(".wm-zoom").onclick = (e) => {
@@ -101,9 +103,21 @@ const WorldMapPage = (() => {
     return data.pets.filter((p) => {
       if (cfg.genus !== "All types" && p.genus !== cfg.genus) return false;
       if (cfg.unfinished && progress(p.id)[0] >= live.max_level) return false;
+      if (notHome() && (p.farm || []).includes(live.home.map)) return false;  // you can farm it on your own map
       if (!search) return true;
       return p.name.toLowerCase().includes(search) || p.points.some(([, , t]) => ((data.monsters[t] || {}).name || "").toLowerCase().includes(search));
     });
+  }
+  // "Not farmable in <your map>": only while the playing character's home map is known
+  const notHome = () => cfg.not_home && live && live.home && live.home.map;
+  function homeSwitch() {
+    const h = live && live.home, known = !!(h && h.map);
+    $("wm-nothome-text").textContent = known ? `Not farmable in ${h.name}` : "Not farmable at home";
+    $("wm-nothome").disabled = !known;
+    $("wm-nothome-label").classList.toggle("muted", !known);
+    $("wm-nothome-label").title = known
+      ? `Only the pets whose souls ${h.char} can't farm in ${h.name}, its faction's land`
+      : h ? `Set ${h.char}'s faction on Settings → Characters` : "Log in with a character first";
   }
   function resourcesHere() {
     return data ? data.resources.filter((r) => !search || r.name.toLowerCase().includes(search)) : [];
@@ -131,7 +145,8 @@ const WorldMapPage = (() => {
         const [level, souls, need] = progress(p.id), [c, i] = GENUS[p.genus] || ["#ccc", "•"];
         const state = level >= live.max_level ? "Lv3 ✓" : `Lv${level} ${souls}/${need}`;
         return `<div class="m-item ${p.id === selected ? "sel" : ""}" style="color:${c}">${isTarget(p.id) ? "★" : i} ${esc(p.name.padEnd(21).slice(0, 21))} ${state}</div>`;
-      }).join("") || `<div class="m-item muted">${live.synced ? "No pets match." : "Waiting for the pet collection."}</div>`;
+      }).join("") || `<div class="m-item muted" style="white-space:normal">${!live.synced ? "Waiting for the pet collection."
+        : notHome() && mapKey === live.home.map ? `This is your map: every pet here is farmable in ${esc(live.home.name)}.` : "No pets match."}</div>`;
       const maxed = pets.filter((p) => progress(p.id)[0] >= live.max_level).length;
       const left = pets.reduce((n, p) => n + live.soul_cap - progress(p.id)[3], 0);
       $("wm-totals").textContent = pets.length ? `Level 3: ${maxed}/${pets.length} · To finish: ${left} souls` : "";
@@ -354,9 +369,10 @@ const WorldMapPage = (() => {
       }
       if (live && next.topmost !== live.topmost && window.pywebview && window.pywebview.api.on_top) window.pywebview.api.on_top(next.topmost);
       focusSeen = next.focus;
-      const before = live && JSON.stringify([live.progress, live.targets, live.watch]);
+      const before = live && JSON.stringify([live.progress, live.targets, live.watch, live.home]);
       live = next;
-      if (before !== JSON.stringify([live.progress, live.targets, live.watch])) side();
+      homeSwitch();
+      if (before !== JSON.stringify([live.progress, live.targets, live.watch, live.home])) side();
       dirty = true;
     } catch (e) {
       $("wm-totals").textContent = "Daeva Radar isn't running (" + e.message + ").";
@@ -369,6 +385,8 @@ const WorldMapPage = (() => {
     cfg = { ...live.cfg };
     $("wm-genus").value = cfg.genus;
     $("wm-unfinished").checked = cfg.unfinished;
+    $("wm-nothome").checked = !!cfg.not_home;
+    homeSwitch();
     layersBar();
     await loadMap(live.initial);
     requestAnimationFrame(loop);

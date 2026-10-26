@@ -327,6 +327,45 @@ select:hover, .btn:hover { border-color: #33404f; background: var(--hover); }
 .cl-src { color: var(--muted); font-size: 11px; text-align: left !important; }
 .cl-grid tbody tr:hover td, .cl-grid tbody tr:hover th { background: var(--hover); }
 .cl-near { color: #ffb347; font-weight: 600; }
+.cl-total { display: block; margin: 2px 0 0 32px; font-size: 11px; font-weight: 400; color: var(--muted); white-space: nowrap; }
+.cl-total b { color: #9fd8ff; font-weight: 600; }
+.cl-total.cl-proj b { text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
+/* scaling with the window: sized by the checklist's own width (the side menu takes part of the window) */
+.cl-page { container-type: inline-size; }
+.cl-top { display: grid; gap: 0 32px; align-items: start; }
+.cl-block { min-width: 0; }
+.cl-server { min-width: min(520px, 100%); }
+.cl-server .cl-src { white-space: normal; }
+.cl-grid th, .cl-grid td { padding: 7px clamp(7px, 1.1cqi, 16px); }
+.cl-grid thead th:first-child, .cl-grid tbody th { width: 1%; }  /* names shrink to fit; characters share the rest */
+.cl-col { min-width: clamp(92px, 10cqi, 180px); }
+.cl-v { display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 0 4px; }
+.cm-tiers.cm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); }  /* the 4 Abyss tiers: 2 x 2 */
+@container (max-width: 480px) { .cm-tiers.cm-grid { grid-template-columns: minmax(0, max-content); } }
+@container (min-width: 1150px) {
+  .cl-top { grid-template-columns: auto minmax(0, 1fr); }  /* server and duty commands side by side */
+}
+/* the 4 tiers in one row when they fit: stacked (the whole width) from ~880 px, beside the server table from ~1500 px */
+@container (min-width: 880px) and (max-width: 1149px) { .cm-tiers.cm-grid { grid-template-columns: repeat(4, minmax(0, max-content)); } }
+@container (min-width: 1500px) { .cm-tiers.cm-grid { grid-template-columns: repeat(4, minmax(0, max-content)); } }
+@container (min-width: 1500px) {
+  .cl-grid { font-size: 14px; }
+  .cl-col img { width: 32px; height: 32px; }
+}
+@container (max-width: 760px) {
+  .cl-grid { font-size: 12px; }
+  .cl-grid th, .cl-grid td { padding: 6px 7px; }
+  .cl-scroll .cl-grid tbody th { white-space: normal; min-width: 110px; }  /* long names wrap: "Daeva Season Pass Coin" */
+  .cl-grid .cl-icon, .cl-coin-icon { width: 20px; height: 20px; margin-right: 6px; }
+  .cl-grid .cl-icon svg { width: 13px; height: 13px; }
+  .cl-total { margin-left: 26px; }
+  .cl-col img { width: 22px; height: 22px; }
+  .cl-when { margin-left: 4px; padding: 0 3px; }
+  .cl-v { flex-wrap: wrap; }
+  .cl-v small { order: 3; flex-basis: 100%; text-align: right; line-height: 1.1; }  /* the bonus under the value */
+  .cm-tier { padding: 6px 8px; gap: 8px; }
+  .cm-tier img { width: 32px; height: 32px; }
+}
 .cl-full { color: #ff5c5c; font-weight: 700; }
 
 /* ---- FAQ */
