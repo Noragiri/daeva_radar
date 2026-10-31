@@ -320,4 +320,40 @@ t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragi
 assert t.own == 5898 and t.own_name == 'Noragiri'
 print('notice: nothing read until agreed')
 
+# 22) Odyle energy items in the inventory: counted per login (gone from it = used up), updated by '1b 56'
+def rec(item, count, where=1): return b'\x2f\xa4\x13\x00\x9c\x01\x00' + struct.pack('<IQ', item, count) + bytes([where]) + bytes(4)
+inv = b'\x11V' + bytes(5) + rec(930100031, 500) + rec(512000014, 12) + rec(512000015, 25) + rec(512000014, 99, where=2)
+assert cf.currencies(inv) == {930100031: 500, 512000014: 12, 512000015: 25}  # the storage's stack (02) left out
+t = cf.Tracker(); t.feed([inv], 1.0); t.feed([b'36' + venc(5898) + bytes([0x5e, 0x81, 0xc9, 0x28, 0x37, 8]) + b'Noragiri' + bytes(20)], 2.0)
+s = t.snapshot(now=2)['sheet']
+assert s['items'] == {512000014: 12, 512000015: 25} and 512000014 not in s['currencies'] and s['currencies'][930100031] == 500, s
+t.feed([b'\x1bV' + bytes(5) + rec(512000015, 24)], 3.0)
+assert t.snapshot(now=3)['sheet']['items'] == {512000014: 12, 512000015: 24}
+t2 = cf.Tracker(); t2.feed([b'\x11V' + bytes(5) + rec(930100031, 7)], 1.0)  # a login without any: both used up
+assert t2.snapshot(now=1)['sheet']['items'] == {512000014: 0, 512000015: 0}
+from daevaradar.characters import Characters
+out = Characters.checklist(dict(sheet=dict(read='x', read_at=None, counters={}, currencies={}, items={'512000014': 12, '512000015': 24})))
+assert out['energy_bag'] == 12 * 40 + 24 * 10 and out['energy_items'] == [['Odyle Energy', 12, 40], ['Small Odyle Energy', 24, 10]], out
+print('energy items: 12 x 40 + 24 x 10 = %d in the bag; used up = 0' % out['energy_bag'])
+
+# 23) Key: Hidden Cube in the inventory: no key (read at login) = no cube sound; unknown = the sound plays
+t = cf.Tracker(); assert t.cube_keys() is None and t.snapshot(now=0)['cube_keys'] is None
+t.feed([b'\x11V' + bytes(5) + rec(630900003, 2) + rec(630900007, 1) + rec(630900003, 50, where=2)], 1.0)  # 2 bound (+ storage)
+assert t.cube_keys() == 2, t.key_items  # 630900007 isn't known as a key yet
+t.feed([b'\x1bV' + bytes(5) + rec(630900003, 1)], 2.0); assert t.cube_keys() == 1
+t.feed([b'\x1bV' + bytes(5) + rec(630900007, 0)], 3.0)  # a drop with no cube opened: not learned
+assert 630900007 not in t.key_ids
+t.key_items[630900007] = 1
+cube_spawn = b'46' + venc(777) + b'\x04\x00' + struct.pack('<I', 1200039) + struct.pack('<fff', 1.0, 2.0, 3.0) + bytes(6)
+t.feed([cube_spawn], 4.0); t.feed([b'56' + venc(777) + b'\x04\x03\x00'], 5.0)  # you open a cube...
+t.feed([b'\x1bV' + bytes(5) + rec(630900007, 0)], 6.0)  # ...and a timed key goes: it's a cube key
+assert 630900007 in t.key_ids and t.snapshot(now=6)['key_ids'] == [630900003, 630900007] and t.cube_keys() == 1
+t3 = cf.Tracker(); t3.feed([b'\x11V' + bytes(5) + rec(930100031, 7)], 1.0)  # a login without keys
+assert t3.cube_keys() == 0 and t3.snapshot(now=1)['cube_keys'] == 0
+print('cube keys: counted at login, updated, learned from a cube opening (630900007), none = 0')
+t4 = cf.Tracker(); t4.feed([b'\x1bV' + bytes(5) + rec(930100031, 9)], 1.0)  # an update starts a sheet just before...
+t4.feed([b'\x11V' + bytes(5) + rec(930100031, 9)], 30.0)  # ...the relog's inventory, with no keys (live, 2026-10-31)
+assert t4.cube_keys() == 0, t4.key_items
+print('cube keys: read at a relog even after an inventory update started a sheet')
+
 print('ALL OK')

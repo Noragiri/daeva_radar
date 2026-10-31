@@ -391,7 +391,13 @@ CURRENCIES = {930100031: "Kinah", 930100001: "Kinah (bound)", 930100003: "Abyss 
               930100023: "Enhance Stone", 930200001: "Quna"}
 # only these are tracked (not the Customization Voucher 930100021, nor event currencies 9603…); ids from the game,
 # checked against the game and Inven's AION 2 DB (Quna 930200001, the gold / platinum medals)
-CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100))
+# Key: Hidden Cube. The bound key is 630900003 (AION 2 Hub); the timed (7 / 10 / 30 days) and plain keys aren't
+# published, so any item of this family whose count drops right after a cube opens is learned as a key too.
+KEY_RANGE = (630900000, 630900100)
+CUBE_KEYS = {630900003}
+CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100), (512000000, 512000100), KEY_RANGE)
+# Odyle energy items in the inventory (ids from AION 2 Hub, 2026-10-27): item id -> (name, energy it recharges)
+ENERGY_ITEMS = {512000014: ("Odyle Energy", 40), 512000015: ("Small Odyle Energy", 10)}
 
 
 def currency_records(data):
@@ -408,7 +414,8 @@ def currency_records(data):
             if start >= 7 and start + 13 <= len(b) and b[start - 1] == 0 and b[start - 4] == 0:
                 item = int.from_bytes(b[start:start + 4], "little")
                 count = int.from_bytes(b[start + 4:start + 12], "little")
-                if lo <= item < hi and item in CURRENCIES and count < 10 ** 12:
+                if lo <= item < hi and (item in CURRENCIES or item in ENERGY_ITEMS or lo == KEY_RANGE[0]) \
+                        and count < 10 ** 12:
                     out.append((item, count, b[start + 12]))
             p = b.find(prefix, p + 1)
     return out
@@ -587,6 +594,12 @@ class Tracker:
         # BEFORE the message with the name: a full counter list starts a new sheet, the next login names it.
         self.sheet = None
         self.sheet_count = 0
+        # cube keys: {item id: count} of the key family in your inventory, None until a login's inventory is read
+        # (then the cube sound is skipped while you have none); key_ids grows as keys are learned (see KEY_RANGE)
+        self.key_items = None
+        self.key_ids = set(CUBE_KEYS)
+        self.cube_opened_at = None  # when a cube was last opened
+        self.inventory_at = None  # when the last full inventory ('11 56', at login) began
         self.storage = None  # dict(kinah, time, by): the server storage's kinah, last seen when a character used the storage
         self.storage_count = 0
         self.zone_count = 0  # teleports / zone-ins seen: a change means you're somewhere else
@@ -661,7 +674,7 @@ class Tracker:
 
     def new_sheet(self, when):
         """A login is under way: its counters and inventory come before the message with the name, which names it."""
-        self.sheet = dict(owner=None, counters={}, currencies={}, time=when, start=when)
+        self.sheet = dict(owner=None, counters={}, currencies={}, items={}, time=when, start=when)
 
     def note_sheet(self, kind, data, when):
         """Counters and currencies -> self.sheet (see __init__). Either of the login messages ('0b 61' the counters,
@@ -684,18 +697,48 @@ class Tracker:
             if change is None:
                 return False
             if self.sheet is None:
-                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, time=when)
+                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, items={}, time=when)
             self.sheet["counters"][change[0]] = change[1]
         else:
             found = currencies(data)
             if not found and not login:
                 return False
             if self.sheet is None:
-                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, time=when)
-            self.sheet["currencies"].update(found)
+                self.sheet = dict(owner=self.own_name, counters={}, currencies={}, items={}, time=when)
+            items = self.sheet.setdefault("items", {})
+            if login and (self.inventory_at is None or when - self.inventory_at > 5):
+                # the whole inventory: every key is listed, what isn't, you don't have. Not tied to the sheet: an
+                # update just before the login can have started one already (seen 2026-10-31: keys stayed unknown)
+                self.inventory_at = when
+                self.key_items = {}
+            if login:  # the whole inventory: an energy item it doesn't list is used up
+                items.update({ident: 0 for ident in ENERGY_ITEMS if ident not in items})
+            for ident, count in found.items():
+                if KEY_RANGE[0] <= ident < KEY_RANGE[1]:
+                    self.note_key(ident, count, when)
+                    continue
+                (items if ident in ENERGY_ITEMS else self.sheet["currencies"])[ident] = count
         self.sheet["time"] = when
         self.sheet_count += 1
         return True
+
+    def note_key(self, ident, count, when):
+        """A key-family item's count from the inventory. One that drops within 5 s of a cube opening is a cube key."""
+        if self.key_items is None:
+            return  # no login inventory read yet: nothing to compare with
+        old = self.key_items.get(ident)
+        if (ident not in self.key_ids and old is not None and count < old and self.cube_opened_at is not None
+                and 0 <= when - self.cube_opened_at <= 5):
+            self.key_ids.add(ident)
+            if self.log:
+                self.log("Cubes: item %d is a Key: Hidden Cube (used on a cube)" % ident)
+        self.key_items[ident] = count
+
+    def cube_keys(self):
+        """-> how many Key: Hidden Cube you carry, or None while it isn't known (no login inventory read)."""
+        if self.key_items is None:
+            return None
+        return sum(count for ident, count in self.key_items.items() if ident in self.key_ids)
 
     def set_own(self, own):
         """You are `own`. Switching from another character drops everything about the old one."""
@@ -704,6 +747,7 @@ class Tracker:
         if self.own is not None:
             self.clear()
             self.own_name = self.own_char_no = None
+            self.key_items = None  # another character: its keys aren't known until its inventory is read
         self.own = own
 
     def _feed(self, batch, when):
@@ -840,6 +884,7 @@ class Tracker:
                 continue
             if kind == b"56" and data[p:] == b"\x04\x03\x00":
                 item.update(status="opened", seen=when)
+                self.cube_opened_at = when
             elif item["status"] != "opened" and (kind == b"\x05\x8d" or data[p:] == b"\x01\x01\x00"):
                 item.update(status="last seen", seen=when)
 
@@ -926,5 +971,6 @@ class Tracker:
                         bosses=dict(self.bosses), boss_count=self.boss_count,
                         storage=None if self.storage is None else dict(self.storage), storage_count=self.storage_count, zone_count=self.zone_count,
                         sheet=None if self.sheet is None else dict(self.sheet, counters=dict(self.sheet["counters"]),
-                                                                   currencies=dict(self.sheet["currencies"])),
-                        sheet_count=self.sheet_count, own_profile=self.own_profile)
+                                                                   currencies=dict(self.sheet["currencies"]), items=dict(self.sheet.get("items", {}))),
+                        sheet_count=self.sheet_count, own_profile=self.own_profile,
+                        cube_keys=self.cube_keys(), key_ids=sorted(self.key_ids))

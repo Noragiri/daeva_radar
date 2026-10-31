@@ -2,7 +2,7 @@
 
 A companion radar for **AION 2** that runs next to the game and shows what's around you:
 
-- 🧊 **Hidden Cubes** with a callout when one appears, and their spawn points
+- 🧊 **Hidden Cubes** with a callout when one appears (silent while your inventory has no Key: Hidden Cube), and their spawn points
 - ✧ **Empyrean Traces** (feathers), remembering the ones you've collected
 - ☠ **Monsters** you're hunting, with a watch list
 - ❀ **Pets**: your collection's progress to Lv3, a Pet tracker card over the game, and where the monsters that drop the

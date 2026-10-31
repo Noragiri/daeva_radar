@@ -35,6 +35,8 @@ class CubesFeature(Feature):
         self.toy = Lovense(app.engine.say)
         self.toy.configure(self.cfg["haptics_host"], self.cfg["haptics_port"])
         self.haptic = None  # (level, distance m) now, for the Settings page
+        self.saved_key_ids = set(load_settings().get("cube_key_ids", []))  # keys learned on earlier runs
+        app.tracker.key_ids |= self.saved_key_ids
         super().__init__(app)
 
     # ---- Radar tab
@@ -289,10 +291,14 @@ class CubesFeature(Feature):
             if new and snap["position"]:
                 dist, dz, compass = relative(snap["position"], new["xyz"])
                 where = " %d m %s" % (dist, compass)
-            self.app.engine.say("Cube!" + where)
-            if not self.app.args.demo:  # the demo's made-up cubes stay quiet (the Test button still plays)
+            no_key = snap.get("cube_keys") == 0  # read from the inventory: no Key: Hidden Cube (unknown: plays)
+            self.app.engine.say("Cube!" + where + (" (no Key: Hidden Cube: no sound)" if no_key else ""))
+            if not self.app.args.demo and not no_key:  # the demo's made-up cubes stay quiet (the Test button still plays)
                 play(self.voice, self.app.args.sound, self.volume)
             self.seen_detections = snap["detections"]
+        if set(snap.get("key_ids", ())) - self.saved_key_ids:  # a key learned on a cube: kept for the next runs
+            self.saved_key_ids = set(snap["key_ids"])
+            save_settings(dict(load_settings(), cube_key_ids=sorted(self.saved_key_ids)))
         self.apply_haptics(snap)
         super().background(snap)
 
@@ -306,4 +312,6 @@ class CubesFeature(Feature):
 
     def status(self, snap):
         nearby = sum(1 for c in snap["cubes"] if c["status"] == "nearby")
-        return "%d cube%s nearby" % (nearby, "" if nearby == 1 else "s")
+        keys = snap.get("cube_keys")
+        return "%d cube%s nearby%s" % (nearby, "" if nearby == 1 else "s",
+                                      "" if keys is None else " · no key: silent" if keys == 0 else " · %d key%s" % (keys, "" if keys == 1 else "s"))

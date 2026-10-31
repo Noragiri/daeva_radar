@@ -4,7 +4,7 @@ import datetime as _dt
 import time
 
 from .common import load_settings, save_settings
-from .game import CLASSES, CLASS_ICONS, COUNTERS, CURRENCIES, ENERGY
+from .game import CLASSES, CLASS_ICONS, COUNTERS, CURRENCIES, ENERGY, ENERGY_ITEMS
 
 FACTIONS = ("Elyos", "Asmodian")
 HISTORY_DAYS, HISTORY_CHANGES = 120, 300  # what's kept per character: a value per day, and the latest changes
@@ -130,6 +130,7 @@ class Characters:
         self.note_history(entry, kept, sheet)
         entry["sheet"] = dict(counters=dict(kept.get("counters", {}), **{str(k): v for k, v in sheet["counters"].items()}),
                               currencies=dict(kept.get("currencies", {}), **{str(k): v for k, v in sheet["currencies"].items()}),
+                              items=dict(kept.get("items", {}), **{str(k): v for k, v in sheet.get("items", {}).items()}),
                               read=time.strftime("%Y-%m-%d %H:%M", time.localtime(sheet["time"])),
                               read_at=sheet["time"])
         self.save()
@@ -208,6 +209,10 @@ class Characters:
                 proj, left = min(c["max"], left + gain) - left, min(c["max"], left + gain)
             out[c["group"]].append(dict(name=c["name"], left=left, bonus=bonus, max=c["max"], scope=c["scope"],
                                         unit=c.get("unit"), note=c.get("note"), proj=proj))
+        # Odyle energy items in the inventory: [[name, count, energy each], ...] and the energy they'd give
+        items = sheet.get("items", {})
+        out["energy_items"] = [[name, items[str(i)], each] for i, (name, each) in ENERGY_ITEMS.items() if str(i) in items]
+        out["energy_bag"] = sum(count * each for _, count, each in out["energy_items"])
         amounts = [(name, money[str(i)], i) for i, name in CURRENCIES.items() if str(i) in money]
         kinah = [v for n, v, _ in amounts if n.startswith("Kinah")]
         out["currencies"] = ([("Kinah (total)", sum(kinah), 930100030)] if len(kinah) == 2 else []) + amounts

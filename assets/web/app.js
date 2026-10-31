@@ -294,15 +294,19 @@ function checklist() {
   const energyTotal = withEnergy.reduce((a, c) => a + c.checklist.energy[0], 0);
   const energyBonus = withEnergy.reduce((a, c) => a + (c.checklist.energy[1] || 0), 0);
   const energyEst = withEnergy.some((c) => c.checklist.energy_proj);
+  const bagTotal = chars.reduce((a, c) => a + (c.checklist.energy_bag || 0), 0);  // Odyle energy items in the inventories
+  // "bag +1,240": what a character's Odyle energy items would give; the counts on hover
+  const bag = (c) => !c.checklist.energy_bag ? "" : `<small class="cl-bag" title="In the inventory: ${
+    c.checklist.energy_items.filter(([, n]) => n).map(([name, n, each]) => `${fmt(n)} × ${name} (+${each})`).join(", ")}">bag +${fmt(c.checklist.energy_bag)}</small>`;
   const totalLine = withEnergy.length > 1 ? `<small class="cl-total${energyEst ? " cl-proj" : ""}" title="All ${withEnergy.length} characters${energyEst ? ", estimated since their readings" : ""}">
-    Total <b>${fmt(energyTotal)}</b>${energyBonus ? ` (+${fmt(energyBonus)})` : ""}</small>` : "";
+    Total <b>${fmt(energyTotal)}</b>${energyBonus ? ` (+${fmt(energyBonus)})` : ""}${bagTotal ? ` · bag +${fmt(bagTotal)}` : ""}</small>` : "";
   const energy = `<tr><th>${clIcon("Odyle energy")}Odyle energy${totalLine}</th>${chars.map((c) => {
     const e = c.checklist.energy;
     if (!e) return "<td>—</td>";
     // it stops filling at ENERGY_CAP: orange when close (over 700), red when full (spend it before it's wasted)
     const level = e[0] >= ENERGY_CAP ? "cl-full" : e[0] > ENERGY_WARN ? "cl-near" : "";
     const est = c.checklist.energy_proj;
-    return `<td class="${est ? "cl-proj" : ""}" title="${est ? `Estimated: +${est} since it was read (15 every 3 hours)` : ""}">${clValue(`<span class="${level}">${fmt(e[0])}</span>`, e[1] && fmt(e[1]), ENERGY_CAP)}</td>`;
+    return `<td class="${est ? "cl-proj" : ""}" title="${est ? `Estimated: +${est} since it was read (15 every 3 hours)` : ""}">${clValue(`<span class="${level}">${fmt(e[0])}</span>`, e[1] && fmt(e[1]), ENERGY_CAP)}${bag(c)}</td>`;
   }).join("")}</tr>`;
   const counterRows = charRows.map((row) => `<tr><th>${clIcon(row.name)}${esc(row.name)}${tag(row)}</th>${chars.map((c) => cell(c, find(c, row.group, row.name), row.group)).join("")}</tr>`).join("");
   const coins = [];
