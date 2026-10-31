@@ -55,9 +55,10 @@ From source, or on Linux under Wine / Proton: see [Running from source](docs/GUI
 
 ## A quick tour
 
-- **Settings** (double-click the tray icon) lists the features. Each has an **On/Off** switch, its tabs (radar,
-  lists, settings) and its overlays; a feature that's off does nothing at all.
-- **Overlay layout** (in Settings or the tray) puts a grid over the game: drag every overlay into place, then Esc.
+- **Settings** (double-click the tray icon) opens on **Home**: a tile per tool with what it does and an **On/Off**
+  switch; click a tile to open the tool (its radar, lists, settings and overlays). A tool that's off does nothing at
+  all. Can't find something? Type in the **search box** at the top of the sidebar (`keys`, `pets`, `ore`, `update`…).
+- **Place overlays** (in Settings or the tray) puts a grid over the game: drag every overlay into place, then Esc.
 - **The Pet tracker** card shows your target pet's souls to its next level and the pets whose soul monsters are
   around you.
 - **The radar** is north-up with you as the white dot. Colour and shape show height: **cyan ▲** above you, **magenta ▼**
@@ -68,14 +69,14 @@ From source, or on Linux under Wine / Proton: see [Running from source](docs/GUI
   resource there to highlight it everywhere.
 - **Overlays:** switch one on in its feature's page (or the tray), drag it onto the game's minimap, scale it with
   the mouse wheel until the rings match, then lock it with **Ctrl+Shift+O** so clicks go through to the game.
-- **Settings → General → Map you're on:** **Auto** reads it from the boss list the game sends every few seconds (Verteron, Altgard, Lower Reshanta); on other maps pick it yourself.
+- **Home → Map you're on:** **Auto** reads it from the boss list the game sends every few seconds (Verteron, Altgard, Lower Reshanta); on other maps pick it yourself.
 
 The full feature reference is in the **[user guide](docs/GUIDE.md)**.
 
 ## Updates
 
 The app checks for a new version at start and every hour. When one is out, a pop-up says so and **Settings →
-General** shows **Update and restart**: click it, and it updates itself and restarts. Your settings are kept. (The check only asks GitHub for the
+App settings** shows **Update and restart**: click it, and it updates itself and restarts. Your settings are kept. (The check only asks GitHub for the
 latest version and sends nothing about you or the game.)
 
 ## Troubleshooting
@@ -90,7 +91,7 @@ latest version and sends nothing about you or the game.)
 - **Overlays don't appear over the game:** switch the game to borderless or windowed mode.
 - **Antivirus or SmartScreen warnings:** the exe isn't code-signed and captures network traffic, which some tools
   flag. It's built from this repository's source by GitHub's release workflow.
-- **Wrong map:** pick it in **Settings → General** instead of Auto.
+- **Wrong map:** pick it on **Home** (**Map you're on**) instead of Auto.
 
 ## More
 

@@ -198,7 +198,7 @@ class FeathersFeature(Feature):
 
     def empty_text(self):
         if not self.app.map_key():
-            return "Map not known yet: pick it in Settings → General."
+            return "Map not known yet: pick it on Home → Map you're on."
         if not self.map_key():
             return "No feather data for %s." % map_name(self.app.map_key())
         return "No feather spots within %d m." % self.range

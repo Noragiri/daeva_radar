@@ -11,20 +11,24 @@ World map and **Quit**. Closing Settings keeps the radar running in the tray. (W
 app: closing it quits.)
 
 - **First start:** Settings opens with a notice (an unofficial tool, at your own risk; what it keeps on your PC and what
-  it sends: only update checks to GitHub). Until you agree, the app reads no game traffic and checks for no updates; **About →
+  it sends: only update checks to GitHub). Until you agree, the app reads no game traffic and checks for no updates; **Help →
   Read it again** shows it later.
-- **Settings** has a page per feature (its On/Off switch, its tabs: radar, lists, settings, and its overlays),
-  **General** (map, start-up, updates, troubleshooting), **Overlay layout** and **About**. Turn off *Open Settings when Daeva Radar starts* to start
-  straight in the tray.
+- **Settings** opens on **Home**: whether it sees your character, the map you're on, buttons for the World map, the
+  Checklist, Place overlays and Help, and a tile per tool (what it does, its status, its On/Off switch; click it to open
+  the tool). The sidebar has Home, **Checklist**, **Characters**, **World map**, the **Tools** (one page each: its tabs
+  radar, lists, settings, and its overlays) and **Setup**: **Place overlays**, **App settings** (start-up, updates,
+  troubleshooting) and **Help** (common problems, the notice, credits). The **search box** at its top finds a page by
+  what's on it: `keys`, `pets`, `ore`, `update`… (Enter opens the first hit, Esc clears it). Turn off *Open Settings
+  when Daeva Radar starts* to start straight in the tray.
 - **Overlays:** every feature can have its minimap overlay and an info card (the **Pet tracker**: your target pet's
   souls to its next level and how many of its soul monsters are in range, then the other pets whose soul monsters
   are around you). Unlocked, drag them; right-click (or the pin on a card) locks them so clicks go to the game.
   **Ctrl+Shift+O** locks / unlocks every shown one.
-- **Overlay layout** (Settings, or the tray's *Edit overlay layout*) puts a see-through grid over the game window
+- **Place overlays** (Settings, or the tray's *Edit overlay layout*) puts a see-through grid over the game window
   (the main screen when the game isn't running) and unlocks every shown overlay: drag them, and a minimap's corner or
   a card's right edge to resize, snapping to the grid (off / 10-80 px in the bar at the top). Hidden ones are dashed
   boxes you can place too. **Done** or **Esc** locks everything back as it was.
-- **Characters** (under General) lists every character the radar has seen log in, by name, with when you last
+- **Characters** lists every character the radar has seen log in, by name, with when you last
   played it and the maps it was detected on, and its **checklist** read from the game at login (and live while you
   play it): Nightmare runs, Ascension Trial entries and Abyss time left, and its currencies (Kinah, Abyss Points,
   Nightmare Points, Oath Coin, Silver Medal of Merit, Centuryroot Token). Other characters show their last reading. Set each one's faction, **Elyos** or **Asmodian** (click again to
@@ -32,19 +36,19 @@ app: closing it quits.)
 - **Duty Command** (12 a week) and **Duty Command: Abyss** (the Abyss Command Shop's scrolls, 4 tiers x 5 = 20 a week), in the
   Checklist's Server section, shared on the server. The game doesn't send these counts, so you fill them in: **− / +**, a tick box
   that fills one, and **All** for the Abyss tiers. It clears itself at the weekly reset (Wednesday 09:00).
-- **Checklist** (under Characters): per character, read from the game at login and live while you play it, like the
+- **Checklist**: per character, read from the game at login and live while you play it, like the
   game's own lists: Stock and keys (Nightmare, Shugo keys, Invasion keys), Weekly (Unknown Fissure, Ascension Trial,
   Abyss time) with the time to the daily (09:00) and weekly (Wednesday 09:00) resets, and the currencies. CHAR / SERVER
   says whether a count is the character's own or shared on the server; "(+26)" is bonus entries. A reading from before
   the last reset is marked as refilled since. More lists are added as they're decoded.
-- **On/Off switch** (top right of each feature's page, or the dot beside it in the sidebar): a feature that's off does nothing in the background: no
-  alerts, its overlay hidden (it comes back when switched on), and View cone doesn't read the screen. The sidebar
-  dims it. Its settings can still be changed.
+- **On/Off switch** (on its tile on Home, or top right of its page; a page that's off has a **Turn it on** button): a
+  tool that's off does nothing in the background: no alerts, its overlay hidden (it comes back when switched on), and
+  View cone doesn't read the screen. The sidebar dims it and marks it *off*. Its settings can still be changed.
 - Every feature's background work keeps running whichever page is shown, and with Settings closed: alerts, pop-ups
   and overlays.
-- **General:** the map you're on (see [Map picker](#map-picker)), start-up, *Keep the World map on top*, updates,
-  and **Restart** / **Quit**. **Position debug** (sidebar) shows your position, its last packet and how often it
-  updates; **FAQ** has the common problems and fixes.
+- **App settings:** the map you're on (also on Home; see [Map picker](#map-picker)), start-up, *Keep the World map
+  on top*, updates, and **Restart** / **Quit**. **Position debug** (its Troubleshooting button) shows your position,
+  its last packet and how often it updates; **Help** has the common problems and fixes.
 - The last page and tab you used are remembered.
 
 ## Features
@@ -166,14 +170,14 @@ minimised, or a shown overlay), and the minimap must be visible: borderless or w
 
 ## Map picker
 
-**Settings → General → Map you're on** picks the map the map data is for, shared by Cubes (spawn points), Feathers, Gathering (names,
+**Settings → Home → Map you're on** (also in App settings) picks the map the map data is for, shared by Cubes (spawn points), Feathers, Gathering (names,
 map-only nodes) and Pets (spawns). **Auto** uses the detected map: live gathering nodes decide when there are any,
 else live cubes (at least two must sit on spawn points); pets also detect it from soul monsters. Pick a map by hand
 when detection is slow or wrong; the line under it shows what was detected.
 
 ## Map window
 
-Opened with **Map ↗** from Monsters → Pets or Gathering → Radar, **World map** in the tray or Settings → General (one
+Opened with **Map ↗** from Monsters → Pets or Gathering → Radar, **World map** in the tray, the sidebar or Home (one
 window for all, in the Settings style with its own top bar): the world map with layers for
 pets' soul spawns (coloured by genus), hidden cubes and each gathering group (Ore, Gems, Odyle, Herbs, Wood,
 Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side panel has two sides:
@@ -186,7 +190,7 @@ Ingredients). Wheel to zoom, drag to pan, click a point for what it is. The side
   drawn bigger in their watch colour even with their layer off.
 
 It reopens at start if it was open when the app closed, and stays above the game with **Keep the World map on top**
-(Settings → General).
+(Settings → App settings).
 
 ## Reading the radar
 

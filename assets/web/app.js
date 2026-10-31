@@ -9,7 +9,7 @@ const store = {
 };
 {
   const [p, t] = decodeURIComponent(location.hash.slice(1)).split("/");  // #Page or #Feature/Tab
-  page = p || store.get("page", "General");
+  page = p || store.get("page", "Home");
   if (p && t) store.set("tab:" + p, t);
 }
 
@@ -46,6 +46,9 @@ const P = {
   Debug: '<circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5"/>',
   FAQ: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4M12 17v.5"/>',
   Characters: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>',
+  Home: '<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',
+  Help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4M12 17v.5"/>',
+  "World map": '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
   Checklist: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8l1.5 1.5L12 7M8 14l1.5 1.5L12 13M14 8h3M14 14h3"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[name] || P.About}</svg>`;
@@ -72,32 +75,109 @@ document.addEventListener("change", (e) => {
 });
 
 // ---- navigation
+// What each page is called in the sidebar, what a tool does (Home's tiles), and the words that find it (the search)
+const NAMES = { General: "App settings", Layout: "Place overlays", Debug: "Position debug" };
+const name = (p) => NAMES[p] || p;
+const ABOUT = {
+  Cubes: "Finds hidden cubes near you and beeps when one shows up.",
+  Feathers: "Shows the feather spots on your map.",
+  Monsters: "Monsters around you, and the pets you can still collect.",
+  Gathering: "Ore, Odyle, gems, logs and herbs near you.",
+  Wardrobe: "Which outfit pieces you already own.",
+  "Boss timers": "When the field bosses come back.",
+  Shop: "The hourly shop's offers, and a ping when one you want is up.",
+  Alerts: "Your own alarms and reminders.",
+  "View cone": "Shows where you're looking on the minimap overlay.",
+};
+const WORDS = {
+  Home: "start main overview",
+  Checklist: "keys shugo invasion nightmare odyle energy kinah currency currencies duty command commands reset daily weekly fissure abyss corridors ascension storage",
+  Characters: "character characters faction elyos asmodian id alts",
+  Cubes: "cube cubes hidden key keys sound beep radar",
+  Feathers: "feather feathers",
+  Monsters: "monster monsters mob elite pet pets soul genus collection",
+  Gathering: "gather ore gem gems log logs herb herbs ingredient ingredients odyle node nodes mining",
+  Wardrobe: "skin skins outfit costume appearance clothes",
+  "Boss timers": "boss bosses field respawn route timer",
+  Shop: "shop offers buy deal deals",
+  Alerts: "alarm alarms reminder reminders timer notification",
+  "View cone": "cone facing direction camera look",
+  "World map": "map world pets spawns nodes",
+  Layout: "overlay overlays place move position lock unlock minimap card hide show",
+  General: "settings options map zone update updates restart quit startup tray top",
+  Help: "help faq about problem problems admin administrator antivirus terms notice question questions credits",
+  Debug: "position debug coordinates",
+};
+let query = "";
 function pages() {
-  return [["General"], ["Characters"], ["Checklist"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["Debug"], ["FAQ"], ["About"]];
+  return [["Home"], ["General"], ["Characters"], ["Checklist"], ...state.features.map((f) => [f.title, f]), ["Layout"], ["Debug"], ["Help"]];
 }
-function renderNav() {
-  const nav = document.getElementById("nav");
-  const item = (name, f) => `<button data-page="${esc(name)}" class="${name === page ? "active" : ""} ${f && !f.enabled ? "off" : ""}">
-    ${icon(name)}<span>${esc(name === "Layout" ? "Overlay layout" : name === "Debug" ? "Position debug" : name)}</span>${f ? `<i class="dot" data-switch="${esc(f.title)}" title="${f.enabled ? "On: click to turn off" : "Off: click to turn on"}"></i>` : ""}</button>`;
-  nav.innerHTML = item("Characters") + item("Checklist") + '<div class="group">Features</div>' +
-    state.features.map((f) => item(f.title, f)).join("") + '<div class="group">Overlays</div>' + item("Layout") +
-    '<div class="group">Daeva Radar</div>' + item("General") + item("Debug") + item("FAQ") + item("About");
-}
-document.getElementById("nav").addEventListener("click", (e) => {
-  const dot = e.target.closest("[data-switch]");
-  if (dot) {  // the dot switches the feature on / off without opening its page
-    const f = state.features.find((x) => x.title === dot.dataset.switch);
-    if (f) act("set_feature", { title: f.title, on: !f.enabled });
-    return;
-  }
-  const b = e.target.closest("[data-page]");
-  if (!b) return;
-  page = b.dataset.page;
+function go(p) {
+  page = p;
   store.set("page", page);
   render(true);
+}
+function renderNav() {
+  const nav = document.getElementById("navlist");
+  const item = (p, f) => `<button data-page="${esc(p)}" class="${p === page ? "active" : ""} ${f && !f.enabled ? "off" : ""}">
+    ${icon(p)}<span>${esc(name(p))}</span>${f && !f.enabled ? '<small class="tag">off</small>' : ""}</button>`;
+  const map = `<button data-open-map title="Opens in its own window">${icon("World map")}<span>World map</span><small class="tag">↗</small></button>`;
+  if (query) {  // the search: every page whose name or words match, best first; Enter opens the first
+    const q = query.toLowerCase().trim();
+    const hits = [...pages().filter(([p]) => p !== "Debug" || q.startsWith("pos")), ["World map"]].map(([p, f]) => {
+      const n = name(p).toLowerCase(), w = (WORDS[p] || "") + " " + (ABOUT[p] || "").toLowerCase();
+      const score = n.startsWith(q) ? 3 : n.includes(q) ? 2 : w.split(/\W+/).some((x) => x && x.startsWith(q)) ? 1 : 0;
+      return [score, p, f];
+    }).filter(([score]) => score).sort((x, y) => y[0] - x[0]);
+    nav.innerHTML = hits.length ? hits.map(([, p, f]) => p === "World map" ? map : item(p, f)).join("")
+      : '<p class="muted find-none">Nothing found. Try <b>Help</b>.</p>';
+    return;
+  }
+  nav.innerHTML = item("Home") + item("Checklist") + item("Characters") + map +
+    '<div class="group">Tools</div>' + state.features.map((f) => item(f.title, f)).join("") +
+    '<div class="group">Setup</div>' + item("Layout") + item("General") + item("Help");
+}
+document.getElementById("nav").addEventListener("click", (e) => {
+  if (e.target.closest("[data-open-map]")) return act("open_map");
+  const b = e.target.closest("[data-page]");
+  if (b) go(b.dataset.page);
+});
+const find = document.getElementById("find");
+find.addEventListener("input", () => { query = find.value; renderNav(); });
+find.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { find.value = query = ""; renderNav(); }
+  if (e.key !== "Enter") return;
+  const first = document.querySelector("#navlist button");
+  find.value = query = "";
+  if (first) first.click();
+  renderNav();
+});
+// Home's tiles open their page (but not when the click is on the tile's switch)
+document.getElementById("content").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-goto]");
+  if (b && !e.target.closest(".switch")) go(b.dataset.goto);
 });
 
 // ---- pages
+// Home: whether it sees you, the map, the main buttons, and a tile per tool (click to open, the switch turns it on / off)
+function home() {
+  const s = state, who = s.status.who;
+  const tile = (f) => `<div class="tile ${f.enabled ? "" : "off"}" data-goto="${esc(f.title)}" role="button">
+      <div class="tile-top">${icon(f.title)}<b>${esc(f.title)}</b>${toggle(f.enabled, (v) => act("set_feature", { title: f.title, on: v }))}</div>
+      <p>${esc(ABOUT[f.title] || "")}</p>
+      <small class="${f.enabled ? "tile-status" : "muted"}">${f.enabled ? esc(f.status || "On") : "Off"}</small></div>`;
+  return `<h2>${icon("Home")}Home</h2>
+  ${who ? `<p class="lead">Playing as <b>${esc(who)}</b>. Click a tool to open it; its switch turns it on or off.</p>`
+    : '<div class="callout"><span>Daeva Radar doesn\'t know your character yet: <b>relog or change zone once</b> while it runs.</span></div>'}
+  <div class="btns home-btns">${btn(icon("World map") + "Open the World map", () => act("open_map"), "primary")}
+    ${btn(icon("Checklist") + "Checklist", () => go("Checklist"))}
+    ${btn(icon("Layout") + "Place overlays on the game", () => go("Layout"))}
+    ${btn(icon("Help") + "Help", () => go("Help"))}</div>
+  <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Found: " + esc(label(s.map.detected)) : "Not found yet: pick it if spots don't line up."}</span></div>
+    <select data-h="${reg((v) => act("set_map", { key: v }))}">${s.map.choices.map(([k, t]) => `<option value="${esc(k)}" ${k === s.map.choice ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
+  <div class="section">Tools</div>
+  <div class="tiles">${s.features.map(tile).join("")}</div>`;
+}
 function general() {
   const s = state, u = s.update, g = s.general;
   const upd = {
@@ -106,7 +186,7 @@ function general() {
     installing: `Updating to ${esc(u.release)}…`, install_failed: "The update failed.", installed: "Updated, restarting…",
   }[u.state] || "";
   const mine = s.version ? "v" + esc(s.version) : (s.git ? "a git checkout" : "version unknown");
-  return `<h2>${icon("General")}General</h2>
+  return `<h2>${icon("General")}App settings</h2>
   <div class="section">Map</div>
   <div class="row"><div class="label">Map you're on<span class="hint">${s.map.detected ? "Detected: " + esc(label(s.map.detected)) : "Not detected yet: read from the boss list, or pick one."}</span></div>
     <select data-h="${reg((v) => act("set_map", { key: v }))}">${s.map.choices.map(([k, t]) => `<option value="${esc(k)}" ${k === s.map.choice ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
@@ -120,7 +200,7 @@ function general() {
     ${u.state === "available" && !s.git ? btn("Update and restart", () => confirm(`Update to ${u.release} now? The app restarts; your settings are kept.`) && act("install_update"), "primary") : ""}
     ${btn("Check now", () => act("check_updates"), "", ["checking", "installing", "installed"].includes(u.state))}</div>
   <div class="section">Troubleshooting</div>
-  <div class="row"><div class="label">Position debug<span class="hint">Your position and how it updates.</span></div>${btn("Open", () => { page = "Debug"; store.set("page", page); render(true); })}</div>
+  <div class="row"><div class="label">Position debug<span class="hint">Your position and how it updates.</span></div>${btn("Open", () => go("Debug"))}</div>
   <div class="divider"></div>
   <div class="btns">${btn("Restart Daeva Radar", () => confirm("Restart Daeva Radar? It closes and starts again (this window too); your settings are kept.") && act("restart_app"))}
   ${btn("Quit Daeva Radar", () => confirm("Quit Daeva Radar? Capture, overlays and alerts stop.") && act("quit_app"), "danger")}</div>`;
@@ -142,7 +222,9 @@ function featureHead(f) {
   const tab = featureTab(f);
   return `<h2>${icon(f.title)}${esc(f.title)} <span style="margin-left:auto"></span>
       <span class="switch-label">${f.enabled ? "On" : "Off"}${toggle(f.enabled, (v) => act("set_feature", { title: f.title, on: v }))}</span></h2>
-    <p class="lead">${f.enabled ? esc(f.status || "Running.") : "Off: nothing is tracked or drawn."}</p>
+    ${f.enabled ? `<p class="lead">${esc(ABOUT[f.title] || "")} <b>${esc(f.status || "Running.")}</b></p>`
+      : `<div class="callout"><span>${esc(ABOUT[f.title] || "")} It's <b>off</b>: nothing is tracked or drawn.</span>
+          ${btn("Turn it on", () => act("set_feature", { title: f.title, on: true }), "primary")}</div>`}
     <div class="tabs">${featureTabs(f).map((t) => `<button class="tab ${t === tab ? "on" : ""}" data-tab="${esc(t)}">${esc(t)}</button>`).join("")}</div>
     ${tab === "Overlays" ? state.overlays.filter((o) => o.feature === f.title).map((o) => overlayRow(o, true)).join("") : ""}`;
 }
@@ -184,7 +266,7 @@ function characters() {
       <span class="hint">${c.last ? "Last played " + esc(c.last) : "Seen before this page existed"} · ${esc(where(c))}${
         !c.faction && c.guess ? ` · looks <b>${esc(c.guess)}</b>` : ""}</span></div>
       <div class="btns">${side(c, "Elyos")}${side(c, "Asmodian")}</div>
-      ${btn("Checklist", () => { store.set("checklist", c.name); page = "Checklist"; store.set("page", page); render(true); })}
+      ${btn("Checklist", () => { store.set("checklist", c.name); go("Checklist"); })}
       ${btn("Forget", () => confirm(`Forget ${c.name}? It comes back the next time it logs in.`) && act("forget_character", { name: c.name }), "danger")}
     </div>`).join("") : '<p class="muted">None yet: log in with Daeva Radar running.</p>'}`;
 }
@@ -360,7 +442,7 @@ const FAQ = [
     ["I closed Settings. How do I get it back?",
      "Daeva Radar keeps running in the tray (bottom right of the taskbar, maybe under the ^ arrow). Double-click its icon, or right-click → <b>Settings</b>."],
     ["How do I quit or restart it?",
-     "Tray icon → <b>Quit Daeva Radar</b>, or the <b>Restart</b> / <b>Quit</b> buttons at the bottom of General."],
+     "Tray icon → <b>Quit Daeva Radar</b>, or the <b>Restart</b> / <b>Quit</b> buttons at the bottom of <b>App settings</b>."],
   ]],
   ["Seeing things", [
     ["It says \"Character not identified yet\" and nothing shows up.",
@@ -368,13 +450,13 @@ const FAQ = [
     ["My position doesn't move when I walk.",
      "The game only sends your position when you teleport, dash or have an <b>aura</b> active (about once a second). Plain walking isn't sent, so keep an aura on for steady updates."],
     ["The overlays don't show over the game.",
-     "Play in <b>borderless or windowed</b> mode (fullscreen covers them). Overlays only show while AION 2 is the active window, so click into the game. Check the feature is on (the dot in the sidebar) and its overlay is shown (the feature's Overlays tab, or the tray)."],
+     "Play in <b>borderless or windowed</b> mode (fullscreen covers them). Overlays only show while AION 2 is the active window, so click into the game. Check the tool is on (its switch on <b>Home</b>) and its overlay is shown (the tool's Overlays tab, or the tray)."],
     ["An overlay is in the wrong place or I lost it.",
-     "Use <b>Overlay layout</b> (sidebar or tray) to drag everything into place over the game, or <b>Bring it here</b> in the feature's Overlays tab. Unlocked overlays can be dragged; <b>Ctrl+Shift+O</b> locks / unlocks them all."],
+     "Use <b>Place overlays</b> (sidebar or tray) to drag everything into place over the game, or <b>Bring it here</b> in the tool's Overlays tab. Unlocked overlays can be dragged; <b>Ctrl+Shift+O</b> locks / unlocks them all."],
     ["The Pet tracker card disappeared.",
      "It fades out 60 seconds after your last soul drop and comes back with the next one. Turn that off in Monsters → Settings → Pets."],
     ["The map is wrong (cube spawns, feathers or gathering nodes don't line up).",
-     "Pick the map yourself in General → <b>Map you're on</b> instead of Auto."],
+     "Pick the map yourself on <b>Home</b> → <b>Map you're on</b> instead of Auto."],
   ]],
   ["Game data", [
     ["Pets, wardrobe or the checklist are empty.",
@@ -386,20 +468,20 @@ const FAQ = [
   ]],
   ["Updates and settings", [
     ["How do I update?",
-     "Daeva Radar checks at start and every hour. When there's a new version, a pop-up says so: click it, then <b>Update and restart</b> in General. Your settings are kept."],
+     "Daeva Radar checks at start and every hour. When there's a new version, a pop-up says so: click it, then <b>Update and restart</b> in <b>App settings</b>. Your settings are kept."],
     ["Where are my settings?",
      "In <code>%APPDATA%\\DaevaRadar\\settings.json</code> (overlay positions, watch lists, characters, the checklist). Updates and reinstalls keep it."],
   ]],
 ];
-function faq() {
-  return `<h2>${icon("FAQ")}FAQ</h2>
+function help() {
+  return `<h2>${icon("Help")}Help</h2>
   <p class="lead">Common problems and what to do. Still stuck? Ask on <a href="https://github.com/Noragiri/daeva_radar/issues" target="_blank" rel="noopener">GitHub</a>.</p>
   ${FAQ.map(([group, items]) => `<div class="section">${esc(group)}</div>
     ${items.map(([q, a]) => `<details class="faq"><summary>${esc(q)}</summary><p>${a}</p></details>`).join("")}`).join("")}`;
 }
 
 function about() {
-  return `<h2>${icon("About")}About</h2>
+  return `<div class="section">About Daeva Radar</div>
   <p class="lead">Reads AION 2's network traffic on this PC. Read-only: it never changes, sends or uploads anything.</p>
   <p class="lead warn">NCSOFT's rules prohibit tools that read the game's traffic. Use at your own risk.</p>
   <div class="row"><div class="label">The notice you agreed to<span class="hint">Its risk, and what it keeps and sends.</span></div>${btn("Read it again", () => Terms.open(false, state.terms.when))}</div>
@@ -414,7 +496,7 @@ function layout() {
     await act("edit_layout");
     if (window.pywebview && window.pywebview.api.minimize) window.pywebview.api.minimize();  // out of the way
   };
-  return `<h2>${icon("Layout")}Overlay layout</h2>
+  return `<h2>${icon("Layout")}Place overlays</h2>
   <p class="lead">Place overlays and info cards on the game window: drag them on a grid (hidden ones show dashed).
   <b>Done</b> or <b>Esc</b> locks them again.</p>
   <div class="btns">${state.layout ? btn("Finish layout", () => act("edit_layout"), "primary") : btn("Edit layout over the game", startLayout, "primary")}
@@ -429,7 +511,7 @@ function render(fresh) {
   if (!state) return;
   handlers = {};
   regs = 0;
-  if (!pages().some(([n]) => n === page)) page = "General";
+  if (!pages().some(([n]) => n === page)) page = "Home";
   renderNav();
   const f = state.features.find((x) => x.title === page);
   const el = document.getElementById("content");
@@ -453,7 +535,8 @@ function render(fresh) {
     el.dataset.view = "";
     FeaturePage.stop();
     const open = new Set([...el.querySelectorAll("details[open] > summary")].map((x) => x.textContent));  // kept across redraws
-    el.innerHTML = page === "General" ? general() : page === "Characters" ? characters() : page === "Checklist" ? checklist() : page === "Layout" ? layout() : page === "FAQ" ? faq() : about();
+    el.innerHTML = page === "Home" ? home() : page === "General" ? general() : page === "Characters" ? characters()
+      : page === "Checklist" ? checklist() : page === "Layout" ? layout() : help() + about();
     el.querySelectorAll("details > summary").forEach((x) => { if (open.has(x.textContent)) x.parentElement.open = true; });
     el.scrollTop = scroll;
   }
