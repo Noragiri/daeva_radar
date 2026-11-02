@@ -18,6 +18,7 @@ from .vision import ViewCone
 from .debug import PositionDebug
 from .game import BOSS_MAP_KEYS, MapData, map_name
 from .ui import OVERLAY_CONE, Toast, draw_cone, foreground_exe, hotkey_thread, set_icon
+from .features.abyss import AbyssFeature
 from .features.cubes import CubesFeature
 from .features.feathers import FeathersFeature
 from .features.monsters import MonstersFeature
@@ -38,7 +39,7 @@ TERMS_VERSION = 1  # the first-run notice (assets/web/terms.js): raise it when i
 class App:
     """Runs from the tray: Settings is a web page in its own window (a page per feature); each feature has its
     minimap overlay and info card over the game. Every feature's background() runs each tick."""
-    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, BossesFeature, ShopFeature, AlertsFeature, ViewFeature)
+    FEATURES = (CubesFeature, FeathersFeature, MonstersFeature, GatherFeature, WardrobeFeature, BossesFeature, ShopFeature, AbyssFeature, AlertsFeature, ViewFeature)
 
     def __init__(self, tracker, engine, args):
         import tkinter as tk

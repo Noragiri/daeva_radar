@@ -116,6 +116,7 @@ select:hover, .btn:hover { border-color: #33404f; background: var(--hover); }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
 .stat b { display: block; font-size: 20px; }
+.stat span { white-space: pre-line; }
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--raised); color: var(--muted); }
 .badge.on { background: var(--accent-soft); color: var(--accent); }
 .warn { color: var(--warn); }

@@ -356,4 +356,14 @@ t4.feed([b'\x11V' + bytes(5) + rec(930100031, 9)], 30.0)  # ...the relog's inven
 assert t4.cube_keys() == 0, t4.key_items
 print('cube keys: read at a relog even after an inventory update started a sheet')
 
+# 24. Abyss Points: each update carries the new total; a rise is a gain (not the login's total, nor a spend)
+t5 = cf.Tracker()
+t5.feed([b'\x11V' + bytes(5) + rec(cf.ABYSS_POINTS, 150602)], 1.0)
+for when, total in ((2.0, 150618), (3.0, 151418), (4.0, 1418), (5.0, 2418)):
+    t5.feed([b'\x1bV' + bytes(5) + rec(cf.ABYSS_POINTS, total)], when)
+assert t5.take_abyss_gains() == [(2.0, 16, 150618), (3.0, 800, 151418), (5.0, 1000, 2418)], t5.abyss_gains
+assert t5.take_abyss_gains() == []
+assert [t for _, t in t5.take_abyss_readings()] == [150602, 150618, 151418, 1418, 2418]  # every total, for the graph
+print('abyss points: gains from the inventory updates')
+
 print('ALL OK')

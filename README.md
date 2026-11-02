@@ -69,6 +69,11 @@ From source, or on Linux under Wine / Proton: see [Running from source](docs/GUI
   resource there to highlight it everywhere.
 - **Overlays:** switch one on in its feature's page (or the tray), drag it onto the game's minimap, scale it with
   the mouse wheel until the rings match, then lock it with **Ctrl+Shift+O** so clicks go through to the game.
+- **Abyss Points:** monsters give 10-30, a player kill 100 or more. Every player kill (a gain of at least the
+  amount you set, 100 to start with) is listed on its page and
+  written to `%APPDATA%\DaevaRadar\abyss_points.log` (time, gain, new total, character, map; tab-separated, opens
+  in Excel), with an optional pop-up and beep. Its page also graphs each character's total over a day, week or
+  month, and shows the points gained this hour, the last hour, per hour played and today.
 - **Home → Map you're on:** **Auto** reads it from the boss list the game sends every few seconds (Verteron, Altgard, Lower Reshanta); on other maps pick it yourself.
 
 The full feature reference is in the **[user guide](docs/GUIDE.md)**.
@@ -91,6 +96,9 @@ latest version and sends nothing about you or the game.)
 - **Overlays don't appear over the game:** switch the game to borderless or windowed mode.
 - **Antivirus or SmartScreen warnings:** the exe isn't code-signed and captures network traffic, which some tools
   flag. It's built from this repository's source by GitHub's release workflow.
+- **The folder can't be deleted ("WinDivert64.sys is open in another program"):** the capture driver stays
+  loaded after the app quits. Quit Daeva Radar, then restart the PC or run `sc stop windivert` as administrator.
+  Newer versions load it from a copy in `%LOCALAPPDATA%\DaevaRadar\windivert`, so the app folder stays free.
 - **Wrong map:** pick it on **Home** (**Map you're on**) instead of Auto.
 
 ## More

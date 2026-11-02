@@ -2,6 +2,7 @@
 connections; the engine that feeds captured packets to the tracker."""
 from pathlib import Path
 import ctypes
+import hashlib
 import os
 import subprocess
 import sys
@@ -133,6 +134,40 @@ def find_windivert(explicit):
             return d
     raise OSError("WinDivert.dll + WinDivert64.sys not found. Put them beside daeva_radar.py "
                   "(from the official WinDivert 2.2.2 x64 release) or pass --windivert DIR.")
+DIVERT_FILES = ("WinDivert.dll", "WinDivert64.sys")
+
+
+def driver_copy(folder):
+    """WinDivert loads its driver from the DLL's folder, and Windows keeps that .sys locked until the driver is stopped
+    or the PC restarts (often long after Daeva Radar quit): the app's folder then can't be deleted or replaced. So the
+    files are loaded from a copy in %LOCALAPPDATA%\\DaevaRadar\\windivert\\<their hash>, which is never overwritten (a new
+    WinDivert gets a new folder). The copy is checked against the originals before every load. -> the folder to load
+    from (the original one if the copy can't be made)."""
+    base = os.environ.get("LOCALAPPDATA")
+    if not base:
+        return folder
+    try:
+        data = {name: (folder / name).read_bytes() for name in DIVERT_FILES}
+        digest = hashlib.sha256(b"".join(data[name] for name in DIVERT_FILES)).hexdigest()[:16]
+        target = Path(base) / "DaevaRadar" / "windivert" / digest
+        for name, content in data.items():
+            path = target / name
+            try:
+                if path.read_bytes() == content:
+                    continue
+            except OSError:
+                pass
+            target.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(name + ".tmp%d" % os.getpid())
+            tmp.write_bytes(content)
+            os.replace(tmp, path)  # fails if a different file there is loaded: then the original folder is used
+            if path.read_bytes() != content:
+                return folder
+        return target
+    except OSError:
+        return folder
+
+
 def usable(q):
     """IPv4 TCP packet, not a fragment, long enough for the headers."""
     return len(q) >= 40 and q[0] >> 4 == 4 and q[9] == 6 and not int.from_bytes(q[6:8], "big") & 0x3FFF
@@ -141,7 +176,7 @@ class Capture:
     filters_ports = True
 
     def __init__(self, folder, ports):
-        self.dll = ctypes.WinDLL(str(folder / "WinDivert.dll"), use_last_error=True)
+        self.dll = ctypes.WinDLL(str(driver_copy(folder) / "WinDivert.dll"), use_last_error=True)
         self.dll.WinDivertOpen.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_short, ctypes.c_ulonglong]
         self.dll.WinDivertOpen.restype = ctypes.c_void_p
         self.dll.WinDivertRecv.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint,

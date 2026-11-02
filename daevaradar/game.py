@@ -397,6 +397,7 @@ KEY_RANGE = (630900000, 630900100)
 CUBE_KEYS = {630900003}
 CURRENCY_RANGES = ((930100000, 930100100), (930200000, 930200100), (512000000, 512000100), KEY_RANGE)
 # Odyle energy items in the inventory (ids from AION 2 Hub, 2026-10-27): item id -> (name, energy it recharges)
+ABYSS_POINTS = 930100003
 ENERGY_ITEMS = {512000014: ("Odyle Energy", 40), 512000015: ("Small Odyle Energy", 10)}
 
 
@@ -600,6 +601,10 @@ class Tracker:
         self.key_ids = set(CUBE_KEYS)
         self.cube_opened_at = None  # when a cube was last opened
         self.inventory_at = None  # when the last full inventory ('11 56', at login) began
+        # Abyss Points: every change comes as an inventory update with the new total; a rise is a gain [(when, gain, total)]
+        self.abyss_total = None
+        self.abyss_gains = []
+        self.abyss_readings = []  # every total read [(when, total)], for the graph
         self.storage = None  # dict(kinah, time, by): the server storage's kinah, last seen when a character used the storage
         self.storage_count = 0
         self.zone_count = 0  # teleports / zone-ins seen: a change means you're somewhere else
@@ -717,6 +722,8 @@ class Tracker:
                 if KEY_RANGE[0] <= ident < KEY_RANGE[1]:
                     self.note_key(ident, count, when)
                     continue
+                if ident == ABYSS_POINTS:
+                    self.note_abyss(count, when, login)
                 (items if ident in ENERGY_ITEMS else self.sheet["currencies"])[ident] = count
         self.sheet["time"] = when
         self.sheet_count += 1
@@ -734,6 +741,27 @@ class Tracker:
                 self.log("Cubes: item %d is a Key: Hidden Cube (used on a cube)" % ident)
         self.key_items[ident] = count
 
+    def note_abyss(self, total, when, login):
+        """The Abyss Points total from the inventory: an update that's higher than the last one is a gain."""
+        if not login and self.abyss_total is not None and total > self.abyss_total:
+            self.abyss_gains.append((when, total - self.abyss_total, total))
+            del self.abyss_gains[:-100]
+        self.abyss_total = total
+        self.abyss_readings.append((when, total))
+        del self.abyss_readings[:-100]
+
+    def take_abyss_readings(self):
+        """-> every Abyss Points total read [(when, total)] since the last call."""
+        with self.lock:
+            readings, self.abyss_readings = self.abyss_readings, []
+        return readings
+
+    def take_abyss_gains(self):
+        """-> the Abyss Points gains [(when, gain, total)] since the last call."""
+        with self.lock:
+            gains, self.abyss_gains = self.abyss_gains, []
+        return gains
+
     def cube_keys(self):
         """-> how many Key: Hidden Cube you carry, or None while it isn't known (no login inventory read)."""
         if self.key_items is None:
@@ -748,6 +776,7 @@ class Tracker:
             self.clear()
             self.own_name = self.own_char_no = None
             self.key_items = None  # another character: its keys aren't known until its inventory is read
+            self.abyss_total = None
         self.own = own
 
     def _feed(self, batch, when):
